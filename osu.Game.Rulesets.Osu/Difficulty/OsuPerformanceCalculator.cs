@@ -139,7 +139,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             // Scale aim value with deviation
-            aimValue *= 4169 / 4050.0 * SpecialFunctions.Erf(50 / (Math.Sqrt(2) * deviation));
+            aimValue *= SpecialFunctions.Erf(50 / (Math.Sqrt(2) * deviation));
 
             return aimValue;
         }
@@ -199,7 +199,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax))
                 return 0.0;
 
-            double accuracyValue = 4407 * Math.Pow(deviation, -1.818);
+            double accuracyValue = 763.087 * Math.Exp(-0.230237 * deviation);
 
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
