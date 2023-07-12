@@ -19,6 +19,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
     {
         public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
+        private const double od_to_normalize_into = 10;
+        private const double normalized_hit_window300 = 80 - 6 * od_to_normalize_into;
+        private const double normalized_hit_window100 = 140 - 8 * od_to_normalize_into;
+        private const double normalized_hit_window50 = 200 - 10 * od_to_normalize_into;
+
         private double accuracy;
         private int scoreMaxCombo;
         private int countGreat;
@@ -196,7 +201,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
             speedValue *= 1 / (1 + Math.Pow(effectiveSpeedDeviation(speedDeviation, attributes.ApproachRate) / 20, 4)); // Scale the speed value with speed deviation.
 
-            speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
+            double accuracyOnNormalizedOd = 2.0 / 3 * SpecialFunctions.Erf(normalized_hit_window300 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window100 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window50 / deviationRoot2);
+
+            double speedAccuracyOnNormalizedOd = 2.0 / 3 * SpecialFunctions.Erf(normalized_hit_window300 / speedDeviationRoot2) +
+                                                 1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window100 / speedDeviationRoot2) +
+                                                 1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window50 / speedDeviationRoot2);
+
+            speedValue *= (0.95 + Math.Pow(od_to_normalize_into, 2) / 750) * Math.Pow((accuracyOnNormalizedOd + speedAccuracyOnNormalizedOd) / 2, (14.5 - Math.Max(8, od_to_normalize_into)) / 2);
 
             return speedValue;
         }
