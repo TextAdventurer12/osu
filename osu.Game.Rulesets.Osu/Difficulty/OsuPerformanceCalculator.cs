@@ -20,6 +20,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
     {
         public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
+        private const double od_to_normalize_into = 10;
+        private const double normalized_hit_window300 = 80 - 6 * od_to_normalize_into;
+        private const double normalized_hit_window100 = 140 - 8 * od_to_normalize_into;
+        private const double normalized_hit_window50 = 200 - 10 * od_to_normalize_into;
+
         private double accuracy;
         private int scoreMaxCombo;
         private int countGreat;
@@ -121,7 +126,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax))
                 approachRateFactor = 0.0;
 
-            aimValue *= 1.0 + approachRateFactor;
+            aimValue *= 1.0 + approachRateFactor * lengthBonus;
 
             if (score.Mods.Any(m => m is OsuModBlinds))
                 aimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * attributes.DrainRate * attributes.DrainRate);
@@ -168,7 +173,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (attributes.ApproachRate > 10.33)
                 approachRateFactor = 0.2 * (attributes.ApproachRate - 10.33);
 
-            speedValue *= 1.0 + approachRateFactor;
+            speedValue *= 1.0 + approachRateFactor * lengthBonus;
 
             if (score.Mods.Any(m => m is OsuModBlinds))
             {
@@ -200,7 +205,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
             speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
 
-            speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
+            double accuracyOnNormalizedOd = 2.0 / 3 * SpecialFunctions.Erf(normalized_hit_window300 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window100 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window50 / deviationRoot2);
+
+            double speedAccuracyOnNormalizedOd = 2.0 / 3 * SpecialFunctions.Erf(normalized_hit_window300 / speedDeviationRoot2) +
+                                                 1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window100 / speedDeviationRoot2) +
+                                                 1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window50 / speedDeviationRoot2);
+
+            speedValue *= (0.95 + Math.Pow(od_to_normalize_into, 2) / 750) * Math.Pow((accuracyOnNormalizedOd + speedAccuracyOnNormalizedOd) / 2, (14.5 - Math.Max(8, od_to_normalize_into)) / 2);
 
             return speedValue;
         }
@@ -245,8 +258,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             flashlightValue *= 0.7 + 0.1 * Math.Min(1.0, totalHits / 200.0) +
                                (totalHits > 200 ? 0.2 * Math.Min(1.0, (totalHits - 200) / 200.0) : 0.0);
 
-            // Scale the flashlight value with deviation
-            flashlightValue *= SpecialFunctions.Erf(50 / (Math.Sqrt(2) * (double)deviation));
+            flashlightValue *= 0.98 + Math.Pow(od_to_normalize_into, 2) / 2500;
+
+            double deviationRoot2 = Math.Sqrt(2) * deviation;
+            double accuracyOnNormalizedOd = 2.0 / 3 * SpecialFunctions.Erf(normalized_hit_window300 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window100 / deviationRoot2) +
+                                            1.0 / 6 * SpecialFunctions.Erf(normalized_hit_window50 / deviationRoot2);
+
+            flashlightValue *= 0.5 + accuracyOnNormalizedOd / 2.0;
 
             return flashlightValue;
         }
