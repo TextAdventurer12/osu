@@ -1061,40 +1061,17 @@ namespace osu.Game.Database
 
                 case 35:
                 {
-                    // catch used `Shift` twice as a default key combination for dash, which generally was bothersome and causes issues elsewhere.
-                    // the duplicate binding logic below had to account for it, it could also break keybinding conflict resolution on revert-to-default.
-                    // as such, detect this situation and fix it before proceeding further.
-                    var catchDashBindings = migration.NewRealm.All<RealmKeyBinding>()
-                                                     .Where(kb => kb.RulesetName == @"fruits" && kb.ActionInt == 2)
-                                                     .ToList();
-
-                    if (catchDashBindings.All(kb => kb.KeyCombination.Equals(new KeyCombination(InputKey.Shift))))
+                    foreach (var score in migration.NewRealm.All<ScoreInfo>())
                     {
-                        Debug.Assert(catchDashBindings.Count == 2);
-                        catchDashBindings.Last().KeyCombination = KeyCombination.FromMouseButton(MouseButton.Left);
-                    }
-
-                    // with the catch case dealt with, de-duplicate the remaining bindings.
-                    int countCleared = 0;
-
-                    var globalBindings = migration.NewRealm.All<RealmKeyBinding>().Where(kb => kb.RulesetName == null).ToList();
-
-                    foreach (var category in Enum.GetValues<GlobalActionCategory>())
-                    {
-                        var categoryActions = GlobalActionContainer.GetGlobalActionsFor(category).Cast<int>().ToHashSet();
-                        var categoryBindings = globalBindings.Where(kb => categoryActions.Contains(kb.ActionInt));
-                        countCleared += RealmKeyBindingStore.ClearDuplicateBindings(categoryBindings);
-                    }
-
-                    var rulesetBindings = migration.NewRealm.All<RealmKeyBinding>().Where(kb => kb.RulesetName != null).ToList();
-
-                    foreach (var variantGroup in rulesetBindings.GroupBy(kb => (kb.RulesetName, kb.Variant)))
-                        countCleared += RealmKeyBindingStore.ClearDuplicateBindings(variantGroup);
-
-                    if (countCleared > 0)
-                    {
-                        Logger.Log($"{countCleared} of your keybinding(s) have been cleared due to being bound to multiple actions. "
-                                   + "Please choose new unique ones in the settings panel.", level: LogLevel.Important);
+                        if (score.OnlineID > 0)
+                        {
+                            score.LegacyOnlineID = score.OnlineID;
+                            score.OnlineID = -1;
+                        }
+                        else
+                        {
+                            score.LegacyOnlineID = score.OnlineID = -1;
+                        }
                     }
 
                     break;
