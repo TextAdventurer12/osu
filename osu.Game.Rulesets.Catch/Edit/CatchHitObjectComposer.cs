@@ -69,8 +69,6 @@ namespace osu.Game.Rulesets.Catch.Edit
                 Catcher.BASE_DASH_SPEED, -Catcher.BASE_DASH_SPEED,
                 Catcher.BASE_WALK_SPEED, -Catcher.BASE_WALK_SPEED,
             }));
-
-            AddInternal(beatSnapGrid = new CatchBeatSnapGrid());
         }
 
         protected override IEnumerable<TernaryButton> CreateTernaryButtons()
