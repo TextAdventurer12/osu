@@ -201,6 +201,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
+            speedValue *= Math.Pow(accOd10Speed, 2);
 
             return speedValue;
         }
