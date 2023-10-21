@@ -190,7 +190,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= Math.Pow(0.99, countMeh < totalHits / 500.0 ? 0 : countMeh - totalHits / 500.0);
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
-            speedValue *= Math.Pow(accOd10Speed, 2);
+
+            // Scale the speed value with speed deviation.
+            // Constants obtained with regression.
+            speedValue *= Math.Exp(1 - Math.Cosh(Math.Pow(speedDeviation / 18.8, 1.9)));
 
             return speedValue;
         }
