@@ -184,6 +184,8 @@ namespace osu.Game.Overlays.Mods
             approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.ApproachRate, adjustedDifficulty.ApproachRate);
             overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.OverallDifficulty, adjustedDifficulty.OverallDifficulty);
 
+            haveRateChangedValues = !haveEqualDifficulties(rateAdjustedDifficulty, moddedDifficulty);
+
             approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.ApproachRate, rateAdjustedDifficulty.ApproachRate);
             overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.OverallDifficulty, rateAdjustedDifficulty.OverallDifficulty);
 
@@ -211,6 +213,18 @@ namespace osu.Game.Overlays.Mods
                 Font = OsuFont.Default.With(size: 20, weight: FontWeight.SemiBold),
                 UseFullGlyphHeight = false,
             };
+        }
+
+        public LocalisableString TooltipText
+        {
+            get
+            {
+                if (haveRateChangedValues)
+                {
+                    return "Some of the values are Rate-Adjusted.";
+                }
+                return "";
+            }
         }
     }
 }
