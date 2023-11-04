@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Linq;
 using System.Threading;
 using osu.Framework.Allocation;
@@ -11,6 +12,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Configuration;
@@ -184,15 +186,15 @@ namespace osu.Game.Overlays.Mods
             approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.ApproachRate, adjustedDifficulty.ApproachRate);
             overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.OverallDifficulty, adjustedDifficulty.OverallDifficulty);
 
-            haveRateChangedValues = !haveEqualDifficulties(rateAdjustedDifficulty, moddedDifficulty);
+            haveRateChangedValues = !isDifferentArOd(originalDifficulty, adjustedDifficulty);
 
-            approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.ApproachRate, rateAdjustedDifficulty.ApproachRate);
-            overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.OverallDifficulty, rateAdjustedDifficulty.OverallDifficulty);
+            approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.ApproachRate, adjustedDifficulty.ApproachRate);
+            overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.OverallDifficulty, adjustedDifficulty.OverallDifficulty);
 
-            circleSizeDisplay.Current.Value = rateAdjustedDifficulty.CircleSize;
-            drainRateDisplay.Current.Value = rateAdjustedDifficulty.DrainRate;
-            approachRateDisplay.Current.Value = rateAdjustedDifficulty.ApproachRate;
-            overallDifficultyDisplay.Current.Value = rateAdjustedDifficulty.OverallDifficulty;
+            circleSizeDisplay.Current.Value = adjustedDifficulty.CircleSize;
+            drainRateDisplay.Current.Value = adjustedDifficulty.DrainRate;
+            approachRateDisplay.Current.Value = adjustedDifficulty.ApproachRate;
+            overallDifficultyDisplay.Current.Value = adjustedDifficulty.OverallDifficulty;
         });
 
         private void updateCollapsedState()
@@ -221,7 +223,8 @@ namespace osu.Game.Overlays.Mods
             {
                 if (haveRateChangedValues)
                 {
-                    return "Some of the values are Rate-Adjusted.";
+                    return LocalisableString.Format("Values are changed by mods that change speed.\n" +
+                        "Original values: AR = {0}, OD = {1}", originalDifficulty?.ApproachRate ?? 0, originalDifficulty?.OverallDifficulty ?? 0);
                 }
                 return "";
             }

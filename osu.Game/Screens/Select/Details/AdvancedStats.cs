@@ -260,6 +260,30 @@ namespace osu.Game.Screens.Select.Details
             starDifficultyCancellationSource?.Cancel();
         }
 
+        private bool isDifferentArOd(BeatmapDifficulty a, BeatmapDifficulty b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+
+            if (!Precision.AlmostEquals(a.ApproachRate, b.ApproachRate, 0.01)) return false;
+            if (!Precision.AlmostEquals(a.OverallDifficulty, b.OverallDifficulty, 0.01)) return false;
+
+            return true;
+        }
+
+        public LocalisableString TooltipText
+        {
+            get
+            {
+                if (haveRateChangedValues)
+                {
+                    return LocalisableString.Format("Values are changed by mods that change speed.\n" +
+                        "Original values: AR = {0}, OD = {1}", originalDifficulty?.ApproachRate ?? 0, originalDifficulty?.OverallDifficulty ?? 0);
+                }
+                return "";
+            }
+        }
+
         public partial class StatisticRow : Container, IHasAccentColour
         {
             private const float value_width = 25;
