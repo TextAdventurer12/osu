@@ -184,10 +184,13 @@ namespace osu.Game.Overlays.Mods
             approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.ApproachRate, adjustedDifficulty.ApproachRate);
             overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(originalDifficulty.OverallDifficulty, adjustedDifficulty.OverallDifficulty);
 
-            circleSizeDisplay.Current.Value = adjustedDifficulty.CircleSize;
-            drainRateDisplay.Current.Value = adjustedDifficulty.DrainRate;
-            approachRateDisplay.Current.Value = adjustedDifficulty.ApproachRate;
-            overallDifficultyDisplay.Current.Value = adjustedDifficulty.OverallDifficulty;
+            approachRateDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.ApproachRate, rateAdjustedDifficulty.ApproachRate);
+            overallDifficultyDisplay.AdjustType.Value = VerticalAttributeDisplay.CalculateEffect(moddedDifficulty.OverallDifficulty, rateAdjustedDifficulty.OverallDifficulty);
+
+            circleSizeDisplay.Current.Value = rateAdjustedDifficulty.CircleSize;
+            drainRateDisplay.Current.Value = rateAdjustedDifficulty.DrainRate;
+            approachRateDisplay.Current.Value = rateAdjustedDifficulty.ApproachRate;
+            overallDifficultyDisplay.Current.Value = rateAdjustedDifficulty.OverallDifficulty;
         });
 
         private void updateCollapsedState()
