@@ -84,6 +84,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         public double HitWindowGreat { get; private set; }
 
         /// <summary>
+        /// Retrieves the preempt time for the object.
+        /// </summary>
+        public double ApproachRateTime { get; private set; }
+
+        /// <summary>
         /// Selective bonus for maps with higher circle size.
         /// </summary>
         public double SmallCircleBonus { get; private set; }
@@ -110,6 +115,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             }
 
             setDistances(clockRate);
+
+            ApproachRateTime = BaseObject.TimePreempt / clockRate;
         }
 
         public double OpacityAt(double time, bool hidden)
@@ -159,9 +166,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             float scalingFactor = NORMALISED_RADIUS / (float)BaseObject.Radius;
 
             SmallCircleBonus = 1.0;
-            if (BaseObject.Radius < 30)
+            if (BaseObject.Radius < 31)
             {
-                SmallCircleBonus += (float)Math.Min(30 - BaseObject.Radius, 30) / 35;
+                SmallCircleBonus += (float)(31 - BaseObject.Radius) / 35;
             }
 
             Vector2 lastCursorPosition = getEndCursorPosition(lastObject);

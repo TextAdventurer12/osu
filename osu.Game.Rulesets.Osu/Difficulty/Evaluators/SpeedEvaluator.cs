@@ -13,6 +13,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double single_spacing_threshold = 125;
         private const double min_speed_bonus = 75; // ~200BPM
         private const double speed_balancing_factor = 40;
+        private const double reaction_time = 215;
 
         /// <summary>
         /// Evaluates the difficulty of tapping the current object, based on:
@@ -33,6 +34,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuNextObj = (OsuDifficultyHitObject?)current.Next(0);
 
             double strainTime = osuCurrObj.StrainTime;
+            double readingTime = Math.Min(osuCurrObj.StrainTime, osuCurrObj.ApproachRateTime - reaction_time);
+
             double doubletapness = 1;
 
             // Nerf doubletappable doubles.
@@ -55,7 +58,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = Math.Min(single_spacing_threshold, travelDistance + osuCurrObj.MinimumJumpDistance);
 
-            return (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) * doubletapness / strainTime;
+            return doubletapness * (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
         }
     }
 }
