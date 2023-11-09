@@ -71,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = computeAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
-            double accuracyValue = computeAccuracyValue(score, osuAttributes);
+            double accuracyValue = computeAccuracyValue(score);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
@@ -197,15 +197,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 1 / (1 + Math.Pow(effectiveSpeedDeviation(speedDeviation, attributes.ApproachRate) / 20, 4)); // Scale the speed value with speed deviation.
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
-
-            // Scale the speed value with speed deviation.
-            // Constants obtained with regression.
-            speedValue *= Math.Exp(1 - Math.Cosh(Math.Pow(speedDeviation / 18.8, 1.9)));
+            speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
 
             return speedValue;
         }
 
-        private double computeAccuracyValue(ScoreInfo score, OsuDifficultyAttributes attributes)
+        private double computeAccuracyValue(ScoreInfo score)
         {
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
