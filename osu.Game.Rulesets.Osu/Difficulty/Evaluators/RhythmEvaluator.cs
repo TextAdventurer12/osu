@@ -10,7 +10,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
     public static class RhythmEvaluator
     {
-        private const int history_time_max = 5000; // 5 seconds of calculatingRhythmBonus max.
+        private const int history_time_max = 2500; // 5 seconds of calculatingRhythmBonus max.
         private const double rhythm_multiplier = 0.75;
 
         /// <summary>
@@ -49,7 +49,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double currDelta = currObj.StrainTime;
                 double prevDelta = prevObj.StrainTime;
                 double lastDelta = lastObj.StrainTime;
-                double currRatio = 1.0 + 6.0 * Math.Min(0.5, Math.Pow(Math.Sin(Math.PI / (Math.Min(prevDelta, currDelta) / Math.Max(prevDelta, currDelta))), 2)); // fancy function to calculate rhythmbonuses.
+                double currRatio = Math.PI * Math.Max(prevDelta, currDelta) / Math.Min(prevDelta, currDelta);
+                currRatio = 1.0 + 18 * Math.Min(0.5, Math.Pow(Math.Sin(currRatio), 2) + Math.Pow(Math.Sin(1.5 * currRatio), 2) - 0.75 * Math.Pow(Math.Sin(1.5 * currRatio), 2)); // fancy function to calculate rhythmbonuses.
 
                 double windowPenalty = Math.Min(1, Math.Max(0, Math.Abs(prevDelta - currDelta) - currObj.HitWindowGreat * 0.3) / (currObj.HitWindowGreat * 0.3));
 
@@ -59,7 +60,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 if (firstDeltaSwitch)
                 {
-                    if (!(prevDelta > 1.25 * currDelta || prevDelta * 1.25 < currDelta))
+                    if (!(prevDelta > 1.125 * currDelta || prevDelta * 1.125 < currDelta))
                     {
                         if (islandSize < 7)
                             islandSize++; // island is still progressing, count size.
@@ -76,7 +77,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                             effectiveRatio *= 0.25;
 
                         if (previousIslandSize % 2 == islandSize % 2) // repeated island polartiy (2 -> 4, 3 -> 5)
-                            effectiveRatio *= 0.50;
+                            effectiveRatio *= 0.25;
 
                         if (lastDelta > prevDelta + 10 && prevDelta > currDelta + 10) // previous increase happened a note ago, 1/1->1/2-1/4, dont want to buff this.
                             effectiveRatio *= 0.125;
@@ -93,7 +94,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                         islandSize = 1;
                     }
                 }
-                else if (prevDelta > 1.25 * currDelta) // we want to be speeding up.
+                else if (prevDelta > 1.125 * currDelta) // we want to be speeding up.
                 {
                     // Begin counting island until we change speed again.
                     firstDeltaSwitch = true;

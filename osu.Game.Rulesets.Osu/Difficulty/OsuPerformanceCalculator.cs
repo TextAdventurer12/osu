@@ -166,7 +166,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // Constants obtained with regression.
             double hitWindow300 = 80 - 6 * attributes.OverallDifficulty;
             speedValue *= Math.Exp(1 - Math.Cosh(Math.Pow(speedDeviation / Math.Min(25, 6 + Math.Pow(hitWindow300, 0.9)), 2)));
-            Console.WriteLine(6 + Math.Pow(hitWindow300, 0.9));
+            
             return speedValue;
         }
 

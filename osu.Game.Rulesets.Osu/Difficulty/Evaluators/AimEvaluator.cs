@@ -128,7 +128,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (withSliderTravelDistance)
                 aimStrain += sliderBonus * slider_multiplier;
 
-            double arBuff = (1.0 + 0.0727 * Math.Max(0, 400 - osuCurrObj.ApproachRateTime) / 100.0);
+            double arBuff = (1.0 + 0.1 * Math.Max(0, 400 - osuCurrObj.ApproachRateTime) / 100.0);
 
             return osuCurrObj.SmallCircleBonus * aimStrain * arBuff;
         }
