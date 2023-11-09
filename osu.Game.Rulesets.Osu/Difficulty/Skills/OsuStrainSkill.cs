@@ -66,7 +66,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 // Good for properly weighting difficulty across full map instead of using object count for LengthBonus.
                 // 1.44 and 7.5 are arbitrary constants that worked well.
                 // double weight = 1.44 * ((1 + (7.5 / (1 + index))) / (index + 1 + (7.5 / (1 + index))));
-                double weight = 1.42 * ((1 + (7.5 / (1 + index))) / (Math.Pow(index, Math.Max(0.85, 1.0 - 0.15 * Math.Pow(index / 1500.0, 1))) + 1 + (7.5 / (1 + index))));
+                double weight = 1.42 * ((1 + (7.5 / (1 + index))) / (Math.Pow(index, Math.Max(0.85, 1.0 - 0.15 * Math.Pow(index / 2000.0, 1))) + 1 + (7.5 / (1 + index))));
 
                 difficulty += strain * weight;
                 index += 1;
