@@ -166,9 +166,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             float scalingFactor = NORMALISED_RADIUS / (float)BaseObject.Radius;
 
             SmallCircleBonus = 1.0;
-            if (BaseObject.Radius < 30)
+            if (BaseObject.Radius < 32)
             {
-                SmallCircleBonus += (float)(30 - BaseObject.Radius) / 35;
+                SmallCircleBonus += (float)(32 - BaseObject.Radius) / 40;
             }
 
             Vector2 lastCursorPosition = getEndCursorPosition(lastObject);

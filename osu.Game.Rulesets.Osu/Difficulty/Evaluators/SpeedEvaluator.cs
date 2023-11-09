@@ -33,7 +33,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuPrevObj = current.Index > 0 ? (OsuDifficultyHitObject)current.Previous(0) : null;
             var osuNextObj = (OsuDifficultyHitObject?)current.Next(0);
 
-            double arBuff = (1.0 - 0.0727 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
+            double arBuff = (1.0 - 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
             double strainTime = osuCurrObj.StrainTime;
             double readingTime = Math.Min(osuCurrObj.StrainTime * arBuff, 
                                           osuCurrObj.ApproachRateTime - reaction_time);

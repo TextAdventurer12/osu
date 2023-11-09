@@ -10,8 +10,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
     public static class RhythmEvaluator
     {
-        private const int history_time_max = 2500; // 2.5 seconds of calculatingRhythmBonus max.
-        private const double rhythm_multiplier = 1.0;
+        private const int history_time_max = 5000; // 5 seconds of calculatingRhythmBonus max.
+        private const double rhythm_multiplier = 0.75;
 
         /// <summary>
         /// Calculates a rhythm multiplier for the difficulty of the tap associated with historic data of the current <see cref="OsuDifficultyHitObject"/>.
