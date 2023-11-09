@@ -201,19 +201,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
-
-            // Scale the speed value with speed deviation.
-            // Constants obtained with regression.
-            speedValue *= Math.Exp(1 - Math.Cosh(Math.Pow(speedDeviation / 18.8, 1.9)));
+            speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
 
             return speedValue;
         }
 
         private double computeAccuracyValue(ScoreInfo score)
         {
-            int hitCircleCount = attributes.HitCircleCount;
-
-            if (score.Mods.Any(h => h is OsuModRelax) || totalSuccessfulHits == 0 || hitCircleCount == 0)
+            if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
 
             double accuracyValue = 121 * Math.Pow(7.5 / effectiveDeviation(deviation.Value, attributes.ApproachRate), 2);
