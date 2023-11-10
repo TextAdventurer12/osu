@@ -163,9 +163,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
 
             // Scale the speed value with speed deviation.
-            // Constants obtained with regression.
-            double hitWindow300 = 80 - 6 * attributes.OverallDifficulty;
-            speedValue *= Math.Exp(1 - Math.Cosh(Math.Pow(speedDeviation / Math.Min(25, 6 + Math.Pow(hitWindow300, 0.9)), 2)));
+            if (deviation != null)
+                speedValue *= 1.0 / (1.0 + Math.Pow((double)deviation / 20, 4.0));
             
             return speedValue;
         }
@@ -279,6 +278,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 double deviationOnCircles = hitWindow300 / (Math.Sqrt(2) * SpecialFunctions.ErfInv(greatProbabilityCircle));
                 deviationOnCircles *= Math.Sqrt(1 - Math.Sqrt(2 / Math.PI) * hitWindow100 * Math.Exp(-0.5 * Math.Pow(hitWindow100 / deviationOnCircles, 2))
                     / (deviationOnCircles * SpecialFunctions.Erf(hitWindow100 / (Math.Sqrt(2) * deviationOnCircles))));
+
+                // Then compute the variance for 50s.
+                double mehVariance = (hitWindow50 * hitWindow50 + hitWindow100 * hitWindow50 + hitWindow100 * hitWindow100) / 3;
+
+                // Find the total deviation.
+                deviationOnCircles = Math.Sqrt(((greatCountCircles + okCountCircles) * Math.Pow(deviationOnCircles, 2) + mehCountCircles * mehVariance) / (greatCountCircles + okCountCircles + mehCountCircles));
 
                 return deviationOnCircles;
             }

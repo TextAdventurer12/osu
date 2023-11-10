@@ -10,8 +10,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
     public static class RhythmEvaluator
     {
-        private const int history_time_max = 2500; // 5 seconds of calculatingRhythmBonus max.
-        private const double rhythm_multiplier = 0.75;
+        private const int history_time_max = 5000; // 5 seconds of calculatingRhythmBonus max.
+        private const double rhythm_multiplier = 1.0;
 
         /// <summary>
         /// Calculates a rhythm multiplier for the difficulty of the tap associated with historic data of the current <see cref="OsuDifficultyHitObject"/>.
@@ -62,27 +62,32 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 {
                     if (!(prevDelta > 1.125 * currDelta || prevDelta * 1.125 < currDelta))
                     {
-                        if (islandSize < 7)
+                        if (islandSize < 6)
                             islandSize++; // island is still progressing, count size.
                     }
                     else
                     {
+                        islandSize++;
+
                         if (current.Previous(i - 1).BaseObject is Slider) // bpm change is into slider, this is easy acc window
                             effectiveRatio *= 0.125;
 
                         if (current.Previous(i).BaseObject is Slider) // bpm change was from a slider, this is easier typically than circle -> circle
-                            effectiveRatio *= 0.25;
+                            effectiveRatio *= 0.125;
 
-                        if (previousIslandSize == islandSize) // repeated island size (ex: triplet -> triplet)
+                        if (previousIslandSize == islandSize && islandSize % 2 == 1) // repeated island size (ex: triplet -> triplet)
                             effectiveRatio *= 0.25;
 
                         if (previousIslandSize % 2 == islandSize % 2) // repeated island polartiy (2 -> 4, 3 -> 5)
                             effectiveRatio *= 0.25;
 
+                        if (islandSize % 2 == 0)
+                            effectiveRatio *= 2;
+
                         if (lastDelta > prevDelta + 10 && prevDelta > currDelta + 10) // previous increase happened a note ago, 1/1->1/2-1/4, dont want to buff this.
                             effectiveRatio *= 0.125;
 
-                        rhythmComplexitySum += Math.Sqrt(effectiveRatio * startRatio) * currHistoricalDecay * Math.Sqrt(4 + islandSize) / 2 * Math.Sqrt(4 + previousIslandSize) / 2;
+                        rhythmComplexitySum += Math.Sqrt(effectiveRatio * startRatio) * currHistoricalDecay;
 
                         startRatio = effectiveRatio;
 
