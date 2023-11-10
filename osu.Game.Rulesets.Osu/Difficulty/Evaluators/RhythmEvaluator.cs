@@ -60,7 +60,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 if (firstDeltaSwitch)
                 {
-                    if (!(prevDelta > 1.125 * currDelta || prevDelta * 1.125 < currDelta))
+                    if (!(prevDelta > 1.1 * currDelta || prevDelta * 1.1 < currDelta))
                     {
                         if (islandSize < 6)
                             islandSize++; // island is still progressing, count size.
@@ -75,7 +75,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                         if (current.Previous(i).BaseObject is Slider) // bpm change was from a slider, this is easier typically than circle -> circle
                             effectiveRatio *= 0.125;
 
-                        if (previousIslandSize == islandSize && islandSize % 2 == 1) // repeated island size (ex: triplet -> triplet)
+                        if (previousIslandSize == islandSize) // repeated island size (ex: triplet -> triplet)
                             effectiveRatio *= 0.25;
 
                         if (previousIslandSize % 2 == islandSize % 2) // repeated island polartiy (2 -> 4, 3 -> 5)
@@ -93,13 +93,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                         previousIslandSize = islandSize; // log the last island size.
 
-                        if (prevDelta * 1.25 < currDelta) // we're slowing down, stop counting
+                        if (prevDelta * 1.1 < currDelta) // we're slowing down, stop counting
                             firstDeltaSwitch = false; // if we're speeding up, this stays true and  we keep counting island size.
 
                         islandSize = 1;
                     }
                 }
-                else if (prevDelta > 1.125 * currDelta) // we want to be speeding up.
+                else if (prevDelta > 1.1 * currDelta) // we want to be speeding up.
                 {
                     // Begin counting island until we change speed again.
                     firstDeltaSwitch = true;

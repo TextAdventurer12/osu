@@ -162,10 +162,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
 
+            double hitWindow300 = 80 - 6 * attributes.OverallDifficulty;
+
             // Scale the speed value with speed deviation.
             if (deviation != null)
-                speedValue *= 1.0 / (1.0 + Math.Pow((double)deviation / 20, 4.0));
-            
+                speedValue *= 1.0 / (1.0 + Math.Pow((double)deviation / (10.0 + Math.Pow(hitWindow300, .75)), 4.0));
+
             return speedValue;
         }
 
