@@ -73,7 +73,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                             effectiveRatio *= 0.125;
 
                         if (current.Previous(i).BaseObject is Slider) // bpm change was from a slider, this is easier typically than circle -> circle
-                            effectiveRatio *= 0.25;
+                            effectiveRatio *= 0.125;
 
                         if (previousIslandSize == islandSize) // repeated island size (ex: triplet -> triplet)
                             effectiveRatio *= 0.25;
