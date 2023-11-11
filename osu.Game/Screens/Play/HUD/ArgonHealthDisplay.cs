@@ -75,6 +75,13 @@ namespace osu.Game.Screens.Play.HUD
             Width = 0.98f;
         }
 
+        private readonly LayoutValue drawSizeLayout = new LayoutValue(Invalidation.DrawSize);
+
+        public ArgonHealthDisplay()
+        {
+            AddLayout(drawSizeLayout);
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
