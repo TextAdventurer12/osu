@@ -13,6 +13,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double single_spacing_threshold = 125;
         private const double min_speed_bonus = 75; // ~200BPM
         private const double speed_balancing_factor = 40;
+        private const double reaction_time = 150;
 
         /// <summary>
         /// Evaluates the difficulty of tapping the current object, based on:
@@ -32,7 +33,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuPrevObj = current.Index > 0 ? (OsuDifficultyHitObject)current.Previous(0) : null;
             var osuNextObj = (OsuDifficultyHitObject?)current.Next(0);
 
+            double arBuff = (1.0 - 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
             double strainTime = osuCurrObj.StrainTime;
+            double readingTime = Math.Min(osuCurrObj.StrainTime * arBuff, 
+                                          osuCurrObj.ApproachRateTime - reaction_time);
+
             double doubletapness = 1;
 
             // Nerf doubletappable doubles.
@@ -46,10 +51,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 doubletapness = Math.Pow(speedRatio, 1 - windowRatio);
             }
 
-            // Cap deltatime to the OD 300 hitwindow.
-            // 0.93 is derived from making sure 260bpm OD8 streams aren't nerfed harshly, whilst 0.92 limits the effect of the cap.
-            strainTime /= Math.Clamp((strainTime / osuCurrObj.HitWindowGreat) / 0.93, 0.92, 1);
-
             // derive speedBonus for calculation
             double speedBonus = 1.0;
 
@@ -58,7 +59,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double distance = Math.Min(single_spacing_threshold, osuCurrObj.Movement.Length * (50.0 / osuCurrObj.Radius));
 
-            return (speedBonus + speedBonus * Math.Pow(distance / single_spacing_threshold, 3.5)) * doubletapness / strainTime;
+            return doubletapness * (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
+            // return doubletapness * speedBonus / readingTime;
         }
     }
 }
