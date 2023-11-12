@@ -248,6 +248,5 @@ namespace osu.Game.Rulesets.Catch
 
             return adjustedDifficulty;
         }
-
     }
 }

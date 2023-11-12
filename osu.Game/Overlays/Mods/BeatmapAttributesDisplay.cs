@@ -216,18 +216,5 @@ namespace osu.Game.Overlays.Mods
                 UseFullGlyphHeight = false,
             };
         }
-
-        public LocalisableString TooltipText
-        {
-            get
-            {
-                if (haveRateChangedValues)
-                {
-                    return LocalisableString.Format("Values are changed by mods that change speed.\n" +
-                        "Original values: AR = {0}, OD = {1}", originalDifficulty?.ApproachRate ?? 0, originalDifficulty?.OverallDifficulty ?? 0);
-                }
-                return "";
-            }
-        }
     }
 }
