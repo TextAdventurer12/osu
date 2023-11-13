@@ -57,19 +57,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (osuCurrObj.Angle != null && osuLastObj0.Angle != null)
             {
                 double angle = (osuCurrObj.Angle.Value + osuLastObj0.Angle.Value) / 2;
-                jumpDifficulty = 100 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
-                                                (Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius) / Math.Pow(osuCurrObj.MovementTime, 2),
-                                                           osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.StrainTime, 2))
+                jumpDifficulty = 10 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
+                                                (Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius) / Math.Pow(osuCurrObj.MovementTime, 1.5),
+                                                           osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.StrainTime, 1.5))
                                                  + calculateAngleSpline(angle, false)
-                                                  * Math.Max((osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Pow(osuCurrObj.StrainTime + osuLastObj0.StrainTime, 2),
-                                                    ((osuCurrObj.Movement + osuLastObj0.Movement).Length - 4.8 * osuCurrObj.Radius) / Math.Pow((osuCurrObj.MovementTime + osuLastObj0.MovementTime) / 2, 2)));
+                                                  * Math.Max((osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Pow(osuCurrObj.StrainTime + osuLastObj0.StrainTime, 1.5),
+                                                    ((osuCurrObj.Movement + osuLastObj0.Movement).Length - 4.8 * osuCurrObj.Radius) / Math.Pow((osuCurrObj.MovementTime + osuLastObj0.MovementTime) / 2, 1.5)));
 
 
-                jumpDifficulty = Math.Max(jumpDifficulty, Math.Sqrt(areaDifficulty * linearDifficulty)
-                                 * Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius)  / osuCurrObj.MovementTime, 
-                                             osuCurrObj.Movement.Length / osuCurrObj.StrainTime));
+                // jumpDifficulty = Math.Max(jumpDifficulty, Math.Sqrt(areaDifficulty * linearDifficulty)
+                //                  * Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius)  / osuCurrObj.MovementTime, 
+                //                              osuCurrObj.Movement.Length / osuCurrObj.StrainTime));
 
-                flowDifficulty = 0.85 * Math.Sqrt(areaDifficulty * linearDifficulty) * (osuCurrObj.Movement.Length / osuCurrObj.StrainTime + calculateAngleSpline(angle, true) * (osuCurrObj.Movement - osuLastObj0.Movement).Length / ((osuCurrObj.StrainTime + osuLastObj0.StrainTime) / 2));
+                // jumpDifficulty += 75 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
+                //                     Math.Min(osuCurrObj.Radius * 4, Math.Max(0, osuCurrObj.Movement.Length - osuCurrObj.Radius)) / Math.Pow(osuCurrObj.MovementTime, 2);
+
+                flowDifficulty = 0.85 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
+                (osuCurrObj.Movement.Length / osuCurrObj.StrainTime
+                 + calculateAngleSpline(angle, true) * (osuCurrObj.Movement - osuLastObj0.Movement).Length / ((osuCurrObj.StrainTime + osuLastObj0.StrainTime) / 2));
             }
 
 
@@ -77,8 +82,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
             double prevVelocity = osuLastObj0.Movement.Length / osuLastObj0.StrainTime;
             
-            flowDifficulty += Math.Sqrt(areaDifficulty * linearDifficulty) * Math.Sqrt(Math.Min(currVelocity, prevVelocity)) * Math.Abs(currVelocity - prevVelocity)
-                                * (Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
+            flowDifficulty += Math.Sqrt(areaDifficulty * linearDifficulty)
+                             * Math.Sqrt(Math.Max(0, Math.Min(currVelocity, prevVelocity) - osuCurrObj.Radius / Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime))
+                                         * Math.Abs(currVelocity - prevVelocity));
+
+                                // * (Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
             // flowDifficulty *= Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
             // jumpDifficulty *= Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
 
@@ -91,7 +99,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // aimStrain += 9 * Math.Sqrt(areaDifficulty * linearDifficulty) * (osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.MovementTime, 1.5));
             // aimStrain += flowDifficulty;
 
-            // aimStrain *=
+            aimStrain = Math.Min(aimStrain, 1.5 * Math.Max(osuCurrObj.Movement.Length / osuCurrObj.StrainTime, osuLastObj0.Movement.Length / osuLastObj0.StrainTime));
 
             //////////////////////// VECTOR DEFINITIONS /////////////////////////
             double sustainedSliderStrain = 0.0;
