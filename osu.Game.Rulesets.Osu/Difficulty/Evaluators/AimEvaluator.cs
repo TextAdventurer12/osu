@@ -57,15 +57,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (osuCurrObj.Angle != null && osuLastObj0.Angle != null)
             {
                 double angle = (osuCurrObj.Angle.Value + osuLastObj0.Angle.Value) / 2;
-                jumpDifficulty = 10 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
-                                                (Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius) / Math.Pow(osuCurrObj.MovementTime, 1.5),
-                                                           osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.StrainTime, 1.5))
+                jumpDifficulty = 100 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
+                                                (Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius) / Math.Pow(osuCurrObj.MovementTime, 2),
+                                                           osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.StrainTime, 2))
                                                  + calculateAngleSpline(angle, false)
-                                                  * Math.Max((osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Pow(osuCurrObj.StrainTime + osuLastObj0.StrainTime, 1.5),
-                                                    ((osuCurrObj.Movement + osuLastObj0.Movement).Length - 4.8 * osuCurrObj.Radius) / Math.Pow((osuCurrObj.MovementTime + osuLastObj0.MovementTime) / 2, 1.5)));
+                                                  * Math.Max((osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Pow(osuCurrObj.StrainTime + osuLastObj0.StrainTime, 2),
+                                                    ((osuCurrObj.Movement + osuLastObj0.Movement).Length - 4.8 * osuCurrObj.Radius) / Math.Pow((osuCurrObj.MovementTime + osuLastObj0.MovementTime) / 2, 2)));
 
 
-                // jumpDifficulty = Math.Max(jumpDifficulty, Math.Sqrt(areaDifficulty * linearDifficulty) * osuCurrObj.Movement.Length / osuCurrObj.StrainTime);
+                jumpDifficulty = Math.Max(jumpDifficulty, Math.Sqrt(areaDifficulty * linearDifficulty)
+                                 * Math.Max((osuCurrObj.Movement.Length - 2.4 * osuCurrObj.Radius)  / osuCurrObj.MovementTime, 
+                                             osuCurrObj.Movement.Length / osuCurrObj.StrainTime));
 
                 flowDifficulty = 0.85 * Math.Sqrt(areaDifficulty * linearDifficulty) * (osuCurrObj.Movement.Length / osuCurrObj.StrainTime + calculateAngleSpline(angle, true) * (osuCurrObj.Movement - osuLastObj0.Movement).Length / ((osuCurrObj.StrainTime + osuLastObj0.StrainTime) / 2));
             }
@@ -75,7 +77,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
             double prevVelocity = osuLastObj0.Movement.Length / osuLastObj0.StrainTime;
             
-            flowDifficulty += Math.Sqrt(areaDifficulty * linearDifficulty) * Math.Sqrt(Math.Max(0, Math.Min(currVelocity, prevVelocity) - (osuCurrObj.Radius / Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime))) * Math.Abs(currVelocity - prevVelocity))
+            flowDifficulty += Math.Sqrt(areaDifficulty * linearDifficulty) * Math.Sqrt(Math.Min(currVelocity, prevVelocity)) * Math.Abs(currVelocity - prevVelocity)
                                 * (Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
             // flowDifficulty *= Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
             // jumpDifficulty *= Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
@@ -166,7 +168,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Console.WriteLine("finished slider");
 
             if (historyTime > 0 && withSliderTravelDistance)
-                currentStrain += sliderRealDifficulty * Math.Max(0, historyDistance - osuCurrObj.Radius) / historyTime;
+                currentStrain += sliderRealDifficulty * Math.Max(0, historyVector.Length - osuCurrObj.Radius) / historyTime;
 
             return Math.Max(currentStrain, peakStrain);
         }
