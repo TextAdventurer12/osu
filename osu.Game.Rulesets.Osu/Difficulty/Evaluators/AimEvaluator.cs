@@ -72,7 +72,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 // jumpDifficulty += 75 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
                 //                     Math.Min(osuCurrObj.Radius * 4, Math.Max(0, osuCurrObj.Movement.Length - osuCurrObj.Radius)) / Math.Pow(osuCurrObj.MovementTime, 2);
 
-                flowDifficulty = 0.85 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
+                flowDifficulty = 1.0 * Math.Sqrt(areaDifficulty * linearDifficulty) * 
                 (osuCurrObj.Movement.Length / osuCurrObj.StrainTime
                  + calculateAngleSpline(angle, true) * (osuCurrObj.Movement - osuLastObj0.Movement).Length / ((osuCurrObj.StrainTime + osuLastObj0.StrainTime) / 2));
             }

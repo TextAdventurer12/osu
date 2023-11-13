@@ -59,8 +59,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double distance = Math.Min(single_spacing_threshold, osuCurrObj.Movement.Length * (50.0 / osuCurrObj.Radius));
 
-            return doubletapness * (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
-            // return doubletapness * speedBonus / readingTime;
+            // return doubletapness * (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
+            return doubletapness * speedBonus / readingTime;
         }
     }
 }
