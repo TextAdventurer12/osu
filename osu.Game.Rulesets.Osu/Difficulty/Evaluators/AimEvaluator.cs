@@ -174,7 +174,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double currStrain = 0;
 
                 if (index == 0 && osuCurrObj.SliderSubObjects.Count > 1)
-                    currentStrain += Math.Max(0, subObject.Movement.Length - osuCurrObj.Radius / 2) / subObject.StrainTime;
+                    currentStrain += Math.Max(0, (32 / osuCurrObj.Radius) * subObject.Movement.Length - osuCurrObj.Radius / 2) / subObject.StrainTime;
+                else if (index == 0)
+                    currentStrain += Math.Max(0, sliderLinearDifficulty * subObject.Movement.Length - osuCurrObj.Radius) / subObject.StrainTime;
 
                 historyVector += subObject.Movement;
                 historyTime += subObject.StrainTime;
@@ -182,7 +184,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 
                 if (historyVector.Length > sliderRadius * 2.0)
                 {
-                    currStrain = sliderRealDifficulty * historyDistance / historyTime;
+                    currStrain = Math.Max(currStrain, sliderLinearDifficulty * historyDistance / historyTime);
 
                     historyVector = new Vector2(0,0);
                     historyTime = 0;
