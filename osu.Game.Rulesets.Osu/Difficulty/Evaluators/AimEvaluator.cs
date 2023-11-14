@@ -73,7 +73,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                                             + linearDifficulty * osuLastObj0.Movement.Length / osuLastObj0.StrainTime;
 
             aimStrain = Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
-            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, 0.9 * flowDifficulty));
+            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, flowDifficulty));
             // aimStrain = Math.Min(aimStrain, currVelocity + prevVelocity);
                                          
             aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
@@ -174,7 +174,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double currStrain = 0;
 
                 if (index == 0 && osuCurrObj.SliderSubObjects.Count > 1)
-                    currentStrain += Math.Max(0, subObject.Movement.Length) / subObject.StrainTime;
+                    currentStrain += Math.Max(0, subObject.Movement.Length - osuCurrObj.Radius / 2) / subObject.StrainTime;
 
                 historyVector += subObject.Movement;
                 historyTime += subObject.StrainTime;
