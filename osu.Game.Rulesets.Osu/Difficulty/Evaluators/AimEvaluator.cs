@@ -136,7 +136,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (osuCurrObj.SliderSubObjects.Count != 0 && withSliderTravelDistance)
                 sustainedSliderStrain = calculateSustainedSliderStrain(osuCurrObj, strainDecayBase, withSliderTravelDistance);
             
-            aimStrain += 3 * sustainedSliderStrain;
+            aimStrain += 2.4 * sustainedSliderStrain;
             double arBuff = (1.0 - 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
 
             return aimStrain * arBuff;
@@ -174,7 +174,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double currStrain = 0;
 
                 if (index == 0 && osuCurrObj.SliderSubObjects.Count > 1)
-                    currentStrain += Math.Max(0, subObject.Movement.Length - osuCurrObj.Radius / 2) / subObject.StrainTime;
+                    currentStrain += Math.Max(0, subObject.Movement.Length) / subObject.StrainTime;
 
                 historyVector += subObject.Movement;
                 historyTime += subObject.StrainTime;
