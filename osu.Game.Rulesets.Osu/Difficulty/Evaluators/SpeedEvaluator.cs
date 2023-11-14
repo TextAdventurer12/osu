@@ -58,9 +58,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 speedBonus = 1 + 0.75 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2);
 
             double distance = Math.Min(single_spacing_threshold, osuCurrObj.Movement.Length * (50.0 / osuCurrObj.Radius));
+            // double distanceBuff = Math.Pow(Math.Sin(Math.PI / (2.0 * single_spacing_threshold) * distance), 4.5);
 
-            // return doubletapness * (speedBonus + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
-            return doubletapness * speedBonus / readingTime;
+            return doubletapness * Math.Max(speedBonus, 1.0 + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
+            // return doubletapness * (speedBonus + distanceBuff) / readingTime;
         }
     }
 }

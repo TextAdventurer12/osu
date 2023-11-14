@@ -50,7 +50,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double prevDelta = prevObj.StrainTime;
                 double lastDelta = lastObj.StrainTime;
                 double currRatio = Math.PI * Math.Min(5, Math.Max(prevDelta, currDelta) / Math.Min(prevDelta, currDelta));
-                currRatio = 1.0 + 12 * (-0.25 + Math.Min(0.75, Math.Max(0.25, Math.Pow(Math.Sin(currRatio), 2.0) + 0.375 * Math.Pow(Math.Sin(1.5 * currRatio), 2.0))));
+                currRatio = 1.0 + 6 * (-0.25 + Math.Min(0.75, Math.Max(0.25, Math.Pow(Math.Sin(currRatio), 2.0) + 0.2 * Math.Pow(Math.Sin(1.5 * currRatio), 2.0))));
 
                 double windowPenalty = Math.Min(1, Math.Max(0, Math.Abs(prevDelta - currDelta) - currObj.HitWindowGreat * 0.3) / (currObj.HitWindowGreat * 0.3));
 
@@ -69,27 +69,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     {
                         islandSize++;
 
-                        if (current.Previous(i - 1).BaseObject is Slider) // bpm change is into slider, this is easy acc window
-                            effectiveRatio *= 0.125;
-
-                        if (current.Previous(i).BaseObject is Slider) // bpm change was from a slider, this is easier typically than circle -> circle
-                            effectiveRatio *= 0.125;
-
-                        if (previousIslandSize == islandSize) // repeated island size (ex: triplet -> triplet)
-                            effectiveRatio *= 0.25;
-
-                        if (previousIslandSize % 2 == islandSize % 2) // repeated island polartiy (2 -> 4, 3 -> 5)
-                            effectiveRatio *= 0.5;
-
-                        if (islandSize % 2 == 0)
-                            effectiveRatio *= 2;
-
                         if (lastDelta > prevDelta + 10 && prevDelta > currDelta + 10) // previous increase happened a note ago, 1/1->1/2-1/4, dont want to buff this.
                             effectiveRatio *= 0.125;
 
+                        effectiveRatio = applyPenalties(effectiveRatio, current.Previous(i), current.Previous(i - 1), islandSize, previousIslandSize);
+
                         rhythmComplexitySum += Math.Sqrt(effectiveRatio * startRatio) * currHistoricalDecay;
 
-                        startRatio = effectiveRatio;
+                        startRatio = applyPenalties(effectiveRatio, current.Previous(i), current.Previous(i - 1), islandSize, previousIslandSize);;
 
                         previousIslandSize = islandSize; // log the last island size.
 
@@ -103,12 +90,32 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 {
                     // Begin counting island until we change speed again.
                     firstDeltaSwitch = true;
-                    startRatio = effectiveRatio;
+                    startRatio = applyPenalties(effectiveRatio, current.Previous(i), current.Previous(i - 1), islandSize, previousIslandSize);
                     islandSize = 1;
                 }
             }
 
             return Math.Sqrt(4 + rhythmComplexitySum * rhythm_multiplier) / 2; //produces multiplier that can be applied to strain. range [1, infinity) (not really though)
+        }
+
+        private static double applyPenalties(double effectiveRatio, DifficultyHitObject prev, DifficultyHitObject curr, int islandSize, int previousIslandSize)
+        {
+            if (prev.BaseObject is Slider) // bpm change is into slider, this is easy acc window
+                effectiveRatio *= 0.125;
+
+            if (curr.BaseObject is Slider) // bpm change was from a slider, this is easier typically than circle -> circle
+                effectiveRatio *= 0.125;
+
+            if (previousIslandSize == islandSize) // repeated island size (ex: triplet -> triplet)
+                effectiveRatio *= 0.5;
+
+            if (previousIslandSize % 2 == islandSize % 2) // repeated island polartiy (2 -> 4, 3 -> 5)
+                effectiveRatio *= 0.5;
+
+            if (islandSize % 2 == 0 && islandSize != 2)
+                effectiveRatio *= 2;
+
+            return effectiveRatio;
         }
     }
 }

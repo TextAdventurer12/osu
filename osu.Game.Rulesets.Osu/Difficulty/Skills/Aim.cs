@@ -23,7 +23,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
 
-        private double skillMultiplier => 50.0;
+        private double skillMultiplier => 46.0;
         // private double skillMultiplier => 23.55;
         private double strainDecayBase => 0.15;
 
@@ -34,7 +34,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(current.DeltaTime);
-            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase) * skillMultiplier;
+
+            double currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
+            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase, currentRhythm) * skillMultiplier;
 
             return currentStrain;
         }
