@@ -34,9 +34,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuNextObj = (OsuDifficultyHitObject?)current.Next(0);
 
             double arBuff = (1.0 - 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
+
             double strainTime = osuCurrObj.StrainTime;
-            double readingTime = Math.Min(osuCurrObj.StrainTime * arBuff, 
-                                          osuCurrObj.ApproachRateTime - reaction_time);
+            double readingTime = osuCurrObj.StrainTime;
+            if (osuPrevObj != null)
+            {
+                strainTime = (osuCurrObj.StrainTime + osuPrevObj.StrainTime) / 2;
+                readingTime = Math.Min(Math.Max(speed_balancing_factor, osuPrevObj.MovementTime + osuCurrObj.StrainTime) / 2, 
+                                       osuCurrObj.ApproachRateTime - reaction_time);
+            }
 
             double doubletapness = 1;
 
@@ -55,13 +61,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double speedBonus = 1.0;
 
             if (strainTime < min_speed_bonus)
-                speedBonus = 1 + 0.75 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2);
+                speedBonus = 1 + Math.Min(1, Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2));
 
             double distance = Math.Min(single_spacing_threshold, osuCurrObj.Movement.Length * (50.0 / osuCurrObj.Radius));
             double distanceBuff = Math.Pow(Math.Sin(Math.PI / (2.0 * single_spacing_threshold) * distance), 5.5);
 
             // return doubletapness * Math.Max(speedBonus, 1.0 + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
             return doubletapness * Math.Max(speedBonus, 1.0 + distanceBuff) / readingTime;
+            // return arBuff * doubletapness * 1 / (readingTime - speed_balancing_factor);
         }
     }
 }
