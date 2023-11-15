@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
     public static class RhythmEvaluator
     {
         private const int history_time_max = 5000; // 5 seconds of calculatingRhythmBonus max.
-        private const double rhythm_multiplier = 1.0;
+        private const double rhythm_multiplier = 1.5;
 
         /// <summary>
         /// Calculates a rhythm multiplier for the difficulty of the tap associated with historic data of the current <see cref="OsuDifficultyHitObject"/>.
@@ -44,13 +44,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 double currHistoricalDecay = (history_time_max - (current.StartTime - currObj.StartTime)) / history_time_max; // scales note 0 to 1 from history to now
 
-                currHistoricalDecay = Math.Min((double)(historicalNoteCount - i) / historicalNoteCount, currHistoricalDecay); // either we're limited by time or limited by object count.
+                // currHistoricalDecay = Math.Min((double)(historicalNoteCount - i) / historicalNoteCount, currHistoricalDecay); // either we're limited by time or limited by object count.
 
                 double currDelta = currObj.StrainTime;
                 double prevDelta = prevObj.StrainTime;
                 double lastDelta = lastObj.StrainTime;
                 double currRatio = Math.PI * Math.Min(5, Math.Max(prevDelta, currDelta) / Math.Min(prevDelta, currDelta));
-                currRatio = 1.0 + 6 * (-0.25 + Math.Min(0.75, Math.Max(0.25, Math.Pow(Math.Sin(currRatio), 2.0) + 0.2 * Math.Pow(Math.Sin(1.5 * currRatio), 2.0))));
+                currRatio = 1.0 + 12 * (-0.25 + Math.Min(0.75, Math.Max(0.25, Math.Pow(Math.Sin(currRatio), 2.0) + 0.2 * Math.Pow(Math.Sin(1.5 * currRatio), 2.0))));
 
                 double windowPenalty = Math.Min(1, Math.Max(0, Math.Abs(prevDelta - currDelta) - currObj.HitWindowGreat * 0.3) / (currObj.HitWindowGreat * 0.3));
 
@@ -62,7 +62,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 {
                     if (!(prevDelta > 1.1 * currDelta || prevDelta * 1.1 < currDelta))
                     {
-                        if (islandSize < 6)
+                        if (islandSize < 8)
                             islandSize++; // island is still progressing, count size.
                     }
                     else
