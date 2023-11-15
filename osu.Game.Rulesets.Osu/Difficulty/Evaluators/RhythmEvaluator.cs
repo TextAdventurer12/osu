@@ -97,7 +97,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double arBuff = (1.0 + 0.50 * Math.Max(0.0, 400.0 - ((OsuDifficultyHitObject)current).ApproachRateTime) / 100.0);
 
-            return Math.Sqrt(4 + arBuff * rhythmComplexitySum * rhythm_multiplier) / 2; //produces multiplier that can be applied to strain. range [1, infinity) (not really though)
+            return Math.Sqrt(4 + rhythmComplexitySum * rhythm_multiplier) / 2; //produces multiplier that can be applied to strain. range [1, infinity) (not really though)
         }
 
         private static double applyPenalties(double effectiveRatio, DifficultyHitObject prev, DifficultyHitObject curr, int islandSize, int previousIslandSize)

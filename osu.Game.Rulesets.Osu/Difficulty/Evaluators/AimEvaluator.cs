@@ -17,6 +17,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double acute_angle_multiplier = 1.95;
         private const double slider_multiplier = 1.35;
         private const double velocity_change_multiplier = 0.75;
+        private const double reaction_time = 150;
 
         /// <summary>
         /// Evaluates the difficulty of aiming the current object, based on:
@@ -50,8 +51,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // double circleArea = Math.Pow(osuCurrObj.Radius, 1.5);
             // double areaDifficulty = 180 / circleArea;
 
-            double flowDifficulty = linearDifficulty * osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
-            double snapDifficulty = Math.Max(100 * areaDifficulty * osuCurrObj.Movement.Length / Math.Pow(osuCurrObj.StrainTime, 2), linearDifficulty * osuCurrObj.Movement.Length / osuCurrObj.StrainTime);
+            double flowDifficulty = linearDifficulty * osuCurrObj.Movement.Length / Math.Min(osuCurrObj.ApproachRateTime - reaction_time, osuCurrObj.StrainTime);
+            double snapDifficulty = Math.Max(100 * areaDifficulty * osuCurrObj.Movement.Length / Math.Pow(Math.Min(osuCurrObj.ApproachRateTime - reaction_time, osuCurrObj.StrainTime), 2), linearDifficulty * osuCurrObj.Movement.Length / Math.Min(osuCurrObj.ApproachRateTime - reaction_time, osuCurrObj.StrainTime));
 
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
             double prevVelocity = osuLastObj0.Movement.Length / osuLastObj0.StrainTime;
@@ -84,8 +85,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // aimStrain = Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
             aimStrain = Math.Min(snapDifficulty, 1.25 *  flowDifficulty);
-            // aimStrain = Math.Min(aimStrain, currVelocity + prevVelocity);
-                                         
+            // aimStrai= n = Math.Min(aimStrain, currVelocity + prevVelocity);       
             aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
             // aimStrain = Math.Min(snapDifficulty, 0.9 * flowDifficulty);
             // * (osuCurrObj.StrainTime / osuCurrObj.MovementTime);
