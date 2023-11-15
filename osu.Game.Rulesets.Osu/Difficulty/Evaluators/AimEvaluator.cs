@@ -77,16 +77,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 // snapFlowDifficulty += calculateAngleSpline(angle, false) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement - osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
             }
 
-            flowDifficulty *= Math.Min(1, osuCurrObj.Movement.Length / (osuCurrObj.Radius * 2));
+            flowDifficulty *= osuCurrObj.Movement.Length / (osuCurrObj.Radius * 3);
             flowDifficulty += linearDifficulty * Math.Abs(currVelocity - prevVelocity);// Math.Min(currVelocity, prevVelocity));
             snapDifficulty += linearDifficulty * Math.Max(0, Math.Min(Math.Abs(currVelocity - prevVelocity) - Math.Min(currVelocity, prevVelocity), Math.Min(currVelocity, prevVelocity)));
 
             double arBuff = (1.0 + 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
 
             // aimStrain = Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
-            aimStrain = Math.Min(snapDifficulty, 1.25 *  flowDifficulty);
+
             // aimStrai= n = Math.Min(aimStrain, currVelocity + prevVelocity);       
-            aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
+            // snapDifficulty = Math.Max(snapDifficulty, (snapDifficulty - linearDifficulty * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
+            
+            aimStrain = Math.Min(snapDifficulty, 1.625 * flowDifficulty);
             // aimStrain = Math.Min(snapDifficulty, 0.9 * flowDifficulty);
             // * (osuCurrObj.StrainTime / osuCurrObj.MovementTime);
             // // 3200 is approximately the area of a CS 5 circle.
