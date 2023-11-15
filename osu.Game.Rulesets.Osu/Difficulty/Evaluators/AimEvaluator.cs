@@ -83,12 +83,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double arBuff = (1.0 + 0.1 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
 
-            // aimStrain = Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
+            aimStrain = Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
 
             // aimStrai= n = Math.Min(aimStrain, currVelocity + prevVelocity);       
             // snapDifficulty = Math.Max(snapDifficulty, (snapDifficulty - linearDifficulty * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
             
-            aimStrain = Math.Min(snapDifficulty, 1.625 * flowDifficulty);
+            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, 1.625 * flowDifficulty));
             // aimStrain = Math.Min(snapDifficulty, 0.9 * flowDifficulty);
             // * (osuCurrObj.StrainTime / osuCurrObj.MovementTime);
             // // 3200 is approximately the area of a CS 5 circle.
