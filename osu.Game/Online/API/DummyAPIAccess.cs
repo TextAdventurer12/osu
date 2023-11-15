@@ -198,6 +198,8 @@ namespace osu.Game.Online.API
         IBindable<UserActivity> IAPIProvider.Activity => Activity;
         IBindable<UserStatistics?> IAPIProvider.Statistics => Statistics;
 
+        public void RequireTwoFactor() => requiresTwoFactor = true;
+
         /// <summary>
         /// Skip 2FA requirement for next login.
         /// </summary>
