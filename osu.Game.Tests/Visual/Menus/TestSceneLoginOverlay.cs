@@ -131,6 +131,9 @@ namespace osu.Game.Tests.Visual.Menus
             AddStep("clear handler", () => dummyAPI.HandleRequest = null);
         }
 
+        private void assertAPIState(APIState expected) =>
+            AddUntilStep($"login state is {expected}", () => API.State.Value, () => Is.EqualTo(expected));
+
         [Test]
         public void TestLoginFailure()
         {
