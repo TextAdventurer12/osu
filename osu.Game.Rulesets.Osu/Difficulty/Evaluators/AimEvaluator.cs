@@ -100,7 +100,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             aimStrain = 1000000000;//areaDifficulty * (prevVelocity + currVelocity);//Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Sqrt(Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
 
             // aimStrai= n = Math.Min(aimStrain, currVelocity + prevVelocity);                  
-            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, 1.325 * flowDifficulty)); 
+            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, 1.4727 * flowDifficulty)); 
             aimStrain = Math.Max(aimStrain, (aimStrain - areaDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
             aimStrain *= Math.Max(1, Math.Sqrt(linearDifficulty));
