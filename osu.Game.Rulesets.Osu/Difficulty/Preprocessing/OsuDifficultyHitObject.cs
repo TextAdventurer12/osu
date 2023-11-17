@@ -15,7 +15,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 {
     public class OsuDifficultyHitObject : DifficultyHitObject
     {
-        private const int min_delta_time = 25;
+        private const int min_delta_time = 30;
 
         protected new OsuHitObject BaseObject => (OsuHitObject)base.BaseObject;
 
@@ -33,6 +33,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         /// Raw osu!pixel vector from the end position of the previous <see cref="OsuDifficultyHitObject"/> to the start position of this <see cref="OsuDifficultyHitObject"/>.
         /// </summary>
         public Vector2 Movement { get; private set; }
+
+        /// <summary>
+        /// Raw osu!pixel vector from the end position of the previous <see cref="OsuDifficultyHitObject"/> to the start position of this <see cref="OsuDifficultyHitObject"/>.
+        /// </summary>
+        public Vector2 SliderlessMovement { get; private set; }
 
         /// <summary>
         /// The List of raw osu!pixel vectors from the start position of the previous <see cref="OsuDifficultyHitObject"/> to the end position of the previous <see cref="OsuDifficultyHitObject"/>.
@@ -91,7 +96,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 
             Movement = BaseObject.StackedPosition - getEndCursorPosition(this.lastObject, clockRate);
 
-            if (lastLastObject != null && !(lastLastObject is Spinner))
+            if (lastLastObject != null && !(lastLastObject is Spinner))// && !(lastObject is Slider))
             {
                 Vector2 lastLastCursorPosition = getEndCursorPosition((OsuHitObject)lastLastObject, clockRate);
                 Vector2 lastCursorPosition = getEndCursorPosition(this.lastObject, clockRate);
