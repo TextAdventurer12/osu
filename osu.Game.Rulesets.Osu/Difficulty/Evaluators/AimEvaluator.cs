@@ -54,14 +54,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             areaDifficulty = Math.Sqrt(areaDifficulty * linearDifficulty);
             // linearDifficulty = areaDifficulty;
 
-            double flowDifficulty = areaDifficulty * osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
+            double flowDifficulty = linearDifficulty * osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
             flowDifficulty *= Math.Min(1, osuCurrObj.Movement.Length / (osuCurrObj.Radius * 2));
             // flowDifficulty *= osuCurrObj.Movement.Length / (osuCurrObj.Radius * 3);
             // double snapDifficulty = Math.Max(100 * areaDifficulty * osuCurrObj.Movement.Length / Math.Pow(Math.Min(osuCurrObj.ApproachRateTime - reaction_time, osuCurrObj.StrainTime), 2), 
             //                                  0);//linearDifficulty * osuCurrObj.Movement.Length / Math.Min(osuCurrObj.ApproachRateTime - reaction_time, osuCurrObj.StrainTime));
 
-            double snapDifficulty = areaDifficulty * osuCurrObj.Movement.Length / Math.Max(30, (osuCurrObj.StrainTime - 30));
-
+            double snapDifficulty = linearDifficulty * osuCurrObj.Movement.Length / (osuCurrObj.StrainTime - 20);
+            // snapDifficulty += linearDifficulty * (2 * osuCurrObj.Radius) / (osuCurrObj.StrainTime - 20);
             // snapDifficulty *= Math.Max(1, 100 / osuCurrObj.StrainTime);
 
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
@@ -79,8 +79,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double rhythmRatio = Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime);
 
-            if (0.75 > rhythmRatio)
-                rhythmRatio = 0;
+            // if (0.75 > rhythmRatio)
+            //     rhythmRatio = 0;
 
             if (osuCurrObj.Angle != null && osuLastObj0.Angle != null)
             {
@@ -100,9 +100,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             aimStrain = 1000000000;//areaDifficulty * (prevVelocity + currVelocity);//Math.Min(snapFlowDifficulty, flowSnapDifficulty);// * Math.Sqrt(Math.Min(osuCurrObj.StrainTime, osuLastObj0.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
 
             // aimStrai= n = Math.Min(aimStrain, currVelocity + prevVelocity);                  
-            aimStrain = Math.Min(aimStrain, Math.Min(0.875 * snapDifficulty, 1.325 * flowDifficulty)); 
+            aimStrain = Math.Min(aimStrain, Math.Min(snapDifficulty, 1.325 * flowDifficulty)); 
             aimStrain = Math.Max(aimStrain, (aimStrain - areaDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
+            aimStrain *= Math.Max(1, Math.Sqrt(linearDifficulty));
             // aimStrain = Math.Min(snapDifficulty, 0.9 * flowDifficulty);
             // * (osuCurrObj.StrainTime / osuCurrObj.MovementTime);
             // // 3200 is approximately the area of a CS 5 circle.
@@ -162,11 +163,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (osuCurrObj.SliderSubObjects.Count != 0 && withSliderTravelDistance)
                 sustainedSliderStrain = calculateSustainedSliderStrain(osuCurrObj, strainDecayBase, withSliderTravelDistance);
             
-            aimStrain += sustainedSliderStrain;
+            aimStrain += 1.5 * sustainedSliderStrain;
 
-            // double arBuff = (1.0 + 0.0 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
+            double arBuff = (1.0 + 0.05 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
 
-            return aimStrain;
+            return arBuff * aimStrain;
         }
 
         // private static double calculatePositionalAreaDifficulty(Vector2 movement, double circleDiameter)
