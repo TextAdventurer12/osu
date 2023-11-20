@@ -68,7 +68,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // return doubletapness * Math.Max(speedBonus, 1.0 + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
             // return arBuff * doubletapness * Mat(speedBonus, 1.0 + distanceBuff) / readingTime;
-            return arBuff * doubletapness * 1 / (readingTime - 20);
+            return arBuff * doubletapness * (1 + 200 / (readingTime - 25));
         }
     }
 }
