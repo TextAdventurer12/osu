@@ -57,7 +57,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 doubletapness = Math.Pow(speedRatio, 1 - windowRatio);
             }
 
-            return arBuff * doubletapness * (1 + 200 / (readingTime - 25));
+            return arBuff * doubletapness * (1 / (readingTime - 20));
         }
     }
 }

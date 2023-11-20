@@ -51,14 +51,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double flowDifficulty = linearDifficulty * osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
 
             // Nerf flow aim where circles overlap. Aim requirement is significantly lower in these cases.
-            flowDifficulty *= Math.Min(1, osuCurrObj.Movement.Length / (osuCurrObj.Radius * 2));
+            flowDifficulty *= Math.Min(10, osuCurrObj.Movement.Length / (osuCurrObj.Radius * 2));
 
             // Snap Stuff
             // Reduce strain time by 25ms to account for stopping time.
-            double snapDifficulty = linearDifficulty * osuCurrObj.Movement.Length / (osuCurrObj.StrainTime - 25);
+            double snapDifficulty = linearDifficulty * (osuCurrObj.Movement.Length / (osuCurrObj.StrainTime - 20) + (osuCurrObj.Radius * 2) / (Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime) - 20));
 
             // Arbitrary buff for high bpm snap because its hard.
-            snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
+            // snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
 
             // Begin angle and weird rewards.
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
@@ -73,19 +73,19 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double lastAngle = osuLastObj0.Angle.Value;
 
                 // We reward wide angles on snap.
-                snapDifficulty += linearDifficulty * calculateAngleSpline(currAngle, false) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime)) * rhythmRatio;
+                snapDifficulty += linearDifficulty * calculateAngleSpline(currAngle, false) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
 
                 // We reward for angle changes or the acuteness of the angle, whichever is higher. Possibly a case out there to reward both.
-                flowDifficulty += Math.Max(0.5 * linearDifficulty * calculateAngleSpline(Math.PI / 4 + Math.Min(Math.PI / 2, Math.Abs(lastAngle - currAngle)), false) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime)),
-                                           linearDifficulty * calculateAngleSpline(currAngle, true) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement - osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime))) * rhythmRatio;
+                flowDifficulty += Math.Max(linearDifficulty * calculateAngleSpline(Math.PI / 4 + Math.Min(Math.PI / 2, Math.Abs(lastAngle - currAngle)), false) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement + osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime)),
+                                           linearDifficulty * calculateAngleSpline(currAngle, true) * Math.Min(Math.Min(currVelocity, prevVelocity), (osuCurrObj.Movement - osuLastObj0.Movement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime)));
             }
 
             flowDifficulty += linearDifficulty * Math.Abs(currVelocity - prevVelocity) * rhythmRatio;
             snapDifficulty += linearDifficulty * Math.Max(0, Math.Min(Math.Abs(currVelocity - prevVelocity) - Math.Min(currVelocity, prevVelocity), Math.Min(currVelocity, prevVelocity))) * rhythmRatio;
 
             // Apply balancing parameters.
-            flowDifficulty = flowDifficulty * 1.55;
-            snapDifficulty = snapDifficulty * 1.0;
+            flowDifficulty = flowDifficulty * 1.25;
+            snapDifficulty = snapDifficulty * 0.875;
 
             // Used in an LP sum to buff ambiguous snap flow scenarios.
             double p = 4.0;
