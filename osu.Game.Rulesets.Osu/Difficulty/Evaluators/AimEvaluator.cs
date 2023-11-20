@@ -62,7 +62,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double snapDifficulty = linearDifficulty * osuCurrObj.Movement.Length / (osuCurrObj.StrainTime - 25);
             // snapDifficulty += linearDifficulty * (2 * osuCurrObj.Radius) / (osuCurrObj.StrainTime - 20);
-            // snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
+            snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
 
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
             double prevVelocity = osuLastObj0.Movement.Length / osuLastObj0.StrainTime;
