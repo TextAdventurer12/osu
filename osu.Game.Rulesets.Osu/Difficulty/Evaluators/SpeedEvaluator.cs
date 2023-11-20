@@ -57,17 +57,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 doubletapness = Math.Pow(speedRatio, 1 - windowRatio);
             }
 
-            // derive speedBonus for calculation
-            double speedBonus = 1.0;
-
-            if (strainTime < min_speed_bonus)
-                speedBonus = 1 + 0.75 * Math.Min(1, Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2));
-
-            double distance = Math.Min(single_spacing_threshold, osuCurrObj.Movement.Length * (50.0 / osuCurrObj.Radius));
-            double distanceBuff = Math.Pow(Math.Sin(Math.PI / (2.0 * single_spacing_threshold) * distance), 5.5);
-
-            // return doubletapness * Math.Max(speedBonus, 1.0 + Math.Pow(distance / single_spacing_threshold, 3.5)) / readingTime;
-            // return arBuff * doubletapness * Mat(speedBonus, 1.0 + distanceBuff) / readingTime;
             return arBuff * doubletapness * (1 + 200 / (readingTime - 25));
         }
     }
