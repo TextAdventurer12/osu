@@ -98,11 +98,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Buff cases where the holding of a slider makes the subsequent jump harder, even with leniency abuse.
             aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
-            // Arbitrary cap to bonuses because balancing is hard.
-            aimStrain = Math.Min(aimStrain, currVelocity * 3.75);
-
             // Apply small CS buff.
             aimStrain *= Math.Sqrt(linearDifficulty);
+
+            // Arbitrary cap to bonuses because balancing is hard.
+            aimStrain = Math.Min(aimStrain, linearDifficulty * currVelocity * 3.25);
 
             // Slider stuff.
             double sustainedSliderStrain = 0.0;

@@ -62,7 +62,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 {
                     if (!(prevDelta > 1.1 * currDelta || prevDelta * 1.1 < currDelta))
                     {
-                        if (islandSize < 8)
+                        if (islandSize < 6)
                             islandSize++; // island is still progressing, count size.
                     }
                     else
