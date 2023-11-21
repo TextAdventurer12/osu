@@ -394,6 +394,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                     curveTypeItems.Add(new OsuMenuItemSpacer());
                 }
 
+                curveTypeItems.Add(new OsuMenuItemSpacer());
+
                 // todo: hide/disable items which aren't valid for selected points
                 curveTypeItems.Add(createMenuItemForPathType(PathType.LINEAR));
                 curveTypeItems.Add(createMenuItemForPathType(PathType.PERFECT_CURVE));
