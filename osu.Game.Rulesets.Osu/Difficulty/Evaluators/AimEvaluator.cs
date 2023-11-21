@@ -58,7 +58,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double snapDifficulty = linearDifficulty * (osuCurrObj.Movement.Length / (osuCurrObj.StrainTime - 20) + (osuCurrObj.Radius * 2) / (Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime) - 20));
 
             // Arbitrary buff for high bpm snap because its hard.
-            // snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
+            snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
 
             // Begin angle and weird rewards.
             double currVelocity = osuCurrObj.Movement.Length / osuCurrObj.StrainTime;
@@ -93,9 +93,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             aimStrain = Math.Pow(Math.Pow(Math.Max(0, minStrain - Math.Abs(snapDifficulty - minStrain)), p) + Math.Pow(Math.Max(0, minStrain - Math.Abs(flowDifficulty - minStrain)), p), 1.0 / p);
 
+            // aimStrain = minStrain;
+
             // Buff cases where the holding of a slider makes the subsequent jump harder, even with leniency abuse.
             aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
+            // Arbitrary cap to bonuses because balancing is hard.
+            aimStrain = Math.Min(aimStrain, currVelocity * 3.75);
+
             // Apply small CS buff.
             aimStrain *= Math.Sqrt(linearDifficulty);
 
