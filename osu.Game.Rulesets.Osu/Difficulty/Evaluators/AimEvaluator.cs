@@ -85,7 +85,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // Apply balancing parameters.
             flowDifficulty = flowDifficulty * 1.25;
-            snapDifficulty = snapDifficulty * 0.875;
+            snapDifficulty = snapDifficulty * 0.9;
 
             // Used in an LP sum to buff ambiguous snap flow scenarios.
             double p = 4.0;
@@ -97,7 +97,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
             // Apply small CS buff.
-            aimStrain *= Math.Max(1, Math.Sqrt(linearDifficulty));
+            aimStrain *= Math.Sqrt(linearDifficulty);
 
             // Slider stuff.
             double sustainedSliderStrain = 0.0;
