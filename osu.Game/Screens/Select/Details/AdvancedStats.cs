@@ -135,6 +135,7 @@ namespace osu.Game.Screens.Select.Details
         private void load(OsuColour colours)
         {
             starDifficulty.AccentColour = colours.Yellow;
+            rateAdjustTooltip = new AdjustedAttributesTooltip();
         }
 
         protected override void LoadComplete()
@@ -144,6 +145,9 @@ namespace osu.Game.Screens.Select.Details
             Ruleset.BindValueChanged(_ => updateStatistics());
 
             mods.BindValueChanged(modsChanged, true);
+
+            rateAdjustTooltip.AddAttribute("AR");
+            rateAdjustTooltip.AddAttribute("OD");
         }
 
         private ModSettingChangeTracker modSettingChangeTracker;

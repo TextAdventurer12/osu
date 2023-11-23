@@ -12,7 +12,6 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
-using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Configuration;
@@ -69,6 +68,8 @@ namespace osu.Game.Overlays.Mods
         private void load()
         {
             const float shear = ShearedOverlayContainer.SHEAR;
+
+            rateAdjustTooltip = new AdjustedAttributesTooltip();
 
             LeftContent.AddRange(new Drawable[]
             {
