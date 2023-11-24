@@ -20,6 +20,8 @@ namespace osu.Game.Overlays.Chat
     {
         public Drawable DragBar { get; private set; } = null!;
 
+        public Drawable DragBar = null!;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, TextureStore textures)
         {
