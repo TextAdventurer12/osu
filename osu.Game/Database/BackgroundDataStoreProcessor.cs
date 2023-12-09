@@ -21,6 +21,7 @@ using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
 using osu.Game.Screens.Play;
+using Realms;
 
 namespace osu.Game.Database
 {
@@ -247,6 +248,42 @@ namespace osu.Game.Database
             }
 
             completeNotification(notification, processedCount, beatmapIds.Count, failedCount);
+        }
+
+        private void processBeatmapsWithMissingObjectCounts()
+        {
+            Logger.Log("Querying for beatmaps with missing hitobject counts to reprocess...");
+
+            HashSet<Guid> beatmapIds = realmAccess.Run(r => new HashSet<Guid>(r.All<BeatmapInfo>()
+                                                                               .Filter($"{nameof(BeatmapInfo.Difficulty)}.{nameof(BeatmapDifficulty.TotalObjectCount)} == 0")
+                                                                               .AsEnumerable().Select(b => b.ID)));
+
+            Logger.Log($"Found {beatmapIds.Count} beatmaps which require reprocessing.");
+
+            int i = 0;
+
+            foreach (var id in beatmapIds)
+            {
+                sleepIfRequired();
+
+                realmAccess.Run(r =>
+                {
+                    var beatmap = r.Find<BeatmapInfo>(id);
+
+                    if (beatmap != null)
+                    {
+                        try
+                        {
+                            Logger.Log($"Background processing {beatmap} ({++i} / {beatmapIds.Count})");
+                            beatmapUpdater.ProcessObjectCounts(beatmap);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Log($"Background processing failed on {beatmap}: {e}");
+                        }
+                    }
+                });
+            }
         }
 
         private void processScoresWithMissingStatistics()
