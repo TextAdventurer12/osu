@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
@@ -44,14 +45,6 @@ namespace osu.Game.Screens.Play.HUD
         {
         }
 
-        /// <summary>
-        /// Triggered when a <see cref="Judgement"/> resulted in the player losing health.
-        /// Calls to this method are debounced.
-        /// </summary>
-        protected virtual void Miss()
-        {
-        }
-
         [Resolved]
         private HUDOverlay? hudOverlay { get; set; }
 
@@ -65,7 +58,9 @@ namespace osu.Game.Screens.Play.HUD
             health = HealthProcessor.Health.GetBoundCopy();
             health.BindValueChanged(h =>
             {
-                finishInitialAnimation();
+                if (initialIncrease != null)
+                    FinishInitialAnimation(h.OldValue);
+
                 Current.Value = h.NewValue;
             });
 
@@ -78,32 +73,35 @@ namespace osu.Game.Screens.Play.HUD
             if (PlayInitialIncreaseAnimation)
                 startInitialAnimation();
             else
-                Current.Value = 1;
+                Current.Value = health.Value;
         }
 
         private void startInitialAnimation()
         {
+            if (Current.Value >= health.Value)
+                return;
+
             // TODO: this should run in gameplay time, including showing a larger increase when skipping.
             // TODO: it should also start increasing relative to the first hitobject.
             const double increase_delay = 150;
 
             initialIncrease = Scheduler.AddDelayed(() =>
             {
-                double newValue = Current.Value + 0.05f;
+                double newValue = Math.Min(Current.Value + 0.05f, health.Value);
                 this.TransformBindableTo(Current, newValue, increase_delay);
                 Scheduler.AddOnce(Flash);
 
-                if (newValue >= 1)
-                    finishInitialAnimation();
+                if (newValue >= health.Value)
+                    FinishInitialAnimation(health.Value);
             }, increase_delay, true);
         }
 
-        private void finishInitialAnimation()
+        protected virtual void FinishInitialAnimation(double value)
         {
             if (initialIncrease == null)
                 return;
 
-            initialIncrease?.Cancel();
+            initialIncrease.Cancel();
             initialIncrease = null;
 
             // aside from the repeating `initialIncrease` scheduled task,
@@ -118,8 +116,6 @@ namespace osu.Game.Screens.Play.HUD
         {
             if (judgement.IsHit && judgement.Type != HitResult.IgnoreHit)
                 Scheduler.AddOnce(Flash);
-            else if (judgement.Judgement.HealthIncreaseFor(judgement) < 0)
-                Scheduler.AddOnce(Miss);
         }
 
         protected override void Dispose(bool isDisposing)

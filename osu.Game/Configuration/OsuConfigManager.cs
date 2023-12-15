@@ -49,6 +49,7 @@ namespace osu.Game.Configuration
 
             SetDefault(OsuSetting.RandomSelectAlgorithm, RandomSelectAlgorithm.RandomPermutation);
             SetDefault(OsuSetting.ModSelectHotkeyStyle, ModSelectHotkeyStyle.Sequential);
+            SetDefault(OsuSetting.ModSelectTextSearchStartsActive, true);
 
             SetDefault(OsuSetting.ChatDisplayHeight, ChatOverlay.DEFAULT_HEIGHT, 0.2f, 1f);
 
@@ -107,6 +108,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.MouseDisableButtons, false);
             SetDefault(OsuSetting.MouseDisableWheel, false);
             SetDefault(OsuSetting.ConfineMouseMode, OsuConfineMouseMode.DuringGameplay);
+
+            SetDefault(OsuSetting.TouchDisableGameplayTaps, false);
 
             // Graphics
             SetDefault(OsuSetting.ShowFpsDisplay, false);
@@ -184,6 +187,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowHitMarkers, true);
             SetDefault(OsuSetting.EditorAutoSeekOnPlacement, true);
             SetDefault(OsuSetting.EditorLimitedDistanceSnap, false);
+            SetDefault(OsuSetting.EditorShowSpeedChanges, false);
 
             SetDefault(OsuSetting.LastProcessedMetadataId, -1);
 
@@ -329,6 +333,10 @@ namespace osu.Game.Configuration
 
         ShowHealthDisplayWhenCantFail,
         FadePlayfieldWhenHealthLow,
+
+        /// <summary>
+        /// Disables mouse buttons clicks during gameplay.
+        /// </summary>
         MouseDisableButtons,
         MouseDisableWheel,
         ConfineMouseMode,
@@ -407,5 +415,8 @@ namespace osu.Game.Configuration
         EditorLimitedDistanceSnap,
         ReplaySettingsOverlay,
         AutomaticallyDownloadMissingBeatmaps,
+        EditorShowSpeedChanges,
+        TouchDisableGameplayTaps,
+        ModSelectTextSearchStartsActive,
     }
 }
