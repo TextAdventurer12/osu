@@ -59,6 +59,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = Math.Min(single_spacing_threshold, travelDistance + osuCurrObj.MinimumJumpDistance);
 
+            // flow aim
             double adjustedDistanceScale = 1.0;
 
             if (osuCurrObj.Angle.HasValue && osuPrevObj?.Angle != null && osuCurrObj.Angle != osuPrevObj.Angle)
