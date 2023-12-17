@@ -115,6 +115,7 @@ namespace osu.Game.Overlays.Mods
         public IEnumerable<ModState> AllAvailableMods => AvailableMods.Value.SelectMany(pair => pair.Value);
 
         private readonly BindableBool customisationVisible = new BindableBool();
+        private Bindable<bool> textSearchStartsActive = null!;
 
         private ModSettingsArea modSettingsArea = null!;
         private ColumnScrollContainer columnScroll = null!;
@@ -154,7 +155,7 @@ namespace osu.Game.Overlays.Mods
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuGameBase game, OsuColour colours, AudioManager audio)
+        private void load(OsuGameBase game, OsuColour colours, AudioManager audio, OsuConfigManager configManager)
         {
             Header.Title = ModSelectOverlayStrings.ModSelectTitle;
             Header.Description = ModSelectOverlayStrings.ModSelectDescription;
@@ -282,6 +283,8 @@ namespace osu.Game.Overlays.Mods
             }
 
             globalAvailableMods.BindTo(game.AvailableMods);
+
+            textSearchStartsActive = configManager.GetBindable<bool>(OsuSetting.ModSelectTextSearchStartsActive);
         }
 
         public override void Hide()
@@ -604,7 +607,7 @@ namespace osu.Game.Overlays.Mods
                     if (columnNumber > 5 && !column.Active.Value) return;
 
                     // use X position of the column on screen as a basis for panning the sample
-                    float balance = column.Parent.BoundingBox.Centre.X / RelativeToAbsoluteFactor.X;
+                    float balance = column.Parent!.BoundingBox.Centre.X / RelativeToAbsoluteFactor.X;
 
                     // dip frequency and ramp volume of sample over the first 5 displayed columns
                     float progress = Math.Min(1, columnNumber / 5f);
@@ -617,6 +620,9 @@ namespace osu.Game.Overlays.Mods
 
                 nonFilteredColumnCount += 1;
             }
+
+            if (textSearchStartsActive.Value)
+                SearchTextBox.TakeFocus();
         }
 
         protected override void PopOut()
