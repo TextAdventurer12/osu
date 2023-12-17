@@ -188,6 +188,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private double computeAccuracyValue(ScoreInfo score)
         {
+            // ok this is is fucked no wonder it gives dogshit values
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
 
