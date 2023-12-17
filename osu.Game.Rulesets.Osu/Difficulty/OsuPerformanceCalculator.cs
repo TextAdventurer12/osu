@@ -182,6 +182,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private double computeAccuracyValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
+            // ADD STAT ACC
             if (score.Mods.Any(h => h is OsuModRelax))
                 return 0.0;
 
