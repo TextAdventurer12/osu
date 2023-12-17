@@ -22,7 +22,7 @@ using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Wiki
 {
-    public class WikiPanelContainer : Container
+    public partial class WikiPanelContainer : Container
     {
         private WikiPanelMarkdownContainer panelContainer;
 
@@ -75,10 +75,10 @@ namespace osu.Game.Overlays.Wiki
         protected override void Update()
         {
             base.Update();
-            Height = Math.Max(panelContainer.Height, Parent.DrawHeight);
+            Height = Math.Max(panelContainer.Height, Parent!.DrawHeight);
         }
 
-        private class WikiPanelMarkdownContainer : WikiMarkdownContainer
+        private partial class WikiPanelMarkdownContainer : WikiMarkdownContainer
         {
             private readonly bool isFullWidth;
 
@@ -93,7 +93,7 @@ namespace osu.Game.Overlays.Wiki
 
             public override SpriteText CreateSpriteText() => base.CreateSpriteText().With(t => t.Font = t.Font.With(Typeface.Torus, weight: FontWeight.Bold));
 
-            public override MarkdownTextFlowContainer CreateTextFlow() => base.CreateTextFlow().With(f => f.TextAnchor = Anchor.TopCentre);
+            public override OsuMarkdownTextFlowContainer CreateTextFlow() => base.CreateTextFlow().With(f => f.TextAnchor = Anchor.TopCentre);
 
             protected override MarkdownParagraph CreateParagraph(ParagraphBlock paragraphBlock, int level)
                 => base.CreateParagraph(paragraphBlock, level).With(p => p.Margin = new MarginPadding { Bottom = 10 });
@@ -104,7 +104,7 @@ namespace osu.Game.Overlays.Wiki
             };
         }
 
-        private class WikiPanelHeading : OsuMarkdownHeading
+        private partial class WikiPanelHeading : OsuMarkdownHeading
         {
             public bool IsFullWidth;
 

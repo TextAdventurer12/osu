@@ -1,8 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-#nullable disable
-
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
@@ -12,12 +10,11 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
-using osu.Game.Database;
 using osu.Framework.Localisation;
+using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
@@ -28,7 +25,7 @@ using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Toolbar
 {
-    public abstract class ToolbarButton : OsuClickableContainer, IKeyBindingHandler<GlobalAction>
+    public abstract partial class ToolbarButton : OsuClickableContainer, IKeyBindingHandler<GlobalAction>
     {
         protected GlobalAction? Hotkey { get; set; }
 
@@ -39,15 +36,12 @@ namespace osu.Game.Overlays.Toolbar
         }
 
         [Resolved]
-        private TextureStore textures { get; set; }
+        private ReadableKeyCombinationProvider keyCombinationProvider { get; set; } = null!;
 
-        [Resolved]
-        private ReadableKeyCombinationProvider keyCombinationProvider { get; set; }
-
-        public void SetIcon(string texture) =>
-            SetIcon(new Sprite
+        public void SetIcon(IconUsage icon) =>
+            SetIcon(new SpriteIcon
             {
-                Texture = textures.Get(texture),
+                Icon = icon,
             });
 
         public LocalisableString Text
@@ -81,7 +75,7 @@ namespace osu.Game.Overlays.Toolbar
         protected FillFlowContainer Flow;
 
         [Resolved]
-        private RealmAccess realm { get; set; }
+        private RealmAccess realm { get; set; } = null!;
 
         protected ToolbarButton()
         {
@@ -179,7 +173,7 @@ namespace osu.Game.Overlays.Toolbar
             HoverBackground.FadeIn(200);
             tooltipContainer.FadeIn(100);
 
-            return base.OnHover(e);
+            return true;
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
@@ -219,7 +213,7 @@ namespace osu.Game.Overlays.Toolbar
         }
     }
 
-    public class OpaqueBackground : Container
+    public partial class OpaqueBackground : Container
     {
         public OpaqueBackground()
         {

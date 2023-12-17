@@ -8,13 +8,14 @@ using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
+using osu.Game.Graphics;
 using osu.Game.Localisation;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Resources.Localisation.Web;
 
 namespace osu.Game.Overlays.Wiki
 {
-    public class WikiHeader : BreadcrumbControlOverlayHeader
+    public partial class WikiHeader : BreadcrumbControlOverlayHeader
     {
         private const string index_path = "Main_Page";
 
@@ -75,13 +76,13 @@ namespace osu.Game.Overlays.Wiki
 
         protected override OverlayTitle CreateTitle() => new WikiHeaderTitle();
 
-        private class WikiHeaderTitle : OverlayTitle
+        private partial class WikiHeaderTitle : OverlayTitle
         {
             public WikiHeaderTitle()
             {
                 Title = PageTitleStrings.MainWikiControllerDefault;
                 Description = NamedOverlayComponentStrings.WikiDescription;
-                IconTexture = "Icons/Hexacons/wiki";
+                Icon = HexaconsIcons.Wiki;
             }
         }
     }

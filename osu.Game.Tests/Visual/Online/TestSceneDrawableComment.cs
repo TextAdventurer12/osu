@@ -15,7 +15,7 @@ using osu.Game.Overlays.Comments;
 
 namespace osu.Game.Tests.Visual.Online
 {
-    public class TestSceneDrawableComment : OsuTestScene
+    public partial class TestSceneDrawableComment : OsuTestScene
     {
         [Cached]
         private readonly OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
@@ -64,7 +64,8 @@ namespace osu.Game.Tests.Visual.Online
             new[] { "Plain", "This is plain comment" },
             new[] { "Pinned", "This is pinned comment" },
             new[] { "Link", "Please visit https://osu.ppy.sh" },
-
+            new[] { "Big Image", "![](Backgrounds/bg1 \"Big Image\")" },
+            new[] { "Small Image", "![](Cursor/cursortrail)" },
             new[]
             {
                 "Heading", @"# Heading 1

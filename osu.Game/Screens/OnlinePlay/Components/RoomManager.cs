@@ -17,7 +17,7 @@ using osu.Game.Online.Rooms;
 
 namespace osu.Game.Screens.OnlinePlay.Components
 {
-    public class RoomManager : Component, IRoomManager
+    public partial class RoomManager : Component, IRoomManager
     {
         public event Action RoomsUpdated;
 
@@ -98,7 +98,9 @@ namespace osu.Game.Screens.OnlinePlay.Components
             if (JoinedRoom.Value == null)
                 return;
 
-            api.Queue(new PartRoomRequest(joinedRoom.Value));
+            if (api.State.Value == APIState.Online)
+                api.Queue(new PartRoomRequest(joinedRoom.Value));
+
             joinedRoom.Value = null;
         }
 

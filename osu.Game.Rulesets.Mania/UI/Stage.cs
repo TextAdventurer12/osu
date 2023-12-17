@@ -27,7 +27,7 @@ namespace osu.Game.Rulesets.Mania.UI
     /// <summary>
     /// A collection of <see cref="Column"/>s.
     /// </summary>
-    public class Stage : ScrollingPlayfield
+    public partial class Stage : ScrollingPlayfield
     {
         [Cached]
         public readonly StageDefinition Definition;
@@ -60,6 +60,7 @@ namespace osu.Game.Rulesets.Mania.UI
             RelativeSizeAxes = Axes.Y;
             AutoSizeAxes = Axes.X;
 
+            Container columnBackgrounds;
             Container topLevelContainer;
 
             InternalChildren = new Drawable[]
@@ -73,13 +74,14 @@ namespace osu.Game.Rulesets.Mania.UI
                     AutoSizeAxes = Axes.X,
                     Children = new Drawable[]
                     {
-                        new SkinnableDrawable(new ManiaSkinComponent(ManiaSkinComponents.StageBackground), _ => new DefaultStageBackground())
+                        new SkinnableDrawable(new ManiaSkinComponentLookup(ManiaSkinComponents.StageBackground), _ => new DefaultStageBackground())
                         {
                             RelativeSizeAxes = Axes.Both
                         },
-                        columnFlow = new ColumnFlow<Column>(definition)
+                        columnBackgrounds = new Container
                         {
-                            RelativeSizeAxes = Axes.Y,
+                            Name = "Column backgrounds",
+                            RelativeSizeAxes = Axes.Both,
                         },
                         new Container
                         {
@@ -98,7 +100,11 @@ namespace osu.Game.Rulesets.Mania.UI
                                 RelativeSizeAxes = Axes.Y,
                             }
                         },
-                        new SkinnableDrawable(new ManiaSkinComponent(ManiaSkinComponents.StageForeground), _ => null)
+                        columnFlow = new ColumnFlow<Column>(definition)
+                        {
+                            RelativeSizeAxes = Axes.Y,
+                        },
+                        new SkinnableDrawable(new ManiaSkinComponentLookup(ManiaSkinComponents.StageForeground), _ => null)
                         {
                             RelativeSizeAxes = Axes.Both
                         },
@@ -126,9 +132,12 @@ namespace osu.Game.Rulesets.Mania.UI
                 };
 
                 topLevelContainer.Add(column.TopLevelContainer.CreateProxy());
+                columnBackgrounds.Add(column.BackgroundContainer.CreateProxy());
                 columnFlow.SetContentForColumn(i, column);
                 AddNested(column);
             }
+
+            RegisterPool<BarLine, DrawableBarLine>(50, 200);
         }
 
         private ISkinSource currentSkin;
@@ -156,6 +165,9 @@ namespace osu.Game.Rulesets.Mania.UI
 
         protected override void Dispose(bool isDisposing)
         {
+            // must happen before children are disposed in base call to prevent illegal accesses to the judgement pool.
+            NewResult -= OnNewResult;
+
             base.Dispose(isDisposing);
 
             if (currentSkin != null)
@@ -176,15 +188,11 @@ namespace osu.Game.Rulesets.Mania.UI
 
         public override bool Remove(DrawableHitObject h) => Columns.ElementAt(((ManiaHitObject)h.HitObject).Column - firstColumnIndex).Remove(h);
 
-        public void Add(BarLine barLine) => base.Add(new DrawableBarLine(barLine));
+        public void Add(BarLine barLine) => base.Add(barLine);
 
         internal void OnNewResult(DrawableHitObject judgedObject, JudgementResult result)
         {
             if (!judgedObject.DisplayResult || !DisplayJudgements.Value)
-                return;
-
-            // Tick judgements should not display text.
-            if (judgedObject is DrawableHoldNoteTick)
                 return;
 
             judgements.Clear(false);

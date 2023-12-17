@@ -5,7 +5,6 @@
 
 using System;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -14,18 +13,16 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Rulesets.Osu.UI.Cursor;
 using osu.Game.Screens.Play;
-using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.Osu.UI
 {
-    public class OsuResumeOverlay : ResumeOverlay
+    public partial class OsuResumeOverlay : ResumeOverlay
     {
         private Container cursorScaleContainer;
         private OsuClickToResumeCursor clickToResumeCursor;
 
         private OsuCursorContainer localCursorContainer;
-        private IBindable<float> localCursorScale;
 
         public override CursorContainer LocalCursor => State.Value == Visibility.Visible ? localCursorContainer : null;
 
@@ -49,13 +46,7 @@ namespace osu.Game.Rulesets.Osu.UI
             clickToResumeCursor.Appear();
 
             if (localCursorContainer == null)
-            {
                 Add(localCursorContainer = new OsuCursorContainer());
-
-                localCursorScale = new BindableFloat();
-                localCursorScale.BindTo(localCursorContainer.CursorScale);
-                localCursorScale.BindValueChanged(scale => cursorScaleContainer.Scale = new Vector2(scale.NewValue), true);
-            }
         }
 
         protected override void PopOut()
@@ -64,12 +55,12 @@ namespace osu.Game.Rulesets.Osu.UI
 
             localCursorContainer?.Expire();
             localCursorContainer = null;
-            GameplayCursor?.ActiveCursor?.Show();
+            GameplayCursor?.ActiveCursor.Show();
         }
 
         protected override bool OnHover(HoverEvent e) => true;
 
-        public class OsuClickToResumeCursor : OsuCursor, IKeyBindingHandler<OsuAction>
+        public partial class OsuClickToResumeCursor : OsuCursor, IKeyBindingHandler<OsuAction>
         {
             public override bool HandlePositionalInput => true;
 
@@ -98,7 +89,8 @@ namespace osu.Game.Rulesets.Osu.UI
                 {
                     case OsuAction.LeftButton:
                     case OsuAction.RightButton:
-                        if (!IsHovered) return false;
+                        if (!IsHovered)
+                            return false;
 
                         this.ScaleTo(2, TRANSITION_TIME, Easing.OutQuint);
 

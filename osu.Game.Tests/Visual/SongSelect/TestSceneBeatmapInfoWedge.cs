@@ -15,6 +15,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
 using osu.Game.Rulesets.Mania;
@@ -30,7 +31,7 @@ using osuTK;
 namespace osu.Game.Tests.Visual.SongSelect
 {
     [TestFixture]
-    public class TestSceneBeatmapInfoWedge : OsuTestScene
+    public partial class TestSceneBeatmapInfoWedge : OsuTestScene
     {
         private RulesetStore rulesets;
         private TestBeatmapInfoWedge infoWedge;
@@ -188,7 +189,7 @@ namespace osu.Game.Tests.Visual.SongSelect
         {
             AddUntilStep($"displayed bpm is {target}", () =>
             {
-                var label = infoWedge.DisplayedContent.ChildrenOfType<BeatmapInfoWedge.WedgeInfoText.InfoLabel>().Single(l => l.Statistic.Name == "BPM");
+                var label = infoWedge.DisplayedContent.ChildrenOfType<BeatmapInfoWedge.WedgeInfoText.InfoLabel>().Single(l => l.Statistic.Name == BeatmapsetsStrings.ShowStatsBpm);
                 return label.Statistic.Content == target;
             });
         }
@@ -267,7 +268,7 @@ namespace osu.Game.Tests.Visual.SongSelect
             };
         }
 
-        private class TestBeatmapInfoWedge : BeatmapInfoWedge
+        private partial class TestBeatmapInfoWedge : BeatmapInfoWedge
         {
             public new Container DisplayedContent => base.DisplayedContent;
 

@@ -9,12 +9,13 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Settings;
 using osuTK;
 
 namespace osu.Game.Overlays
 {
-    public abstract class SettingsSubPanel : SettingsPanel
+    public abstract partial class SettingsSubPanel : SettingsPanel
     {
         protected SettingsSubPanel()
             : base(true)
@@ -34,9 +35,14 @@ namespace osu.Game.Overlays
 
         protected override bool DimMainContent => false; // dimming is handled by main overlay
 
-        public class BackButton : SidebarButton
+        public partial class BackButton : SidebarButton
         {
             private Container content;
+
+            public BackButton()
+                : base(HoverSampleSet.Default)
+            {
+            }
 
             [BackgroundDependencyLoader]
             private void load()

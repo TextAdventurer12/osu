@@ -29,11 +29,13 @@ using osuTK.Input;
 namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 {
     /// <summary>
-    /// A visualisation of a single <see cref="PathControlPoint"/> in a <see cref="Slider"/>.
+    /// A visualisation of a single <see cref="PathControlPoint"/> in an osu hit object with a path.
     /// </summary>
-    public class PathControlPointPiece : BlueprintPiece<Slider>, IHasTooltip
+    /// <typeparam name="T">The type of <see cref="OsuHitObject"/> which this <see cref="PathControlPointPiece{T}"/> visualises.</typeparam>
+    public partial class PathControlPointPiece<T> : BlueprintPiece<T>, IHasTooltip
+        where T : OsuHitObject, IHasPath
     {
-        public Action<PathControlPointPiece, MouseButtonEvent> RequestSelection;
+        public Action<PathControlPointPiece<T>, MouseButtonEvent> RequestSelection;
 
         public Action<PathControlPoint> DragStarted;
         public Action<DragEvent> DragInProgress;
@@ -44,34 +46,34 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         public readonly BindableBool IsSelected = new BindableBool();
         public readonly PathControlPoint ControlPoint;
 
-        private readonly Slider slider;
+        private readonly T hitObject;
         private readonly Container marker;
         private readonly Drawable markerRing;
 
         [Resolved]
         private OsuColour colours { get; set; }
 
-        private IBindable<Vector2> sliderPosition;
-        private IBindable<float> sliderScale;
+        private IBindable<Vector2> hitObjectPosition;
+        private IBindable<float> hitObjectScale;
 
         [UsedImplicitly]
-        private readonly IBindable<int> sliderVersion;
+        private readonly IBindable<int> hitObjectVersion;
 
-        public PathControlPointPiece(Slider slider, PathControlPoint controlPoint)
+        public PathControlPointPiece(T hitObject, PathControlPoint controlPoint)
         {
-            this.slider = slider;
+            this.hitObject = hitObject;
             ControlPoint = controlPoint;
 
-            // we don't want to run the path type update on construction as it may inadvertently change the slider.
-            cachePoints(slider);
+            // we don't want to run the path type update on construction as it may inadvertently change the hit object.
+            cachePoints(hitObject);
 
-            sliderVersion = slider.Path.Version.GetBoundCopy();
+            hitObjectVersion = hitObject.Path.Version.GetBoundCopy();
 
             // schedule ensure that updates are only applied after all operations from a single frame are applied.
-            // this avoids inadvertently changing the slider path type for batch operations.
-            sliderVersion.BindValueChanged(_ => Scheduler.AddOnce(() =>
+            // this avoids inadvertently changing the hit object path type for batch operations.
+            hitObjectVersion.BindValueChanged(_ => Scheduler.AddOnce(() =>
             {
-                cachePoints(slider);
+                cachePoints(hitObject);
                 updatePathType();
             }));
 
@@ -120,11 +122,11 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         {
             base.LoadComplete();
 
-            sliderPosition = slider.PositionBindable.GetBoundCopy();
-            sliderPosition.BindValueChanged(_ => updateMarkerDisplay());
+            hitObjectPosition = hitObject.PositionBindable.GetBoundCopy();
+            hitObjectPosition.BindValueChanged(_ => updateMarkerDisplay());
 
-            sliderScale = slider.ScaleBindable.GetBoundCopy();
-            sliderScale.BindValueChanged(_ => updateMarkerDisplay());
+            hitObjectScale = hitObject.ScaleBindable.GetBoundCopy();
+            hitObjectScale.BindValueChanged(_ => updateMarkerDisplay());
 
             IsSelected.BindValueChanged(_ => updateMarkerDisplay());
 
@@ -212,18 +214,18 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
         protected override void OnDragEnd(DragEndEvent e) => DragEnded?.Invoke();
 
-        private void cachePoints(Slider slider) => PointsInSegment = slider.Path.PointsInSegment(ControlPoint);
+        private void cachePoints(T hitObject) => PointsInSegment = hitObject.Path.PointsInSegment(ControlPoint);
 
         /// <summary>
         /// Handles correction of invalid path types.
         /// </summary>
         private void updatePathType()
         {
-            if (ControlPoint.Type != PathType.PerfectCurve)
+            if (ControlPoint.Type != PathType.PERFECT_CURVE)
                 return;
 
             if (PointsInSegment.Count > 3)
-                ControlPoint.Type = PathType.Bezier;
+                ControlPoint.Type = PathType.BEZIER;
 
             if (PointsInSegment.Count != 3)
                 return;
@@ -231,7 +233,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             ReadOnlySpan<Vector2> points = PointsInSegment.Select(p => p.Position).ToArray();
             RectangleF boundingBox = PathApproximator.CircularArcBoundingBox(points);
             if (boundingBox.Width >= 640 || boundingBox.Height >= 480)
-                ControlPoint.Type = PathType.Bezier;
+                ControlPoint.Type = PathType.BEZIER;
         }
 
         /// <summary>
@@ -239,7 +241,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         /// </summary>
         private void updateMarkerDisplay()
         {
-            Position = slider.StackedPosition + ControlPoint.Position;
+            Position = hitObject.StackedPosition + ControlPoint.Position;
 
             markerRing.Alpha = IsSelected.Value ? 1 : 0;
 
@@ -249,23 +251,27 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 colour = colour.Lighten(1);
 
             marker.Colour = colour;
-            marker.Scale = new Vector2(slider.Scale);
+            marker.Scale = new Vector2(hitObject.Scale);
         }
 
         private Color4 getColourFromNodeType()
         {
-            if (!(ControlPoint.Type is PathType pathType))
+            if (ControlPoint.Type is not PathType pathType)
                 return colours.Yellow;
 
-            switch (pathType)
+            switch (pathType.Type)
             {
-                case PathType.Catmull:
+                case SplineType.Catmull:
                     return colours.SeaFoam;
 
-                case PathType.Bezier:
-                    return colours.Pink;
+                case SplineType.BSpline:
+                    if (!pathType.Degree.HasValue)
+                        return colours.PinkLighter;
 
-                case PathType.PerfectCurve:
+                    int idx = Math.Clamp(pathType.Degree.Value, 0, 3);
+                    return new[] { colours.PinkDarker, colours.PinkDark, colours.Pink, colours.PinkLight }[idx];
+
+                case SplineType.PerfectCurve:
                     return colours.PurpleDark;
 
                 default:
@@ -273,6 +279,6 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             }
         }
 
-        public LocalisableString TooltipText => ControlPoint.Type.ToString() ?? string.Empty;
+        public LocalisableString TooltipText => ControlPoint.Type?.Description ?? string.Empty;
     }
 }

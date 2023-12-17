@@ -7,7 +7,7 @@ using osu.Framework.Graphics;
 
 namespace osu.Game.Rulesets.Osu.Skinning.Legacy
 {
-    public class LegacyFollowCircle : FollowCircle
+    public partial class LegacyFollowCircle : FollowCircle
     {
         public LegacyFollowCircle(Drawable animationContent)
         {
@@ -44,8 +44,11 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
 
         protected override void OnSliderTick()
         {
-            this.ScaleTo(2.2f)
-                .ScaleTo(2f, 200);
+            if (Scale.X >= 2f)
+            {
+                this.ScaleTo(2.2f)
+                    .ScaleTo(2f, 200);
+            }
         }
 
         protected override void OnSliderBreak()

@@ -22,7 +22,7 @@ using osu.Game.Users;
 
 namespace osu.Game.Screens.OnlinePlay.Multiplayer
 {
-    public class MultiplayerPlayer : RoomSubmittingPlayer
+    public partial class MultiplayerPlayer : RoomSubmittingPlayer
     {
         protected override bool PauseOnFocusLost => false;
 
@@ -148,6 +148,9 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
                 loadingDisplay.Show();
                 client.ChangeState(MultiplayerUserState.ReadyForGameplay);
             }
+
+            // This will pause the clock, pending the gameplay started callback from the server.
+            GameplayClockContainer.Reset();
         }
 
         private void failAndBail(string message = null)

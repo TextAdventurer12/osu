@@ -7,11 +7,9 @@ using osu.Framework.Graphics;
 
 namespace osu.Game.Rulesets.Osu.Objects.Drawables
 {
-    public class DrawableSpinnerTick : DrawableOsuHitObject
+    public partial class DrawableSpinnerTick : DrawableOsuHitObject
     {
         public override bool DisplayResult => false;
-
-        protected DrawableSpinner DrawableSpinner => (DrawableSpinner)ParentHitObject;
 
         public DrawableSpinnerTick()
             : this(null)
@@ -25,7 +23,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             Origin = Anchor.Centre;
         }
 
-        public override double MaximumJudgementOffset => DrawableSpinner.HitObject.Duration;
+        protected override void OnApply()
+        {
+            base.OnApply();
+
+            // Lifetime will be managed by `DrawableSpinner`.
+            LifetimeStart = double.MaxValue;
+        }
 
         /// <summary>
         /// Apply a judgement result.

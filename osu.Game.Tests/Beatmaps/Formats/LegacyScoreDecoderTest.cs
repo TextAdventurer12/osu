@@ -16,7 +16,9 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
 using osu.Game.Rulesets.Mania;
 using osu.Game.Rulesets.Mania.Mods;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Replays;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.Replays;
@@ -82,6 +84,34 @@ namespace osu.Game.Tests.Beatmaps.Formats
                 Assert.AreEqual(4, score.ScoreInfo.MaxCombo);
 
                 Assert.That(score.Replay.Frames, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        public void TestDecodeLegacyOnlineID()
+        {
+            var decoder = new TestLegacyScoreDecoder();
+
+            using (var resourceStream = TestResources.OpenResource("Replays/taiko-replay-with-legacy-online-id.osr"))
+            {
+                var score = decoder.Parse(resourceStream);
+
+                Assert.That(score.ScoreInfo.OnlineID, Is.EqualTo(-1));
+                Assert.That(score.ScoreInfo.LegacyOnlineID, Is.EqualTo(255));
+            }
+        }
+
+        [Test]
+        public void TestDecodeNewOnlineID()
+        {
+            var decoder = new TestLegacyScoreDecoder();
+
+            using (var resourceStream = TestResources.OpenResource("Replays/taiko-replay-with-new-online-id.osr"))
+            {
+                var score = decoder.Parse(resourceStream);
+
+                Assert.That(score.ScoreInfo.OnlineID, Is.EqualTo(258));
+                Assert.That(score.ScoreInfo.LegacyOnlineID, Is.EqualTo(-1));
             }
         }
 
@@ -176,6 +206,40 @@ namespace osu.Game.Tests.Beatmaps.Formats
                 Assert.That(decodedAfterEncode.ScoreInfo.Date, Is.EqualTo(scoreInfo.Date));
 
                 Assert.That(decodedAfterEncode.Replay.Frames.Count, Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void TestSoloScoreData()
+        {
+            var ruleset = new OsuRuleset().RulesetInfo;
+
+            var scoreInfo = TestResources.CreateTestScoreInfo(ruleset);
+            scoreInfo.Mods = new Mod[]
+            {
+                new OsuModDoubleTime { SpeedChange = { Value = 1.1 } }
+            };
+
+            var beatmap = new TestBeatmap(ruleset);
+            var score = new Score
+            {
+                ScoreInfo = scoreInfo,
+                Replay = new Replay
+                {
+                    Frames = new List<ReplayFrame>
+                    {
+                        new OsuReplayFrame(2000, OsuPlayfield.BASE_SIZE / 2, OsuAction.LeftButton)
+                    }
+                }
+            };
+
+            var decodedAfterEncode = encodeThenDecode(LegacyBeatmapDecoder.LATEST_VERSION, score, beatmap);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(decodedAfterEncode.ScoreInfo.Statistics, Is.EqualTo(scoreInfo.Statistics));
+                Assert.That(decodedAfterEncode.ScoreInfo.MaximumStatistics, Is.EqualTo(scoreInfo.MaximumStatistics));
+                Assert.That(decodedAfterEncode.ScoreInfo.Mods, Is.EqualTo(scoreInfo.Mods));
             });
         }
 

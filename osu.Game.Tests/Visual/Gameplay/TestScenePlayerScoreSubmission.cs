@@ -26,7 +26,7 @@ using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Tests.Visual.Gameplay
 {
-    public class TestScenePlayerScoreSubmission : PlayerTestScene
+    public partial class TestScenePlayerScoreSubmission : PlayerTestScene
     {
         protected override bool AllowFail => allowFail;
 
@@ -179,9 +179,9 @@ namespace osu.Game.Tests.Visual.Gameplay
             addFakeHit();
 
             AddUntilStep("wait for fail", () => Player.GameplayState.HasFailed);
-            AddStep("exit", () => Player.Exit());
 
-            AddAssert("ensure failing submission", () => Player.SubmittedScore?.ScoreInfo.Passed == false);
+            AddUntilStep("wait for submission", () => Player.SubmittedScore != null);
+            AddAssert("ensure failing submission", () => Player.SubmittedScore.ScoreInfo.Passed == false);
         }
 
         [Test]
@@ -209,7 +209,9 @@ namespace osu.Game.Tests.Visual.Gameplay
             addFakeHit();
 
             AddStep("exit", () => Player.Exit());
-            AddAssert("ensure failing submission", () => Player.SubmittedScore?.ScoreInfo.Passed == false);
+
+            AddUntilStep("wait for submission", () => Player.SubmittedScore != null);
+            AddAssert("ensure failing submission", () => Player.SubmittedScore.ScoreInfo.Passed == false);
         }
 
         [Test]
@@ -257,7 +259,7 @@ namespace osu.Game.Tests.Visual.Gameplay
         {
             prepareTestAPI(true);
 
-            createPlayerTest(false, createRuleset: () => new OsuRuleset
+            createPlayerTest(createRuleset: () => new OsuRuleset
             {
                 RulesetInfo =
                 {
@@ -345,7 +347,7 @@ namespace osu.Game.Tests.Visual.Gameplay
             });
         }
 
-        protected class FakeImportingPlayer : TestPlayer
+        protected partial class FakeImportingPlayer : TestPlayer
         {
             public bool ScoreImportStarted { get; set; }
             public SemaphoreSlim AllowImportCompletion { get; }
