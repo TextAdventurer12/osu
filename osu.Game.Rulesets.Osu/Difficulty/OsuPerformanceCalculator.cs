@@ -71,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = computeAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
-            double accuracyValue = computeAccuracyValue(score);
+            double accuracyValue = computeAccuracyValue(score, osuAttributes.SpeedDifficultStrainCount);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
@@ -180,7 +180,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             return speedValue;
         }
 
-        private double computeAccuracyValue(ScoreInfo score)
+        private double computeAccuracyValue(ScoreInfo score, double speedDifficultStrainCount)
         {
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
@@ -195,6 +195,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             if (score.Mods.Any(m => m is OsuModFlashlight))
                 accuracyValue *= 1.02;
+
+            // High accuracy is easier on shorter maps, and is easier to achieve on aim sections.
+            double lengthBonus = 2.9 * Math.Tanh(Math.Pow(speedDifficultStrainCount / 250, 1.1));
+            accuracyValue *= lengthBonus;
 
             return accuracyValue;
         }

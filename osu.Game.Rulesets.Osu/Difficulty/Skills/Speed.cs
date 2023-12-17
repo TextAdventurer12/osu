@@ -7,6 +7,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
@@ -55,6 +56,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double totalStrainNoDistance = currentStrainNoDistance * currentRhythm;
 
             objectStrainsNoDistance.Add(totalStrainNoDistance);
+            objectStrains.Add(totalStrain);
 
             return totalStrain;
         }
