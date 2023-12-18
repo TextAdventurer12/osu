@@ -377,7 +377,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         private double getLengthBonus(OsuDifficultyAttributes attributes, double relevantStrainCount) => 0.95 + 1.97 * Math.Tanh(attributes.StrainCount / 1500) * spikiness(attributes, relevantStrainCount);
         private double spikiness(OsuDifficultyAttributes attributes, double relevantStrainCount)
         {
-            return Math.Min(1, Math.Pow(relevantStrainCount / Math.Pow(attributes.StrainCount, 0.9), 0.6));
+            return Math.Min(1, Math.Pow(relevantStrainCount / Math.Pow(attributes.StrainCount, 0.9), 0.9));
         }
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalSuccessfulHits => countGreat + countOk + countMeh;
