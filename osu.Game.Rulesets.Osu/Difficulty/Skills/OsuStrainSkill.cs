@@ -80,5 +80,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             return objectStrains.Sum(s => Math.Pow(s / topStrain, 4));
         }
+        public int StrainCount() => objectStrains.Where(x => x > 0).Count();
     }
 }

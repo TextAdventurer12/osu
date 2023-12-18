@@ -47,6 +47,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double aimDifficultyStrainCount = ((OsuStrainSkill)skills[0]).CountDifficultStrains();
             double speedDifficultyStrainCount = ((OsuStrainSkill)skills[2]).CountDifficultStrains();
 
+            int strainCount = ((OsuStrainSkill)skills[0]).StrainCount();
+
             if (mods.Any(m => m is OsuModTouchDevice))
             {
                 aimRating = Math.Pow(aimRating, 0.8);
@@ -109,6 +111,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 HitCircleCount = hitCirclesCount,
                 SliderCount = sliderCount,
                 SpinnerCount = spinnerCount,
+                StrainCount = strainCount
             };
 
             return attributes;

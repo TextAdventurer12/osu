@@ -17,7 +17,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.1727;
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.2727;
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -101,8 +101,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            double lengthBonus = getLengthBonus(attributes, attributes.AimDifficultStrainCount);
             aimValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
@@ -150,9 +149,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
-            speedValue *= lengthBonus;
+            double lengthBonus = getLengthBonus(attributes, attributes.SpeedDifficultStrainCount);
+            //speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
                 speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
@@ -196,11 +194,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(m => m is OsuModFlashlight))
                 accuracyValue *= 1.02;
 
-            // High accuracy is easier on shorter maps, and is easier to achieve on aim sections.
+            // High accuracy is easier on shorter maps
+            // A limiting curve is used, because beyond a certain point accuracy difficulty is no longer affected by length
             double lengthBonus = 2.9 * Math.Tanh(Math.Pow(attributes.SpeedDifficultStrainCount / 250, 1.1));
             accuracyValue *= lengthBonus;
 
-            accuracyValue *= 0.5 + Math.Sqrt(attributes.SpeedDifficulty / (attributes.AimDifficulty + attributes.SpeedDifficulty)) / 2;
+            // High accuracy is harder to achieve on maps with high relative speed difficulty
+            accuracyValue *= 0.8 + Math.Sqrt(attributes.SpeedDifficulty / (attributes.AimDifficulty + attributes.SpeedDifficulty)) * 0.2;
 
             return accuracyValue;
         }
@@ -374,6 +374,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         // to make it more punishing on maps with lower amount of hard sections.
         private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.94 / ((missCount / (2 * Math.Sqrt(difficultStrainCount))) + 1);
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
+        private double getLengthBonus(OsuDifficultyAttributes attributes, double relevantStrainCount) => 0.95 + 1.97 * Math.Tanh(attributes.StrainCount / 1500) * spikiness(attributes, relevantStrainCount);
+        private double spikiness(OsuDifficultyAttributes attributes, double relevantStrainCount)
+        {
+            return Math.Min(1, Math.Pow(relevantStrainCount / Math.Pow(attributes.StrainCount, 0.9), 0.6));
+        }
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalSuccessfulHits => countGreat + countOk + countMeh;
     }

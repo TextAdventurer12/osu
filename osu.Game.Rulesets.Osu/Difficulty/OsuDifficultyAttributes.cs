@@ -52,6 +52,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         [JsonProperty("speed_difficult_strain_count")]
         public double SpeedDifficultStrainCount { get; set; }
 
+        [JsonProperty("strain_count")]
+        public int StrainCount { get; set; }
+
         /// <summary>
         /// The perceived approach rate inclusive of rate-adjusting mods (DT/HT/etc).
         /// </summary>
@@ -89,6 +92,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// The number of spinners in the beatmap.
         /// </summary>
         public int SpinnerCount { get; set; }
+
 
         public override IEnumerable<(int attributeId, object value)> ToDatabaseAttributes()
         {
