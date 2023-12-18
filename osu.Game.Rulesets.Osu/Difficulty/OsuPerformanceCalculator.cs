@@ -17,7 +17,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.14;
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.1727;
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -71,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = computeAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
-            double accuracyValue = computeAccuracyValue(score, osuAttributes.SpeedDifficultStrainCount);
+            double accuracyValue = computeAccuracyValue(score, osuAttributes);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
@@ -180,7 +180,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             return speedValue;
         }
 
-        private double computeAccuracyValue(ScoreInfo score, double speedDifficultStrainCount)
+        private double computeAccuracyValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
@@ -197,8 +197,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 accuracyValue *= 1.02;
 
             // High accuracy is easier on shorter maps, and is easier to achieve on aim sections.
-            double lengthBonus = 2.9 * Math.Tanh(Math.Pow(speedDifficultStrainCount / 250, 1.1));
+            double lengthBonus = 2.9 * Math.Tanh(Math.Pow(attributes.SpeedDifficultStrainCount / 250, 1.1));
             accuracyValue *= lengthBonus;
+
+            accuracyValue *= 0.5 + Math.Sqrt(attributes.SpeedDifficulty / (attributes.AimDifficulty + attributes.SpeedDifficulty)) / 2;
 
             return accuracyValue;
         }
