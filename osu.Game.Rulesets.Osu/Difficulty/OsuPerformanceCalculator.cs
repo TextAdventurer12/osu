@@ -183,7 +183,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
 
-            double accuracyValue = 75 * Math.Pow(7.5 / (double)deviation, 2);
+            double accuracyValue = 75 * Math.Pow(7.5 / (double)deviation, 1.5);
 
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
@@ -376,9 +376,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private double getLengthBonus(OsuDifficultyAttributes attributes, double relevantStrainCount) => 0.95 + 1.97 * Math.Tanh(attributes.StrainCount / 1500) * spikiness(attributes, relevantStrainCount);
         private double spikiness(OsuDifficultyAttributes attributes, double relevantStrainCount)
-        {
-            return Math.Min(1, Math.Pow(relevantStrainCount / Math.Pow(attributes.StrainCount, 0.9), 0.9));
-        }
+            => Math.Pow(relevantStrainCount / attributes.StrainCount, 0.9);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalSuccessfulHits => countGreat + countOk + countMeh;
     }

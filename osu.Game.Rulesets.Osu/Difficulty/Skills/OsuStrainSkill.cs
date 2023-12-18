@@ -78,7 +78,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             double topStrain = objectStrains.Max();
 
-            return objectStrains.Sum(s => Math.Pow(s / topStrain, 4));
+            return objectStrains.Sum(s => Math.Pow(s / topStrain, 2));
         }
         public int StrainCount() => objectStrains.Where(x => x > 0).Count();
     }
