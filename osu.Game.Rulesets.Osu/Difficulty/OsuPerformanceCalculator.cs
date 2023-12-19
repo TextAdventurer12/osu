@@ -104,9 +104,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
             aimValue *= lengthBonus;
-
             if (effectiveMissCount > 0)
-                aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
+                aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
+            aimValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -155,7 +155,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
-                speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
+                speedValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
+            speedValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -369,10 +370,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             return double.PositiveInfinity;
         }
-        // Miss penalty assumes that a player will miss on the hardest parts of a map,
-        // so we use the amount of relatively difficult sections to adjust miss penalty
-        // to make it more punishing on maps with lower amount of hard sections.
-        private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.94 / ((missCount / (2 * Math.Sqrt(difficultStrainCount))) + 1);
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalSuccessfulHits => countGreat + countOk + countMeh;
