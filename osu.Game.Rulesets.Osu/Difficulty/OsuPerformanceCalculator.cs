@@ -17,7 +17,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.1727;
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.2727;
+        public const double ACCURACY_MULTIPLIER = 0.7;
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -197,13 +198,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(m => m is OsuModFlashlight))
                 accuracyValue *= 1.02;
 
-            // High accuracy is easier on shorter maps, and is easier to achieve on aim sections.
-            double lengthBonus = 2.9 * Math.Tanh(Math.Pow(attributes.SpeedDifficultStrainCount / 250, 1.1));
+            // High accuracy is easier on short maps
+            double lengthBonus = 0.5 + Math.Tanh(attributes.SpeedDifficultStrainCount / 150);
             accuracyValue *= lengthBonus;
 
-            accuracyValue *= 0.5 + Math.Sqrt(attributes.SpeedDifficulty / (attributes.AimDifficulty + attributes.SpeedDifficulty)) / 2;
+            // High accuracy is easier to achieve on maps with little speed (should be tapping) difficulty
+            double tappingProportion = attributes.SpeedDifficulty / (attributes.AimDifficulty + attributes.SpeedDifficulty);
+            accuracyValue *= 0.4 + 0.6 * Math.Pow(tappingProportion, 0.37);
 
-            return accuracyValue;
+            return accuracyValue * ACCURACY_MULTIPLIER;
         }
 
         private double computeFlashlightValue(ScoreInfo score, OsuDifficultyAttributes attributes)
