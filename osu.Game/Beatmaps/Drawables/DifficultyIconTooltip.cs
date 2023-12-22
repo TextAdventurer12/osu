@@ -45,6 +45,7 @@ namespace osu.Game.Beatmaps.Drawables
                     Colour = colours.Gray3,
                     RelativeSizeAxes = Axes.Both
                 },
+                // Headers
                 new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
@@ -108,8 +109,8 @@ namespace osu.Game.Beatmaps.Drawables
             if (displayedContent != null)
                 starRating.Current.UnbindFrom(displayedContent.Difficulty);
 
+            // Header row
             displayedContent = content;
-
             starRating.Current.BindTarget = displayedContent.Difficulty;
             difficultyName.Text = displayedContent.BeatmapInfo.DifficultyName;
 
