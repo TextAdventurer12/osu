@@ -96,6 +96,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 
             Movement = BaseObject.StackedPosition - getEndCursorPosition(this.lastObject, clockRate);
 
+            SliderlessMovement = BaseObject.StackedPosition - this.lastObject.StackedPosition;
+
             if (lastLastObject != null && !(lastLastObject is Spinner))// && !(lastObject is Slider))
             {
                 Vector2 lastLastCursorPosition = getEndCursorPosition((OsuHitObject)lastLastObject, clockRate);

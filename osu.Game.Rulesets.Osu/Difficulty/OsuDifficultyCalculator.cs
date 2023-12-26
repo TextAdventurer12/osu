@@ -42,8 +42,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedNotes = ((Speed)skills[2]).RelevantNoteCount();
             double flashlightRating = Math.Sqrt(skills[3].DifficultyValue()) * difficulty_multiplier;
 
-            double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
-
             if (mods.Any(m => m is OsuModTouchDevice))
             {
                 aimRating = Math.Pow(aimRating, 0.8);
@@ -58,8 +56,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             double baseAimPerformance = Math.Pow(5 * Math.Max(1, aimRating / 0.0675) - 4, 3) / 100000;
+            double baseAimNoSlidersPerformance = Math.Pow(5 * Math.Max(1, aimRatingNoSliders / 0.0675) - 4, 3) / 100000;
             double baseSpeedPerformance = Math.Pow(5 * Math.Max(1, speedRating / 0.0675) - 4, 3) / 100000;
             double baseFlashlightPerformance = 0.0;
+
+            double sliderFactor = baseAimPerformance > 0 ? baseAimNoSlidersPerformance / baseAimPerformance : 1;
 
             if (mods.Any(h => h is OsuModFlashlight))
                 baseFlashlightPerformance = Math.Pow(flashlightRating, 2.0) * 25.0;
