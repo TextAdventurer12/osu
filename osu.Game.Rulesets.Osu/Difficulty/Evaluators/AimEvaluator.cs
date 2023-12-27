@@ -117,11 +117,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Slider stuff.
             double sustainedSliderStrain = 0.0;
 
-            if (osuCurrObj.SliderSubObjects.Count != 0 && withSliderTravelDistance)
+            if (osuCurrObj.SliderSubObjects.Count != 0)
                 sustainedSliderStrain = calculateSustainedSliderStrain(osuCurrObj, strainDecayBase, withSliderTravelDistance);
             
             // Apply slider strain with constant adjustment
-            aimStrain += 1.5 * sustainedSliderStrain;
+            aimStrain += 2 * sustainedSliderStrain;
 
             // AR buff for aim.
             double arBuff = (1.0 + 0.05 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
@@ -136,7 +136,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double sliderRadius = 2.4 * osuCurrObj.Radius;
             double linearDifficulty = 32.0 / osuCurrObj.Radius;
 
+            var previousHistoryVector = new Vector2(0,0);
             var historyVector = new Vector2(0,0);
+            var priorMinimalPos = new Vector2(0,0);
             double historyTime = 0;
             double historyDistance = 0;
 
@@ -150,17 +152,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 double noteStrain = 0;
 
-                if (index == 0 && osuCurrObj.SliderSubObjects.Count > 1)
-                    noteStrain = Math.Max(0, linearDifficulty * subObject.Movement.Length) / subObject.StrainTime;
+                // if (index == 0 && osuCurrObj.SliderSubObjects.Count > 1)
+                //     noteStrain = Math.Max(0, linearDifficulty * subObject.Movement.Length - 2 * osuCurrObj.Radius) / subObject.StrainTime;
 
                 historyVector += subObject.Movement;
                 historyTime += subObject.StrainTime;
                 historyDistance += subObject.Movement.Length;
                 
-                if (historyVector.Length > sliderRadius * 2.0)
+                if ((historyVector - priorMinimalPos).Length > sliderRadius)
                 {
-                    noteStrain += linearDifficulty * historyDistance / historyTime;
+                    double angleBonus = Math.Min(previousHistoryVector.Length, Math.Min((previousHistoryVector - historyVector).Length, (previousHistoryVector + historyVector).Length));
 
+                    noteStrain += linearDifficulty * (historyDistance + angleBonus - sliderRadius) / historyTime;
+
+                    previousHistoryVector = historyVector;
+                    priorMinimalPos = Vector2.Multiply(historyVector, (float) - sliderRadius / historyVector.Length);
                     historyVector = new Vector2(0,0);
                     historyTime = 0;
                     historyDistance = 0;
@@ -168,17 +174,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 currentStrain *= Math.Pow(strainDecayBase, subObject.StrainTime / 1000.0); // TODO bug here using strainTime.
                 currentStrain += noteStrain;
+                peakStrain = Math.Max(peakStrain, currentStrain);
 
                 index += 1;
             }
 
             if (historyTime > 0 && withSliderTravelDistance)
-            {
-                if (osuCurrObj.SliderSubObjects.Count > 1)
-                    currentStrain += Math.Max(0, linearDifficulty * Math.Max(0, historyVector.Length) / historyTime);
-                else
-                    currentStrain += Math.Max(0, linearDifficulty * Math.Max(0, historyVector.Length - 2 * osuCurrObj.Radius) / historyTime);
-            }
+                currentStrain += Math.Max(0, linearDifficulty * Math.Max(0, historyDistance - 2 * osuCurrObj.Radius) / historyTime);
 
             return Math.Max(currentStrain, peakStrain);
         }
