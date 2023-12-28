@@ -5,6 +5,7 @@ using System;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using System.Collections.Generic;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
@@ -21,24 +22,42 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private readonly bool withSliders;
 
-        private double currentStrain;
+        private double currentFlowStrain;        
+        private double currentSnapStrain;
+        private double realStrain;
 
         private double skillMultiplier => 32;//38.75;
         // private double skillMultiplier => 23.55;
         private double strainDecayBase => 0.15;
 
+        private readonly List<double> flowStrains = new List<double>();
+        private readonly List<double> snapStrains = new List<double>();
+
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
 
-        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => currentStrain * strainDecay(time - current.Previous(0).StartTime);
+        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => realStrain * strainDecay(time - current.Previous(0).StartTime);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-            currentStrain *= strainDecay(current.DeltaTime);
+            currentFlowStrain *= strainDecay(current.DeltaTime);
+            currentSnapStrain *= strainDecay(current.DeltaTime);
 
             double currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
-            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase, currentRhythm) * skillMultiplier;
 
-            return currentStrain;
+            (double, bool) aimResult = AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase, currentRhythm);
+
+            double aimStrain = aimResult.Item1 * skillMultiplier;
+            bool wasFlow = aimResult.Item2;
+
+            if (wasFlow)
+                currentFlowStrain += aimStrain;
+            else
+                currentSnapStrain += aimStrain;
+
+            double p = 2;
+            realStrain = currentFlowStrain + currentSnapStrain + (Math.Pow(Math.Pow(currentFlowStrain, p) + Math.Pow(currentSnapStrain, p), 1.0 / p) - Math.Max(currentFlowStrain, currentSnapStrain));
+
+            return realStrain;
         }
     }
 }
