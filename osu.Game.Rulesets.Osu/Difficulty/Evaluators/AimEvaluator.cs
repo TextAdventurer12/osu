@@ -161,7 +161,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 
                 if ((historyVector - priorMinimalPos).Length > sliderRadius)
                 {
-                    double angleBonus = Math.Min(Math.Min(previousHistoryVector.Length, historyVector.Length), Math.Min((previousHistoryVector - historyVector).Length, (previousHistoryVector + historyVector).Length));
+                    double angleBonus = 2 * Math.Min(Math.Min(previousHistoryVector.Length, historyVector.Length), Math.Min((previousHistoryVector - historyVector).Length, (previousHistoryVector + historyVector).Length));
 
                     noteStrain += linearDifficulty * (historyDistance + angleBonus - sliderRadius) / historyTime;
 
