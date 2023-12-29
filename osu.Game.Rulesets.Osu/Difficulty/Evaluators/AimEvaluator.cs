@@ -28,21 +28,19 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         /// <item><description>and slider difficulty.</description></item>
         /// </list>
         /// </summary>
-        public static (double, bool) EvaluateDifficultyOf(DifficultyHitObject current, bool withSliderTravelDistance, double strainDecayBase, double currentRhythm)
+        public static (double, double) EvaluateDifficultyOf(DifficultyHitObject current, bool withSliderTravelDistance, double strainDecayBase, double currentRhythm)
         {
             if (current.Index <= 2 || 
                 current.BaseObject is Spinner || 
                 current.Previous(0).BaseObject is Spinner ||
                 current.Previous(1).BaseObject is Spinner ||
                 current.Previous(2).BaseObject is Spinner)
-                return (0, true);
+                return (0, 0);
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuLastObj0 = (OsuDifficultyHitObject)current.Previous(0);
             var osuLastObj1 = (OsuDifficultyHitObject)current.Previous(1);
             var osuLastObj2 = (OsuDifficultyHitObject)current.Previous(2);
-
-            double aimStrain = 0;
 
             //////////////////////// CIRCLE SIZE /////////////////////////
             double linearDifficulty = 32.0 / osuCurrObj.Radius;
@@ -105,23 +103,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             flowDifficulty = flowDifficulty * 1.35;
             snapDifficulty = snapDifficulty * 0.9;
 
-            // Used in an LP sum to buff ambiguous snap flow scenarios.
-            // double p = 4.0;
-            double minStrain = Math.Min(snapDifficulty, flowDifficulty);
-
-            // aimStrain = Math.Pow(Math.Pow(Math.Max(0, minStrain - Math.Abs(snapDifficulty - minStrain)), p) + Math.Pow(Math.Max(0, minStrain - Math.Abs(flowDifficulty - minStrain)), p), 1.0 / p);
-
-            aimStrain = minStrain;
-
             // Buff cases where the holding of a slider makes the subsequent jump harder, even with leniency abuse.
-            aimStrain = Math.Max(aimStrain, (aimStrain - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
+            flowDifficulty = Math.Max(flowDifficulty, (flowDifficulty - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
+            snapDifficulty = Math.Max(snapDifficulty, (snapDifficulty - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
             // Apply small CS buff.
-            aimStrain *= Math.Sqrt(linearDifficulty);
-
-            // Arbitrary cap to bonuses because balancing is hard.
-            // aimStrain = Math.Min(aimStrain, linearDifficulty * currVelocity * 3.25);
-
+            flowDifficulty *= Math.Sqrt(linearDifficulty);
+            snapDifficulty *= Math.Sqrt(linearDifficulty);
+            
             // Slider stuff.
             double sustainedSliderStrain = 0.0;
 
@@ -129,17 +118,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 sustainedSliderStrain = calculateSustainedSliderStrain(osuCurrObj, strainDecayBase, withSliderTravelDistance);
             
             // Apply slider strain with constant adjustment
-            aimStrain += 2 * sustainedSliderStrain;
+            flowDifficulty += 2 * sustainedSliderStrain;
+            snapDifficulty += 2 * sustainedSliderStrain;
 
             // AR buff for aim.
             double arBuff = (1.0 + 0.05 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
 
-            // Report back if this was snap or flow
-            bool wasFlow = false;
-            if (snapDifficulty < flowDifficulty)
-                wasFlow = true;
-
-            return (arBuff * aimStrain, wasFlow);
+            return (arBuff * flowDifficulty, arBuff * snapDifficulty);
         }
 
         private static double calculateSustainedSliderStrain(OsuDifficultyHitObject osuCurrObj, double strainDecayBase, bool withSliderTravelDistance)

@@ -44,15 +44,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
 
-            (double, bool) aimResult = AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase, currentRhythm);
+            (double, double) aimResult = AimEvaluator.EvaluateDifficultyOf(current, withSliders, strainDecayBase, currentRhythm);
 
-            double aimStrain = aimResult.Item1 * skillMultiplier;
-            bool wasFlow = aimResult.Item2;
+            double flowStrain = aimResult.Item1 * skillMultiplier;
+            double snapStrain = aimResult.Item2 * skillMultiplier;
 
-            if (wasFlow)
-                currentFlowStrain += aimStrain;
+            if (flowStrain < snapStrain)
+                currentFlowStrain += flowStrain;
             else
-                currentSnapStrain += aimStrain;
+                currentSnapStrain += snapStrain;
 
             double p = 2;
             realStrain = currentFlowStrain + currentSnapStrain + (Math.Pow(Math.Pow(currentFlowStrain, p) + Math.Pow(currentSnapStrain, p), 1.0 / p) - Math.Max(currentFlowStrain, currentSnapStrain));
