@@ -132,6 +132,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             aimValue *= 0.98 + Math.Pow(100.0 / 9, 2) / 2500; // OD 11 SS stays the same.
+
+            aimValue *= accuracy;
             
             return aimValue;
         }
