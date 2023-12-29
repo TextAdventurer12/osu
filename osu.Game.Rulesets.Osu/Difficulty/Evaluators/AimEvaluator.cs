@@ -66,7 +66,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double snapDifficulty = linearDifficulty * (currMovement.Length / (osuCurrObj.StrainTime - 20) + (osuCurrObj.Radius * 2) / (Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime) - 20));
 
             // Arbitrary buff for high bpm snap because its hard.
-            snapDifficulty *= Math.Sqrt(Math.Max(1, 100 / osuCurrObj.StrainTime));
+            snapDifficulty *= Math.Pow(Math.Max(1, 100 / osuCurrObj.StrainTime), 0.75);
 
             // Begin angle and weird rewards.
             double currVelocity = currMovement.Length / osuCurrObj.StrainTime;
@@ -108,7 +108,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             snapDifficulty = Math.Max(snapDifficulty, (snapDifficulty - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
             // Apply small CS buff.
-            flowDifficulty *= Math.Sqrt(linearDifficulty);
+            // flowDifficulty *= Math.Sqrt(linearDifficulty);
             snapDifficulty *= Math.Sqrt(linearDifficulty);
             
             // Slider stuff.
@@ -118,8 +118,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 sustainedSliderStrain = calculateSustainedSliderStrain(osuCurrObj, strainDecayBase, withSliderTravelDistance);
             
             // Apply slider strain with constant adjustment
-            flowDifficulty += 2 * sustainedSliderStrain;
-            snapDifficulty += 2 * sustainedSliderStrain;
+            flowDifficulty += 2.4 * sustainedSliderStrain;
+            snapDifficulty += 2.4 * sustainedSliderStrain;
 
             // AR buff for aim.
             double arBuff = (1.0 + 0.05 * Math.Max(0.0, 400.0 - osuCurrObj.ApproachRateTime) / 100.0);
