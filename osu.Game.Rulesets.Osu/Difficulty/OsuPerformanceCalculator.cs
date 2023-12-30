@@ -105,8 +105,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             aimValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
-            if (attributes.ApproachRate < 8.0)
-                approachRateFactor = 0.05 * (8.0 - attributes.ApproachRate);
+            if (attributes.ApproachRate < 9.0)
+                approachRateFactor = 0.075 * (9.0 - attributes.ApproachRate);
 
             if (score.Mods.Any(h => h is OsuModRelax))
                 approachRateFactor = 0.0;

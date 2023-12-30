@@ -96,7 +96,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double flowVelChange = linearDifficulty * Math.Max(0, prevVelocity - currVelocity) * rhythmRatio;
             double snapVelChange = linearDifficulty * Math.Max(0, Math.Min(Math.Abs(currVelocity - prevVelocity) - Math.Min(currVelocity, prevVelocity), Math.Min(currVelocity, prevVelocity))) * rhythmRatio;
 
-            snapDifficulty += Math.Max(snapVelChange, snapAngle);
+            snapDifficulty += snapVelChange + snapAngle;
             flowDifficulty += Math.Max(flowVelChange, flowAngle);
 
             // Apply balancing parameters.
@@ -108,7 +108,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             snapDifficulty = Math.Max(snapDifficulty, (snapDifficulty - linearDifficulty * 2.4 * osuCurrObj.Radius / Math.Min(osuCurrObj.MovementTime, osuLastObj0.MovementTime)) * (osuCurrObj.StrainTime / osuCurrObj.MovementTime));   
         
             // Apply small CS buff.
-            // flowDifficulty *= Math.Sqrt(linearDifficulty);
             snapDifficulty *= Math.Sqrt(linearDifficulty);
             
             // Slider stuff.
