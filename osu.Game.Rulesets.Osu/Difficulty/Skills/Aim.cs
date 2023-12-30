@@ -54,7 +54,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             else
                 currentSnapStrain += snapStrain;
 
-            double p = 2;
+            double p = 4;
             realStrain = currentFlowStrain + currentSnapStrain + (Math.Pow(Math.Pow(currentFlowStrain, p) + Math.Pow(currentSnapStrain, p), 1.0 / p) - Math.Max(currentFlowStrain, currentSnapStrain));
 
             return realStrain;
