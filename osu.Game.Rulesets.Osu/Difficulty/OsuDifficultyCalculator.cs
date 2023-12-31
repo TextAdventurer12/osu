@@ -44,13 +44,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             if (mods.Any(m => m is OsuModTouchDevice))
             {
-                aimRating = Math.Pow(aimRating, 0.8);
+                aimRating = Math.Pow(aimRating, 0.85);
+                aimRatingNoSliders = Math.Pow(aimRatingNoSliders, 0.85);
                 flashlightRating = Math.Pow(flashlightRating, 0.8);
             }
 
             if (mods.Any(h => h is OsuModRelax))
             {
                 aimRating *= 0.9;
+                aimRatingNoSliders *= 0.9;
                 speedRating = 0.0;
                 flashlightRating *= 0.7;
             }
