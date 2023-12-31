@@ -67,7 +67,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // Snap Stuff
             // Reduce strain time by 25ms to account for stopping time.
-            double snapDifficulty = linearDifficulty * ((osuCurrObj.Radius * 2 + currMovement.Length) / Math.Min(currTime, osuCurrObj.StrainTime - 20));
+            double snapDifficulty = Math.Max(linearDifficulty * ((osuCurrObj.Radius * 2 + currMovement.Length) / (osuCurrObj.StrainTime - 20)),
+                                             linearDifficulty * currMovement.Length / currTime);
 
             // Arbitrary buff for high bpm snap because its hard.
             snapDifficulty *= Math.Pow(Math.Max(1, 100 / osuCurrObj.StrainTime), 0.75);
@@ -101,7 +102,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double snapVelChange = linearDifficulty * Math.Max(0, Math.Min(Math.Abs(currVelocity - prevVelocity) - Math.Min(currVelocity, prevVelocity), Math.Min(currVelocity, prevVelocity))) * rhythmRatio;
 
             snapDifficulty += snapVelChange + snapAngle;
-            flowDifficulty += Math.Max(flowVelChange, flowAngle);
+            flowDifficulty += flowVelChange + flowAngle;
 
             // Apply balancing parameters.
             flowDifficulty = flowDifficulty * 1.35;
