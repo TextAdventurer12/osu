@@ -44,7 +44,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             OsuDifficultyHitObject lastObj = osuCurrent;
 
-            // double angleRepeatCount = 0.0;
+            double angleRepeatCount = 0.0;
 
             // This is iterating backwards in time from the current object.
             for (int i = 0; i < Math.Min(current.Index, 10); i++)
@@ -70,12 +70,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                     result += stackNerf * opacityBonus * scalingFactor * jumpDistance / cumulativeStrainTime;
 
-                    // if (currentObj.Angle != null && osuCurrent.Angle != null)
-                    // {
-                    //     // Objects further back in time should count less for the nerf.
-                    //     if (Math.Abs(currentObj.Angle.Value - osuCurrent.Angle.Value) < 0.02)
-                    //         angleRepeatCount += Math.Max(1.0 - 0.1 * i, 0.0);
-                    // }
+                    if (currentObj.Angle != null && osuCurrent.Angle != null)
+                    {
+                        // Objects further back in time should count less for the nerf.
+                        if (Math.Abs(currentObj.Angle.Value - osuCurrent.Angle.Value) < 0.02)
+                            angleRepeatCount += Math.Max(1.0 - 0.1 * i, 0.0);
+                    }
                 }
 
                 lastObj = currentObj;
