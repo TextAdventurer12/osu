@@ -26,7 +26,7 @@ namespace osu.Game.Database
             if (score.IsLegacyScore)
                 return false;
 
-            if (score.TotalScoreVersion > 30000004)
+            if (score.TotalScoreVersion > 30000002)
                 return false;
 
             // Recalculate the old-style standardised score to see if this was an old lazer score.
@@ -57,14 +57,14 @@ namespace osu.Game.Database
             // We are constructing a "best possible" score from the statistics provided because it's the best we can do.
             List<HitResult> sortedHits = score.Statistics
                                               .Where(kvp => kvp.Key.AffectsCombo())
-                                              .OrderByDescending(kvp => Judgement.ToNumericResult(kvp.Key))
+                                              .OrderByDescending(kvp => processor.GetBaseScoreForResult(kvp.Key))
                                               .SelectMany(kvp => Enumerable.Repeat(kvp.Key, kvp.Value))
                                               .ToList();
 
             // Attempt to use maximum statistics from the database.
             var maximumJudgements = score.MaximumStatistics
                                          .Where(kvp => kvp.Key.AffectsCombo())
-                                         .OrderByDescending(kvp => Judgement.ToNumericResult(kvp.Key))
+                                         .OrderByDescending(kvp => processor.GetBaseScoreForResult(kvp.Key))
                                          .SelectMany(kvp => Enumerable.Repeat(new FakeJudgement(kvp.Key), kvp.Value))
                                          .ToList();
 
@@ -169,10 +169,10 @@ namespace osu.Game.Database
         public static long GetOldStandardised(ScoreInfo score)
         {
             double accuracyScore =
-                (double)score.Statistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => Judgement.ToNumericResult(kvp.Key) * kvp.Value)
-                / score.MaximumStatistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => Judgement.ToNumericResult(kvp.Key) * kvp.Value);
+                (double)score.Statistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => numericScoreFor(kvp.Key) * kvp.Value)
+                / score.MaximumStatistics.Where(kvp => kvp.Key.AffectsAccuracy()).Sum(kvp => numericScoreFor(kvp.Key) * kvp.Value);
             double comboScore = (double)score.MaxCombo / score.MaximumStatistics.Where(kvp => kvp.Key.AffectsCombo()).Sum(kvp => kvp.Value);
-            double bonusScore = score.Statistics.Where(kvp => kvp.Key.IsBonus()).Sum(kvp => Judgement.ToNumericResult(kvp.Key) * kvp.Value);
+            double bonusScore = score.Statistics.Where(kvp => kvp.Key.IsBonus()).Sum(kvp => numericScoreFor(kvp.Key) * kvp.Value);
 
             double accuracyPortion = 0.3;
 
@@ -193,6 +193,65 @@ namespace osu.Game.Database
                 modMultiplier *= mod.ScoreMultiplier;
 
             return (long)Math.Round((1000000 * (accuracyPortion * accuracyScore + (1 - accuracyPortion) * comboScore) + bonusScore) * modMultiplier);
+
+            static int numericScoreFor(HitResult result)
+            {
+                switch (result)
+                {
+                    default:
+                        return 0;
+
+                    case HitResult.SmallTickHit:
+                        return 10;
+
+                    case HitResult.LargeTickHit:
+                        return 30;
+
+                    case HitResult.Meh:
+                        return 50;
+
+                    case HitResult.Ok:
+                        return 100;
+
+                    case HitResult.Good:
+                        return 200;
+
+                    case HitResult.Great:
+                        return 300;
+
+                    case HitResult.Perfect:
+                        return 315;
+
+                    case HitResult.SmallBonus:
+                        return 10;
+
+                    case HitResult.LargeBonus:
+                        return 50;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates a legacy <see cref="ScoreInfo"/> to standardised scoring.
+        /// </summary>
+        /// <param name="score">The score to update.</param>
+        /// <param name="beatmaps">A <see cref="BeatmapManager"/> used for <see cref="WorkingBeatmap"/> lookups.</param>
+        public static void UpdateFromLegacy(ScoreInfo score, BeatmapManager beatmaps)
+        {
+            score.TotalScore = convertFromLegacyTotalScore(score, beatmaps);
+            score.Accuracy = ComputeAccuracy(score);
+        }
+
+        /// <summary>
+        /// Updates a legacy <see cref="ScoreInfo"/> to standardised scoring.
+        /// </summary>
+        /// <param name="score">The score to update.</param>
+        /// <param name="difficulty">The beatmap difficulty.</param>
+        /// <param name="attributes">The legacy scoring attributes for the beatmap which the score was set on.</param>
+        public static void UpdateFromLegacy(ScoreInfo score, LegacyBeatmapConversionDifficultyInfo difficulty, LegacyScoreAttributes attributes)
+        {
+            score.TotalScore = convertFromLegacyTotalScore(score, difficulty, attributes);
+            score.Accuracy = ComputeAccuracy(score);
         }
 
         /// <summary>
@@ -201,7 +260,7 @@ namespace osu.Game.Database
         /// <param name="score">The score to convert the total score of.</param>
         /// <param name="beatmaps">A <see cref="BeatmapManager"/> used for <see cref="WorkingBeatmap"/> lookups.</param>
         /// <returns>The standardised total score.</returns>
-        public static long ConvertFromLegacyTotalScore(ScoreInfo score, BeatmapManager beatmaps)
+        private static long convertFromLegacyTotalScore(ScoreInfo score, BeatmapManager beatmaps)
         {
             if (!score.IsLegacyScore)
                 return score.TotalScore;
@@ -224,7 +283,7 @@ namespace osu.Game.Database
             ILegacyScoreSimulator sv1Simulator = legacyRuleset.CreateLegacyScoreSimulator();
             LegacyScoreAttributes attributes = sv1Simulator.Simulate(beatmap, playableBeatmap);
 
-            return ConvertFromLegacyTotalScore(score, LegacyBeatmapConversionDifficultyInfo.FromBeatmap(beatmap.Beatmap), attributes);
+            return convertFromLegacyTotalScore(score, LegacyBeatmapConversionDifficultyInfo.FromBeatmap(beatmap.Beatmap), attributes);
         }
 
         /// <summary>
@@ -234,7 +293,7 @@ namespace osu.Game.Database
         /// <param name="difficulty">The beatmap difficulty.</param>
         /// <param name="attributes">The legacy scoring attributes for the beatmap which the score was set on.</param>
         /// <returns>The standardised total score.</returns>
-        public static long ConvertFromLegacyTotalScore(ScoreInfo score, LegacyBeatmapConversionDifficultyInfo difficulty, LegacyScoreAttributes attributes)
+        private static long convertFromLegacyTotalScore(ScoreInfo score, LegacyBeatmapConversionDifficultyInfo difficulty, LegacyScoreAttributes attributes)
         {
             if (!score.IsLegacyScore)
                 return score.TotalScore;
@@ -253,14 +312,20 @@ namespace osu.Game.Database
 
             double legacyAccScore = maximumLegacyAccuracyScore * score.Accuracy;
             // We can not separate the ComboScore from the BonusScore, so we keep the bonus in the ratio.
-            double comboProportion =
-                ((double)score.LegacyTotalScore - legacyAccScore) / (maximumLegacyComboScore + maximumLegacyBonusScore);
+            // Note that `maximumLegacyComboScore + maximumLegacyBonusScore` can actually be 0
+            // when playing a beatmap with no bonus objects, with mods that have a 0.0x multiplier on stable (relax/autopilot).
+            // In such cases, just assume 0.
+            double comboProportion = maximumLegacyComboScore + maximumLegacyBonusScore > 0
+                ? ((double)score.LegacyTotalScore - legacyAccScore) / (maximumLegacyComboScore + maximumLegacyBonusScore)
+                : 0;
 
             // We assume the bonus proportion only makes up the rest of the score that exceeds maximumLegacyBaseScore.
             long maximumLegacyBaseScore = maximumLegacyAccuracyScore + maximumLegacyComboScore;
             double bonusProportion = Math.Max(0, ((long)score.LegacyTotalScore - maximumLegacyBaseScore) * maximumLegacyBonusRatio);
 
             double modMultiplier = score.Mods.Select(m => m.ScoreMultiplier).Aggregate(1.0, (c, n) => c * n);
+
+            long convertedTotalScore;
 
             switch (score.Ruleset.OnlineID)
             {
@@ -293,12 +358,22 @@ namespace osu.Game.Database
                     // Roughly corresponds to integrating f(combo) = combo ^ COMBO_EXPONENT (omitting constants)
                     double maximumAchievableComboPortionInStandardisedScore = Math.Pow(maximumLegacyCombo, 1 + ScoreProcessor.COMBO_EXPONENT);
 
-                    double comboPortionInScoreV1 = maximumAchievableComboPortionInScoreV1 * comboProportion / score.Accuracy;
-
                     // This is - roughly - how much score, in the combo portion, the longest combo on this particular play would gain in score V1.
                     double comboPortionFromLongestComboInScoreV1 = Math.Pow(score.MaxCombo, 2);
                     // Same for standardised score.
                     double comboPortionFromLongestComboInStandardisedScore = Math.Pow(score.MaxCombo, 1 + ScoreProcessor.COMBO_EXPONENT);
+
+                    // We estimate the combo portion of the score in score V1 terms.
+                    // The division by accuracy is supposed to lessen the impact of accuracy on the combo portion,
+                    // but in some edge cases it cannot sanely undo it.
+                    // Therefore the resultant value is clamped from both sides for sanity.
+                    // The clamp from below to `comboPortionFromLongestComboInScoreV1` targets near-FC scores wherein
+                    // the player had bad accuracy at the end of their longest combo, which causes the division by accuracy
+                    // to underestimate the combo portion.
+                    // Ideally, this would be clamped from above to `maximumAchievableComboPortionInScoreV1` too,
+                    // but in practice this appears to fail for some scores (https://github.com/ppy/osu/pull/25876#issuecomment-1862248413).
+                    // TODO: investigate the above more closely
+                    double comboPortionInScoreV1 = Math.Max(maximumAchievableComboPortionInScoreV1 * comboProportion / score.Accuracy, comboPortionFromLongestComboInScoreV1);
 
                     // Calculate how many times the longest combo the user has achieved in the play can repeat
                     // without exceeding the combo portion in score V1 as achieved by the player.
@@ -348,32 +423,55 @@ namespace osu.Game.Database
 
                     double newComboScoreProportion = estimatedComboPortionInStandardisedScore / maximumAchievableComboPortionInStandardisedScore;
 
-                    return (long)Math.Round((
+                    convertedTotalScore = (long)Math.Round((
                         500000 * newComboScoreProportion * score.Accuracy
                         + 500000 * Math.Pow(score.Accuracy, 5)
                         + bonusProportion) * modMultiplier);
+                    break;
 
                 case 1:
-                    return (long)Math.Round((
+                    convertedTotalScore = (long)Math.Round((
                         250000 * comboProportion
                         + 750000 * Math.Pow(score.Accuracy, 3.6)
                         + bonusProportion) * modMultiplier);
+                    break;
 
                 case 2:
-                    return (long)Math.Round((
+                    convertedTotalScore = (long)Math.Round((
                         600000 * comboProportion
                         + 400000 * score.Accuracy
                         + bonusProportion) * modMultiplier);
+                    break;
 
                 case 3:
-                    return (long)Math.Round((
-                        990000 * comboProportion
-                        + 10000 * Math.Pow(score.Accuracy, 2 + 2 * score.Accuracy)
+                    convertedTotalScore = (long)Math.Round((
+                        850000 * comboProportion
+                        + 150000 * Math.Pow(score.Accuracy, 2 + 2 * score.Accuracy)
                         + bonusProportion) * modMultiplier);
+                    break;
 
                 default:
-                    return score.TotalScore;
+                    convertedTotalScore = score.TotalScore;
+                    break;
             }
+
+            if (convertedTotalScore < 0)
+                throw new InvalidOperationException($"Total score conversion operation returned invalid total of {convertedTotalScore}");
+
+            return convertedTotalScore;
+        }
+
+        public static double ComputeAccuracy(ScoreInfo scoreInfo)
+        {
+            Ruleset ruleset = scoreInfo.Ruleset.CreateInstance();
+            ScoreProcessor scoreProcessor = ruleset.CreateScoreProcessor();
+
+            int baseScore = scoreInfo.Statistics.Where(kvp => kvp.Key.AffectsAccuracy())
+                                     .Sum(kvp => kvp.Value * scoreProcessor.GetBaseScoreForResult(kvp.Key));
+            int maxBaseScore = scoreInfo.MaximumStatistics.Where(kvp => kvp.Key.AffectsAccuracy())
+                                        .Sum(kvp => kvp.Value * scoreProcessor.GetBaseScoreForResult(kvp.Key));
+
+            return maxBaseScore == 0 ? 1 : baseScore / (double)maxBaseScore;
         }
 
         /// <summary>
