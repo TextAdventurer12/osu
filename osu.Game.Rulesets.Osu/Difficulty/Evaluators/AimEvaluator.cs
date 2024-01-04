@@ -15,7 +15,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double flow_aim_multiplier = 1.4125;
         private const double slider_multiplier = 2.0;
 
-        private const double flow_angle_change_multiplier = 0.75;
+        private const double flow_angle_change_multiplier = 0.7;
 
         /// <summary>
         /// Evaluates the difficulty of aiming the current object, based on:
