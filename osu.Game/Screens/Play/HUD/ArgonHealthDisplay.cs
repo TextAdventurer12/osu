@@ -4,6 +4,7 @@
 using System;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Caching;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
@@ -54,7 +55,33 @@ namespace osu.Game.Screens.Play.HUD
 
         private double glowBarValue;
 
+        public double GlowBarValue
+        {
+            get => glowBarValue;
+            set
+            {
+                if (Precision.AlmostEquals(glowBarValue, value, 0.0001))
+                    return;
+
+                glowBarValue = value;
+                pathVerticesCache.Invalidate();
+            }
+        }
+
         private double healthBarValue;
+
+        public double HealthBarValue
+        {
+            get => healthBarValue;
+            set
+            {
+                if (Precision.AlmostEquals(healthBarValue, value, 0.0001))
+                    return;
+
+                healthBarValue = value;
+                pathVerticesCache.Invalidate();
+            }
+        }
 
         public const float MAIN_PATH_RADIUS = 10f;
         private const float padding = MAIN_PATH_RADIUS * 2;
@@ -62,6 +89,8 @@ namespace osu.Game.Screens.Play.HUD
         private const float main_path_glow_portion = 0.6f;
 
         private readonly LayoutValue drawSizeLayout = new LayoutValue(Invalidation.DrawSize);
+
+        private readonly Cached pathVerticesCache = new Cached();
 
         public ArgonHealthDisplay()
         {
@@ -160,9 +189,8 @@ namespace osu.Game.Screens.Play.HUD
                 drawSizeLayout.Validate();
             }
 
-            healthBarValue = Interpolation.DampContinuously(healthBarValue, Current.Value, 50, Time.Elapsed);
-            if (!displayingMiss)
-                glowBarValue = Interpolation.DampContinuously(glowBarValue, Current.Value, 50, Time.Elapsed);
+            if (!pathVerticesCache.IsValid)
+                updatePathVertices();
 
             mainBar.Alpha = (float)Interpolation.DampContinuously(mainBar.Alpha, Current.Value > 0 ? 1 : 0, 40, Time.Elapsed);
             glowBar.Alpha = (float)Interpolation.DampContinuously(glowBar.Alpha, glowBarValue > 0 ? 1 : 0, 40, Time.Elapsed);
