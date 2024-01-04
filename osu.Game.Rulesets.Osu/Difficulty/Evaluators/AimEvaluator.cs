@@ -89,7 +89,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 // We reward wide angles on snap.
                 snapAngle = snapBuff * linearDifficulty * calculateAngleSpline(Math.Abs(currAngle), false) * Math.Min(minVelocity, (currMovement + prevMovement).Length / Math.Max(osuCurrObj.StrainTime, osuLastObj0.StrainTime));
 
-                // Mininamal differnce for buff is 60 degrees
+                // Minimal differnce for buff is 60 degrees
                 double angleDifference = Math.Max(0, Math.Abs(currAngle - lastAngle) - Math.PI / 3);
                 double angleChange = flow_angle_change_multiplier * Math.Sin(angleDifference / 2) * linearDifficulty * minVelocity;
 
