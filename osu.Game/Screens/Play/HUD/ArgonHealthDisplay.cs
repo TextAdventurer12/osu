@@ -4,7 +4,6 @@
 using System;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Caching;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
@@ -89,8 +88,6 @@ namespace osu.Game.Screens.Play.HUD
         private const float main_path_glow_portion = 0.6f;
 
         private readonly LayoutValue drawSizeLayout = new LayoutValue(Invalidation.DrawSize);
-
-        private readonly Cached pathVerticesCache = new Cached();
 
         public ArgonHealthDisplay()
         {
