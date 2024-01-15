@@ -157,6 +157,8 @@ namespace osu.Game.Overlays.Login
                         },
                     };
 
+                    api.LocalUser.Value.Status.BindValueChanged(e => updateDropdownCurrent(e.NewValue), true);
+
                     dropdown.Current.BindValueChanged(action =>
                     {
                         switch (action.NewValue)
