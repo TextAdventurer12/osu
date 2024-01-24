@@ -1,16 +1,14 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Net;
-using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using osu.Framework.Extensions.TypeExtensions;
-using osu.Framework.Logging;
+using osu.Game.Online.API;
+using osu.Game.Online.API.Requests;
+using osu.Game.Online.Chat;
 
 namespace osu.Game.Online.Notifications.WebSocket
 {
@@ -19,97 +17,86 @@ namespace osu.Game.Online.Notifications.WebSocket
     /// </summary>
     public class WebSocketNotificationsClient : PersistentEndpointClient
     {
-        public event Action<SocketMessage>? MessageReceived;
+        private readonly OsuClientWebSocket socket;
+        private readonly ConcurrentDictionary<long, Channel> channelsMap = new ConcurrentDictionary<long, Channel>();
 
-        private readonly ClientWebSocket socket;
-        private readonly string endpoint;
-
-        public WebSocketNotificationsClient(ClientWebSocket socket, string endpoint)
+        public WebSocketNotificationsClient(IAPIProvider api, string endpoint)
+            : base(api)
         {
-            this.socket = socket;
-            this.endpoint = endpoint;
+            socket = new OsuClientWebSocket(api, endpoint);
+            socket.MessageReceived += onMessageReceivedAsync;
+            socket.Closed += InvokeClosed;
         }
 
         public override async Task ConnectAsync(CancellationToken cancellationToken)
         {
-            await socket.ConnectAsync(new Uri(endpoint), cancellationToken).ConfigureAwait(false);
-            runReadLoop(cancellationToken);
+            await socket.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await socket.SendMessage(new StartChatRequest(), CancellationToken.None).ConfigureAwait(false);
+
+            await base.ConnectAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private void runReadLoop(CancellationToken cancellationToken) => Task.Run(async () =>
+        private async Task onMessageReceivedAsync(SocketMessage message)
         {
-            byte[] buffer = new byte[1024];
-            StringBuilder messageResult = new StringBuilder();
-
-            while (!cancellationToken.IsCancellationRequested)
+            switch (message.Event)
             {
-                try
-                {
-                    WebSocketReceiveResult result = await socket.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
+                case @"chat.channel.join":
+                    Debug.Assert(message.Data != null);
 
-                    switch (result.MessageType)
-                    {
-                        case WebSocketMessageType.Text:
-                            messageResult.Append(Encoding.UTF8.GetString(buffer[..result.Count]));
+                    Channel? joinedChannel = JsonConvert.DeserializeObject<Channel>(message.Data.ToString());
+                    Debug.Assert(joinedChannel != null);
 
-                            if (result.EndOfMessage)
-                            {
-                                SocketMessage? message = JsonConvert.DeserializeObject<SocketMessage>(messageResult.ToString());
-                                messageResult.Clear();
+                    HandleChannelJoined(joinedChannel);
+                    break;
 
-                                Debug.Assert(message != null);
+                case @"chat.channel.part":
+                    Debug.Assert(message.Data != null);
 
-                                if (message.Error != null)
-                                {
-                                    Logger.Log($"{GetType().ReadableName()} error: {message.Error}", LoggingTarget.Network);
-                                    break;
-                                }
+                    Channel? partedChannel = JsonConvert.DeserializeObject<Channel>(message.Data.ToString());
+                    Debug.Assert(partedChannel != null);
 
-                                MessageReceived?.Invoke(message);
-                            }
+                    HandleChannelParted(partedChannel);
+                    break;
 
-                            break;
+                case @"chat.message.new":
+                    Debug.Assert(message.Data != null);
 
-                        case WebSocketMessageType.Binary:
-                            throw new NotImplementedException("Binary message type not supported.");
+                    NewChatMessageData? messageData = JsonConvert.DeserializeObject<NewChatMessageData>(message.Data.ToString());
+                    Debug.Assert(messageData != null);
 
-                        case WebSocketMessageType.Close:
-                            throw new WebException("Connection closed by remote host.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await InvokeClosed(ex).ConfigureAwait(false);
-                    return;
-                }
-            }
-        }, cancellationToken);
+                    foreach (var msg in messageData.Messages)
+                        HandleChannelJoined(await getChannel(msg.ChannelId).ConfigureAwait(false));
 
-        private async Task closeAsync()
-        {
-            try
-            {
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, @"Disconnecting", CancellationToken.None).ConfigureAwait(false);
-            }
-            catch
-            {
-                // Closure can fail if the connection is aborted. Don't really care since it's disposed anyway.
+                    HandleMessages(messageData.Messages);
+                    break;
             }
         }
 
-        public async Task SendAsync(SocketMessage message, CancellationToken? cancellationToken = default)
+        private async Task<Channel> getChannel(long channelId)
         {
-            if (socket.State != WebSocketState.Open)
-                return;
+            if (channelsMap.TryGetValue(channelId, out Channel? channel))
+                return channel;
 
-            await socket.SendAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message)), WebSocketMessageType.Text, true, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            var tsc = new TaskCompletionSource<Channel>();
+            var req = new GetChannelRequest(channelId);
+
+            req.Success += response =>
+            {
+                channelsMap[channelId] = response.Channel;
+                tsc.SetResult(response.Channel);
+            };
+
+            req.Failure += ex => tsc.SetException(ex);
+
+            API.Queue(req);
+
+            return await tsc.Task.ConfigureAwait(false);
         }
 
         public override async ValueTask DisposeAsync()
         {
             await base.DisposeAsync().ConfigureAwait(false);
-            await closeAsync().ConfigureAwait(false);
-            socket.Dispose();
+            await socket.DisposeAsync().ConfigureAwait(false);
         }
     }
 }
