@@ -135,6 +135,41 @@ namespace osu.Game.Tests.Visual.Menus
             AddUntilStep($"login state is {expected}", () => API.State.Value, () => Is.EqualTo(expected));
 
         [Test]
+        public void TestVerificationFailure()
+        {
+            bool verificationHandled = false;
+            AddStep("reset flag", () => verificationHandled = false);
+            AddStep("logout", () => API.Logout());
+            assertAPIState(APIState.Offline);
+
+            AddStep("enter password", () => loginOverlay.ChildrenOfType<OsuPasswordTextBox>().First().Text = "password");
+            AddStep("submit", () => loginOverlay.ChildrenOfType<OsuButton>().First(b => b.Text.ToString() == "Sign in").TriggerClick());
+
+            assertAPIState(APIState.RequiresSecondFactorAuth);
+            AddUntilStep("wait for second factor auth form", () => loginOverlay.ChildrenOfType<SecondFactorAuthForm>().SingleOrDefault(), () => Is.Not.Null);
+
+            AddStep("set up verification handling", () => dummyAPI.HandleRequest = req =>
+            {
+                switch (req)
+                {
+                    case VerifySessionRequest verifySessionRequest:
+                        if (verifySessionRequest.VerificationKey == "88800088")
+                            verifySessionRequest.TriggerSuccess();
+                        else
+                            verifySessionRequest.TriggerFailure(new WebException());
+                        verificationHandled = true;
+                        return true;
+                }
+
+                return false;
+            });
+            AddStep("enter code", () => loginOverlay.ChildrenOfType<OsuTextBox>().First().Text = "abcdefgh");
+            AddUntilStep("wait for verification handled", () => verificationHandled);
+            assertAPIState(APIState.RequiresSecondFactorAuth);
+            AddStep("clear handler", () => dummyAPI.HandleRequest = null);
+        }
+
+        [Test]
         public void TestLoginFailure()
         {
             AddStep("logout", () =>
