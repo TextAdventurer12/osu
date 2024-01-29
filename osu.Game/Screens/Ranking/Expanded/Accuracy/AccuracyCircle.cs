@@ -19,7 +19,6 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Skinning;
-using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Screens.Ranking.Expanded.Accuracy
@@ -296,7 +295,10 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
 
                 if (score.Rank != ScoreRank.F)
                 {
-                    foreach (var badge in badges)
+                    if (badge.Accuracy > score.Accuracy)
+                        continue;
+
+                    using (BeginDelayedSequence(inverseEasing(ACCURACY_TRANSFORM_EASING, Math.Min(accuracyX - VIRTUAL_SS_PERCENTAGE, badge.Accuracy) / targetAccuracy) * ACCURACY_TRANSFORM_DURATION))
                     {
                         if (badge.Accuracy > score.Accuracy)
                             continue;
