@@ -20,7 +20,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Utils;
+using osu.Game.Online.Rooms;
 using osuTK;
 
 namespace osu.Game.Overlays.Mods
@@ -42,6 +42,9 @@ namespace osu.Game.Overlays.Mods
         public Bindable<IBeatmapInfo?> BeatmapInfo { get; } = new Bindable<IBeatmapInfo?>();
 
         public Bindable<IReadOnlyList<Mod>> Mods { get; } = new Bindable<IReadOnlyList<Mod>>();
+
+        [Resolved(CanBeNull = true)]
+        private IBindable<PlaylistItem>? selectedItem { get; set; }
 
         public BindableBool Collapsed { get; } = new BindableBool(true);
 
@@ -168,11 +171,21 @@ namespace osu.Game.Overlays.Mods
                     starRatingDisplay.FinishTransforms(true);
             });
 
+            Ruleset ruleset = gameRuleset.Value.CreateInstance();
+
             double rate = 1;
             foreach (var mod in Mods.Value.OfType<IApplicableToRate>())
                 rate = mod.ApplyToRate(0, rate);
 
-            bpmDisplay.Current.Value = FormatUtils.RoundBPM(BeatmapInfo.Value.BPM, rate);
+            if (selectedItem != null && selectedItem.Value != null)
+            {
+                var globalMods = selectedItem.Value.RequiredMods.Select(m => m.ToMod(ruleset));
+
+                foreach (var mod in globalMods.OfType<IApplicableToRate>())
+                    rate = mod.ApplyToRate(0, rate);
+            }
+
+            bpmDisplay.Current.Value = BeatmapInfo.Value.BPM * rate;
 
             BeatmapDifficulty originalDifficulty = new BeatmapDifficulty(BeatmapInfo.Value.Difficulty);
 
