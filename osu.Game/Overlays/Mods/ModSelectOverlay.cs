@@ -136,8 +136,14 @@ namespace osu.Game.Overlays.Mods
         private DeselectAllModsButton deselectAllModsButton = null!;
 
         private Container aboveColumnsContent = null!;
-        private RankingInformationDisplay? rankingInformationDisplay;
-        private BeatmapAttributesDisplay? beatmapAttributesDisplay;
+        protected RankingInformationDisplay? RankingInformationDisplay;
+        protected BeatmapAttributesDisplay? BeatmapAttributesDisplay;
+        protected virtual BeatmapAttributesDisplay GetBeatmapAttributesDisplay => new BeatmapAttributesDisplay
+        {
+            Anchor = Anchor.BottomRight,
+            Origin = Anchor.BottomRight,
+            BeatmapInfo = { Value = Beatmap?.BeatmapInfo }
+        };
 
         protected ShearedButton BackButton { get; private set; } = null!;
         protected ShearedToggleButton? CustomisationButton { get; private set; }
@@ -155,8 +161,8 @@ namespace osu.Game.Overlays.Mods
                 if (beatmap == value) return;
 
                 beatmap = value;
-                if (IsLoaded && beatmapAttributesDisplay != null)
-                    beatmapAttributesDisplay.BeatmapInfo.Value = beatmap?.BeatmapInfo;
+                if (IsLoaded && BeatmapAttributesDisplay != null)
+                    BeatmapAttributesDisplay.BeatmapInfo.Value = beatmap?.BeatmapInfo;
             }
         }
 
@@ -278,7 +284,7 @@ namespace osu.Game.Overlays.Mods
                     },
                     Children = new Drawable[]
                     {
-                        rankingInformationDisplay = new RankingInformationDisplay
+                        RankingInformationDisplay = new RankingInformationDisplay
                         {
                             Anchor = Anchor.BottomRight,
                             Origin = Anchor.BottomRight
@@ -373,7 +379,7 @@ namespace osu.Game.Overlays.Mods
 
             SearchTextBox.PlaceholderText = SearchTextBox.HasFocus ? input_search_placeholder : tab_to_search_placeholder;
 
-            if (beatmapAttributesDisplay != null)
+            if (BeatmapAttributesDisplay != null)
             {
                 float rightEdgeOfLastButton = footerButtonFlow[^1].ScreenSpaceDrawQuad.TopRight.X;
 
@@ -385,7 +391,7 @@ namespace osu.Game.Overlays.Mods
 
                 // only update preview panel's collapsed state after we are fully visible, to ensure all the buttons are where we expect them to be.
                 if (Alpha == 1)
-                    beatmapAttributesDisplay.Collapsed.Value = screenIsntWideEnough;
+                    BeatmapAttributesDisplay.Collapsed.Value = screenIsntWideEnough;
 
                 footerContentFlow.LayoutDuration = 200;
                 footerContentFlow.LayoutEasing = Easing.OutQuint;
