@@ -22,7 +22,7 @@ using osu.Game.Graphics.Sprites;
 
 namespace osu.Game.Graphics.UserInterface
 {
-    public class OsuTabControl<T> : TabControl<T>
+    public partial class OsuTabControl<T> : TabControl<T>
     {
         private Color4 accentColour;
 
@@ -37,7 +37,7 @@ namespace osu.Game.Graphics.UserInterface
 
                 if (Dropdown is IHasAccentColour dropdown)
                     dropdown.AccentColour = value;
-                foreach (var i in TabContainer.Children.OfType<IHasAccentColour>())
+                foreach (var i in TabContainer.OfType<IHasAccentColour>())
                     i.AccentColour = value;
             }
         }
@@ -48,7 +48,7 @@ namespace osu.Game.Graphics.UserInterface
 
         protected override TabItem<T> CreateTabItem(T value) => new OsuTabItem(value);
 
-        protected virtual float StripWidth => TabContainer.Children.Sum(c => c.IsPresent ? c.DrawWidth + TabContainer.Spacing.X : 0) - TabContainer.Spacing.X;
+        protected virtual float StripWidth => TabContainer.Sum(c => c.IsPresent ? c.DrawWidth + TabContainer.Spacing.X : 0) - TabContainer.Spacing.X;
 
         /// <summary>
         /// Whether entries should be automatically populated if <typeparamref name="T"/> is an <see cref="Enum"/> type.
@@ -98,7 +98,7 @@ namespace osu.Game.Graphics.UserInterface
                 strip.Width = Interpolation.ValueAt(Math.Clamp(Clock.ElapsedFrameTime, 0, 1000), strip.Width, StripWidth, 0, 500, Easing.OutQuint);
         }
 
-        public class OsuTabItem : TabItem<T>, IHasAccentColour
+        public partial class OsuTabItem : TabItem<T>, IHasAccentColour
         {
             protected readonly SpriteText Text;
             protected readonly Box Bar;

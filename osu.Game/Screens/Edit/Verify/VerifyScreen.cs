@@ -13,7 +13,7 @@ using osu.Game.Rulesets.Edit.Checks.Components;
 namespace osu.Game.Screens.Edit.Verify
 {
     [Cached]
-    public class VerifyScreen : EditorScreen
+    public partial class VerifyScreen : EditorScreen
     {
         public readonly Bindable<Issue> SelectedIssue = new Bindable<Issue>();
 
@@ -55,6 +55,12 @@ namespace osu.Game.Screens.Edit.Verify
                     }
                 }
             };
+        }
+
+        protected override void PopIn()
+        {
+            base.PopIn();
+            IssueList.Refresh();
         }
     }
 }

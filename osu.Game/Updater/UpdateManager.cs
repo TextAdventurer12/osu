@@ -8,6 +8,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osuTK;
@@ -17,7 +18,7 @@ namespace osu.Game.Updater
     /// <summary>
     /// An update manager which only shows notifications after an update completes.
     /// </summary>
-    public class UpdateManager : CompositeDrawable
+    public partial class UpdateManager : CompositeDrawable
     {
         /// <summary>
         /// Whether this UpdateManager should be or is capable of checking for updates.
@@ -85,14 +86,14 @@ namespace osu.Game.Updater
         /// <returns>Whether any update is waiting. May return true if an error occured (there is potentially an update available).</returns>
         protected virtual Task<bool> PerformUpdateCheck() => Task.FromResult(false);
 
-        private class UpdateCompleteNotification : SimpleNotification
+        private partial class UpdateCompleteNotification : SimpleNotification
         {
             private readonly string version;
 
             public UpdateCompleteNotification(string version)
             {
                 this.version = version;
-                Text = $"You are now running osu! {version}.\nClick to see what's new!";
+                Text = NotificationsStrings.GameVersionAfterUpdate(version);
             }
 
             [BackgroundDependencyLoader]
@@ -110,15 +111,15 @@ namespace osu.Game.Updater
             }
         }
 
-        public class UpdateApplicationCompleteNotification : ProgressCompletionNotification
+        public partial class UpdateApplicationCompleteNotification : ProgressCompletionNotification
         {
             public UpdateApplicationCompleteNotification()
             {
-                Text = @"Update ready to install. Click to restart!";
+                Text = NotificationsStrings.UpdateReadyToInstall;
             }
         }
 
-        public class UpdateProgressNotification : ProgressNotification
+        public partial class UpdateProgressNotification : ProgressNotification
         {
             protected override Notification CreateCompletionNotification() => new UpdateApplicationCompleteNotification
             {
@@ -134,7 +135,7 @@ namespace osu.Game.Updater
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
-                        Icon = FontAwesome.Solid.Upload,
+                        Icon = FontAwesome.Solid.Download,
                         Size = new Vector2(34),
                         Colour = OsuColour.Gray(0.2f),
                         Depth = float.MaxValue,
@@ -166,13 +167,13 @@ namespace osu.Game.Updater
             {
                 State = ProgressNotificationState.Active;
                 Progress = 0;
-                Text = @"Downloading update...";
+                Text = NotificationsStrings.DownloadingUpdate;
             }
 
             public void StartInstall()
             {
                 Progress = 0;
-                Text = @"Installing update...";
+                Text = NotificationsStrings.InstallingUpdate;
             }
 
             public void FailDownload()
