@@ -79,7 +79,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         public double CountDifficultStrains()
         {
             double adjustedDifficulty = difficulty / 10;
-            return objectStrains.Sum(s => Math.Pow(s / adjustedDifficulty, 5));
+            return objectStrains.Sum(s => Math.Pow(Math.Min(1, s / adjustedDifficulty), 5));
         }
     }
 }
