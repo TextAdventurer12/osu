@@ -34,6 +34,27 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         public void TestComboBasedSize([Values] bool comboBasedSize) => CreateModTest(new ModTestData { Mod = new OsuModFlashlight { ComboBasedSize = { Value = comboBasedSize } }, PassCondition = () => true });
 
         [Test]
+        public void TestPlayfieldBasedSize()
+        {
+            ModFlashlight mod = new OsuModFlashlight();
+            CreateModTest(new ModTestData
+            {
+                Mod = mod,
+                PassCondition = () =>
+                {
+                    var flashlightOverlay = Player.DrawableRuleset.Overlays
+                                                  .ChildrenOfType<ModFlashlight<OsuHitObject>.Flashlight>()
+                                                  .First();
+
+                    return Precision.AlmostEquals(mod.DefaultFlashlightSize * .5f, flashlightOverlay.GetSize());
+                }
+            });
+
+            AddStep("adjust playfield scale", () =>
+                Player.DrawableRuleset.Playfield.Scale = new Vector2(.5f));
+        }
+
+        [Test]
         public void TestSliderDimsOnlyAfterStartTime()
         {
             bool sliderDimmedBeforeStartTime = false;
