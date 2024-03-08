@@ -91,7 +91,14 @@ namespace osu.Game.Storyboards
                 foreach (var l in loopingGroups)
                     latestEndTime = Math.Max(latestEndTime, l.StartTime + l.Duration * l.TotalIterations);
 
-                return latestEndTime;
+                // If the logic above fails to find anything or discarded by the fact that there are loops present, latestEndTime will be double.MaxValue
+                // and thus conservativeEndTime will be used.
+                double conservativeEndTime = Commands.EndTime;
+
+                foreach (var l in loopingGroups)
+                    conservativeEndTime = Math.Max(conservativeEndTime, l.StartTime + l.Duration * l.TotalIterations);
+
+                return Math.Min(latestEndTime, conservativeEndTime);
             }
         }
 
