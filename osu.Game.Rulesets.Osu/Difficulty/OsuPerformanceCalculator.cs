@@ -129,11 +129,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 // We want to give more reward for lower AR when it comes to aim and HD. This nerfs high AR and buffs lower AR.
                 aimValue *= 1.0 + 0.04 * (12.0 - attributes.ApproachRate);
             }
-            else if (score.Mods.Any(h => h is OsuModTraceable))
-            {
-                // The same as HD, placeholder bonus
-                aimValue *= 1.0 + 0.04 * (12.0 - attributes.ApproachRate);
-            }
 
             // We assume 15% of sliders in a map are difficult since there's no way to tell from the performance calculator.
             double estimateDifficultSliders = attributes.SliderCount * 0.15;
@@ -182,11 +177,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             else if (score.Mods.Any(m => m is OsuModHidden || m is OsuModTraceable))
             {
                 // We want to give more reward for lower AR when it comes to aim and HD. This nerfs high AR and buffs lower AR.
-                speedValue *= 1.0 + 0.04 * (12.0 - attributes.ApproachRate);
-            }
-            else if (score.Mods.Any(h => h is OsuModTraceable))
-            {
-                // The same as HD, placeholder bonus
                 speedValue *= 1.0 + 0.04 * (12.0 - attributes.ApproachRate);
             }
 
