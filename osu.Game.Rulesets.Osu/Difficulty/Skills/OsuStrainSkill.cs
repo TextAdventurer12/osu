@@ -74,12 +74,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         /// <summary>
         /// Returns the number of strains weighted against the top strain.
-        /// The result is scaled by clock rate as it affects the total number of strains.
         /// </summary>
         public double CountDifficultStrains()
         {
-            double adjustedDifficulty = difficulty / 10;
-            return objectStrains.Sum(s => Math.Pow(Math.Min(1, s / adjustedDifficulty), 5));
+            double singleStrain = difficulty / 10;
+            double topStrain = objectStrains.Max();
+            // return objectStrains.Sum(s => s >= singleStrain ? s / singleStrain : Math.Pow(s / singleStrain, 8)); // current branch ver
+            // return objectStrains.Sum(s => Math.Pow(s / topStrain, 4)); // live csr ver
+            return objectStrains.Sum(s => 1.3 / (1 + Math.Exp(-14.15 * (Math.Pow(s / singleStrain, 2) - 0.945))));
         }
     }
 }
