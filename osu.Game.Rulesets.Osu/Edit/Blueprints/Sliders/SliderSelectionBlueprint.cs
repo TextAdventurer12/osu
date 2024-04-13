@@ -311,7 +311,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             foreach (var splitPoint in controlPointsToSplitAt)
             {
-                if (splitPoint == controlPoints[0] || splitPoint == controlPoints[^1] || splitPoint.Type is null)
+                if (splitPoint == controlPoints[0] || splitPoint == controlPoints[^1] || splitPoint.Type == null)
                     continue;
 
                 // Split off the section of slider before this control point so the remaining control points to split are in the latter part of the slider.
@@ -416,8 +416,22 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             DrawableObject.SliderBody?.ToScreenSpace(DrawableObject.SliderBody.PathEndOffset) ?? BodyPiece.ToScreenSpace(BodyPiece.PathEndLocation)
         };
 
-        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) =>
-            BodyPiece.ReceivePositionalInputAt(screenSpacePos) || ControlPointVisualiser?.Pieces.Any(p => p.ReceivePositionalInputAt(screenSpacePos)) == true;
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+        {
+            if (BodyPiece.ReceivePositionalInputAt(screenSpacePos))
+                return true;
+
+            if (ControlPointVisualiser == null)
+                return false;
+
+            foreach (var p in ControlPointVisualiser.Pieces)
+            {
+                if (p.ReceivePositionalInputAt(screenSpacePos))
+                    return true;
+            }
+
+            return false;
+        }
 
         protected virtual SliderCircleOverlay CreateCircleOverlay(Slider slider, SliderPosition position) => new SliderCircleOverlay(slider, position);
     }
