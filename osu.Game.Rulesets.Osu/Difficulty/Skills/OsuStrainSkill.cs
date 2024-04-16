@@ -72,16 +72,20 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             return difficulty * DifficultyMultiplier;
         }
 
-        /// <summary>
-        /// Returns the number of strains weighted against the top strain.
-        /// </summary>
-        public double CountDifficultStrains()
+        public double CountDifficultStrainsBranch()
         {
             double singleStrain = difficulty / 10;
+            return objectStrains.Sum(s => 1.1 / (1 + Math.Exp(-10 * (s / singleStrain - 0.88))));
+        }
+        public double CountDifficultStrainsLive()
+        {
             double topStrain = objectStrains.Max();
-            // return objectStrains.Sum(s => s >= singleStrain ? s / singleStrain : Math.Pow(s / singleStrain, 8)); // current branch ver
-            // return objectStrains.Sum(s => Math.Pow(s / topStrain, 4)); // live csr ver
-            return objectStrains.Sum(s => 1.3 / (1 + Math.Exp(-14.15 * (Math.Pow(s / singleStrain, 2) - 0.945))));
+            return objectStrains.Sum(s => Math.Pow(s / topStrain, 4)); // live csr ver
+        }
+        public double CountDifficultStrainsTest()
+        {
+            double singleStrain = difficulty / 10;
+            return objectStrains.Sum(s => 1.1 / (1 + Math.Exp(-10 * (s / singleStrain - 0.88))));
         }
     }
 }
