@@ -39,12 +39,8 @@ namespace osu.Game.Scoring.Legacy
         [JsonProperty("client_version")]
         public string ClientVersion = string.Empty;
 
-        [JsonProperty("rank")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public ScoreRank? Rank;
-
-        [JsonProperty("user_id")]
-        public int UserID = -1;
+        [JsonProperty("total_score_without_mods")]
+        public long? TotalScoreWithoutMods { get; set; }
 
         [JsonProperty("total_score_without_mods")]
         public long? TotalScoreWithoutMods { get; set; }
