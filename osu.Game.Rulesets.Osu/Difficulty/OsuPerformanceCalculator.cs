@@ -21,8 +21,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         private int countOk;
         private int countMeh;
         private int countMiss;
+        private int countLargeTickMiss;
+        private int countSliderEndsDropped;
 
         private double effectiveMissCount;
+
+        private bool isLegacy;
 
         public OsuPerformanceCalculator()
             : base(new OsuRuleset())
@@ -39,7 +43,23 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             countOk = score.Statistics.GetValueOrDefault(HitResult.Ok);
             countMeh = score.Statistics.GetValueOrDefault(HitResult.Meh);
             countMiss = score.Statistics.GetValueOrDefault(HitResult.Miss);
+            countLargeTickMiss = score.Statistics.GetValueOrDefault(HitResult.LargeTickMiss);
+            countSliderEndsDropped = score.Statistics.GetValueOrDefault(HitResult.SmallTickMiss);
+
             effectiveMissCount = calculateEffectiveMissCount(osuAttributes);
+
+            // Legacy scores always don't have LargeTickMiss here, when lazer scores always do
+            isLegacy = !score.MaximumStatistics.ContainsKey(HitResult.LargeTickMiss);
+
+            if (!score.Mods.Any(h => h is OsuModClassic cl && cl.NoSliderHeadAccuracy.Value))
+            {
+                effectiveMissCount = countMiss;
+                countSliderEndsDropped = osuAttributes.SliderCount - score.Statistics.GetValueOrDefault(HitResult.SliderTailHit);
+            }
+            else if (!isLegacy)
+            {
+                effectiveMissCount = countMiss + countLargeTickMiss;
+            }
 
             double multiplier = PERFORMANCE_BASE_MULTIPLIER;
 
@@ -122,7 +142,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             if (attributes.SliderCount > 0)
             {
-                double estimateSliderEndsDropped = Math.Clamp(Math.Min(countOk + countMeh + countMiss, attributes.MaxCombo - scoreMaxCombo), 0, estimateDifficultSliders);
+                double estimateSliderEndsDropped;
+
+                if (isLegacy)
+                    estimateSliderEndsDropped = Math.Clamp(Math.Min(countOk + countMeh + countMiss, attributes.MaxCombo - scoreMaxCombo), 0, estimateDifficultSliders);
+                else
+                    estimateSliderEndsDropped = Math.Min(countSliderEndsDropped + countLargeTickMiss, estimateDifficultSliders);
+
                 double sliderNerfFactor = (1 - attributes.SliderFactor) * Math.Pow(1 - estimateSliderEndsDropped / estimateDifficultSliders, 3) + attributes.SliderFactor;
                 aimValue *= sliderNerfFactor;
             }
@@ -192,6 +218,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // This percentage only considers HitCircles of any value - in this part of the calculation we focus on hitting the timing hit window.
             double betterAccuracyPercentage;
             int amountHitObjectsWithAccuracy = attributes.HitCircleCount;
+
+            if (!score.Mods.Any(h => h is OsuModClassic cl && cl.NoSliderHeadAccuracy.Value))
+                amountHitObjectsWithAccuracy += attributes.SliderCount;
 
             if (amountHitObjectsWithAccuracy > 0)
                 betterAccuracyPercentage = ((countGreat - (totalHits - amountHitObjectsWithAccuracy)) * 6 + countOk * 2 + countMeh) / (double)(amountHitObjectsWithAccuracy * 6);
