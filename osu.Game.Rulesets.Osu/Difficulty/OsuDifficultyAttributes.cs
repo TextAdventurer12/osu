@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Difficulty.Preprocessing;
+
 
 namespace osu.Game.Rulesets.Osu.Difficulty
 {
@@ -63,6 +65,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// </remarks>
         [JsonProperty("overall_difficulty")]
         public double OverallDifficulty { get; set; }
+
+        public DifficultyHitObject[]? Objects { get; set; }
+        public double[]? AimStrains { get; set; }
+        public double[]? SpeedStrains { get; set;}
 
         /// <summary>
         /// The beatmap's drain rate. This doesn't scale with rate-adjusting mods.

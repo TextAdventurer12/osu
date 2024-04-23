@@ -83,12 +83,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         /// </summary>
         public double HitWindowGreat { get; private set; }
 
+        public int Combo { get; private set; }
+
         private readonly OsuHitObject? lastLastObject;
         private readonly OsuHitObject lastObject;
 
         public OsuDifficultyHitObject(HitObject hitObject, HitObject lastObject, HitObject? lastLastObject, double clockRate, List<DifficultyHitObject> objects, int index)
             : base(hitObject, lastObject, clockRate, objects, index)
         {
+            
             this.lastLastObject = lastLastObject as OsuHitObject;
             this.lastObject = (OsuHitObject)lastObject;
 
@@ -103,6 +106,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             {
                 HitWindowGreat = 2 * BaseObject.HitWindows.WindowFor(HitResult.Great) / clockRate;
             }
+
+            Combo = calcComboOfObject(hitObject);
+            if (Index > 0)
+                PreviousMaxCombo = ((OsuDifficultyHitObject)Previous(0)).CurrentMaxCombo;
+            else
+                PreviousMaxCombo = 0;
+            CurrentMaxCombo = PreviousMaxCombo + Combo;
 
             setDistances(clockRate);
         }
@@ -326,6 +336,28 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             }
 
             return pos;
+        }
+        
+        /// <summary>
+        /// Gets the max combo played before this current OsuHitObject.
+        /// </summary>
+        public int PreviousMaxCombo { get; private set; } = 0;
+
+        /// <summary>
+        /// Gets the max combo played after this current OsuHitObject.
+        /// </summary>
+        public int CurrentMaxCombo { get; private set; } = 0;
+
+        private int calcComboOfObject(HitObject hitObject)
+        {
+            if (hitObject is Slider slider)
+            {
+                if (slider.NestedHitObjects[1] is SliderRepeat)
+                    return slider.RepeatCount + 2;
+                else
+                    return slider.NestedHitObjects.Count;
+            }
+            else return 1;
         }
     }
 }

@@ -8,6 +8,8 @@ using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Difficulty.Preprocessing;
 
 namespace osu.Game.Rulesets.Osu.Difficulty
 {
@@ -23,6 +25,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         private int countMiss;
 
         private double effectiveMissCount;
+        private List<OsuDifficultyHitObject> objects = new List<OsuDifficultyHitObject>();
 
         public OsuPerformanceCalculator()
             : base(new OsuRuleset())
@@ -32,7 +35,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         protected override PerformanceAttributes CreatePerformanceAttributes(ScoreInfo score, DifficultyAttributes attributes)
         {
             var osuAttributes = (OsuDifficultyAttributes)attributes;
-
+            objects = new List<OsuDifficultyHitObject>();
             accuracy = score.Accuracy;
             scoreMaxCombo = score.MaxCombo;
             countGreat = score.Statistics.GetValueOrDefault(HitResult.Great);
@@ -61,6 +64,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 effectiveMissCount = Math.Min(effectiveMissCount + countOk * okMultiplier + countMeh * mehMultiplier, totalHits);
             }
 
+            if (osuAttributes.Objects is not null)
+
+            foreach (DifficultyHitObject obj in osuAttributes.Objects?? new DifficultyHitObject[1])
+                objects.Add((OsuDifficultyHitObject)obj);
+
             double aimValue = computeAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
             double accuracyValue = computeAccuracyValue(score, osuAttributes);
@@ -86,15 +94,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
-            double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
+            if (attributes.Objects is null || attributes.AimStrains is null)
+                return 0.0;
+            double rating = effectiveMissCount == 0 ? attributes.AimDifficulty : MinComboRating(objects, attributes.AimStrains.ToList(), attributes);
+            double aimValue = Math.Pow(5.0 * Math.Max(1.0, rating / 0.0675) - 4.0, 3.0) / 100000.0;
 
             double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
             aimValue *= lengthBonus;
 
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-            if (effectiveMissCount > 0)
-                aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), effectiveMissCount);
+            // if (effectiveMissCount > 0)
+            //     aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), effectiveMissCount);
 
             aimValue *= getComboScalingFactor(attributes);
 
@@ -139,17 +150,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax))
                 return 0.0;
 
-            double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
+            if (attributes.Objects is null || attributes.SpeedStrains is null)
+                return 0.0;
+
+            double rating = effectiveMissCount == 0 ? attributes.SpeedDifficulty : MinComboRating(objects, attributes.SpeedStrains.ToList(), attributes);
+            double speedValue = Math.Pow(5.0 * Math.Max(1.0, rating / 0.0675) - 4.0, 3.0) / 100000.0;
 
             double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
             speedValue *= lengthBonus;
 
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-            if (effectiveMissCount > 0)
-                speedValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
+            // if (effectiveMissCount > 0)
+            //     speedValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
 
-            speedValue *= getComboScalingFactor(attributes);
+            // speedValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -232,7 +247,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (effectiveMissCount > 0)
                 flashlightValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
 
-            flashlightValue *= getComboScalingFactor(attributes);
+            // flashlightValue *= getComboScalingFactor(attributes);
 
             // Account for shorter maps having a higher ratio of 0 combo/100 combo flashlight radius.
             flashlightValue *= 0.7 + 0.1 * Math.Min(1.0, totalHits / 200.0) +
@@ -262,6 +277,46 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             comboBasedMissCount = Math.Min(comboBasedMissCount, countOk + countMeh + countMiss);
 
             return Math.Max(countMiss, comboBasedMissCount);
+        }
+
+        public IEnumerable<Combo> MakeCombos(List<OsuDifficultyHitObject> objects, List<double> strains, OsuDifficultyAttributes attributes)
+        {
+            int i;
+            int lastComboIndex = 0;
+            for (lastComboIndex = 0; objects[lastComboIndex].CurrentMaxCombo + scoreMaxCombo < attributes.MaxCombo && lastComboIndex < objects.Count; lastComboIndex++);
+            Console.WriteLine($"Last Combo Index: {lastComboIndex}");
+            List<double> currSpan = new List<double>();
+            List<OsuDifficultyHitObject> currObjects = new List<OsuDifficultyHitObject>();
+            int combo = 0;
+            int startIndex = 0;
+            for (i = 0; combo < scoreMaxCombo && i < objects.Count; i++)
+            {
+                currSpan.Add(strains[i]);
+                currObjects.Add(objects[i]);
+                combo += objects[i].Combo;
+            }
+            Console.WriteLine($"first combo made, strainCount: {currSpan.Count}");
+            for (; startIndex < lastComboIndex; startIndex++)
+            {
+                yield return new Combo(new List<double>(currSpan), currObjects);
+                if (currObjects.Count == 0)
+                    yield break;
+                combo -= currObjects[0].Combo;
+                currObjects.RemoveAt(0);
+                currSpan.RemoveAt(0);
+                for (; combo < scoreMaxCombo && i < objects.Count; i++)
+                    combo += objects[i].Combo;
+            }
+        }
+        public double MinComboRating(List<OsuDifficultyHitObject> objects, List<double> strains, OsuDifficultyAttributes attributes)
+        {
+            if (scoreMaxCombo < objects.Max(o => o.Combo))
+                return 0;
+            List<Combo> combos = MakeCombos(objects, strains, attributes).ToList();
+            Console.WriteLine($"Made {combos.Count()} combos");
+            if (combos.Count == 0)
+                return 0;
+            return combos.Min(c => c.DifficultyValue());
         }
 
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);

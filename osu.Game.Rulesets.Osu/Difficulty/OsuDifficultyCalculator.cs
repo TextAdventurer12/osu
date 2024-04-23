@@ -108,6 +108,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 HitCircleCount = hitCirclesCount,
                 SliderCount = sliderCount,
                 SpinnerCount = spinnerCount,
+                Objects = getDifficultyHitObjects().ToArray(),
+                AimStrains = ((OsuStrainSkill)skills[0]).objectStrains.ToArray(),
+                SpeedStrains = ((OsuStrainSkill)skills[2]).objectStrains.ToArray()
             };
 
             return attributes;

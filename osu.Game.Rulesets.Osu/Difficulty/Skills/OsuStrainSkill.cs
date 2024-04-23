@@ -34,6 +34,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         /// </summary>
         protected virtual double DifficultyMultiplier => DEFAULT_DIFFICULTY_MULTIPLIER;
 
+        public List<double> objectStrains = new List<double>();
+
         protected OsuStrainSkill(Mod[] mods)
             : base(mods)
         {
@@ -50,6 +52,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             List<double> strains = peaks.OrderDescending().ToList();
 
+            if (strains.Count == 0)
+                return 0;
+
+            Console.WriteLine($"Average strain in StrainSkill: {strains.Average()}");
+
             // We are reducing the highest strains first to account for extreme difficulty spikes
             for (int i = 0; i < Math.Min(strains.Count, ReducedSectionCount); i++)
             {
@@ -65,6 +72,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 weight *= DecayWeight;
             }
 
+            Console.WriteLine($"Difficulty in StrainSkill: {difficulty}");
             return difficulty * DifficultyMultiplier;
         }
     }
