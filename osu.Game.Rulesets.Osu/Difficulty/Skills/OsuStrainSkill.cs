@@ -55,8 +55,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (strains.Count == 0)
                 return 0;
 
-            Console.WriteLine($"Average strain in StrainSkill: {strains.Average()}");
-
             // We are reducing the highest strains first to account for extreme difficulty spikes
             for (int i = 0; i < Math.Min(strains.Count, ReducedSectionCount); i++)
             {
@@ -71,8 +69,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 difficulty += strain * weight;
                 weight *= DecayWeight;
             }
-
-            Console.WriteLine($"Difficulty in StrainSkill: {difficulty}");
             return difficulty * DifficultyMultiplier;
         }
     }

@@ -56,8 +56,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 
             List<double> secStrains = peaks.OrderDescending().ToList();
 
-            Console.WriteLine($"Average Strain in Combo: {secStrains.Average()}");
-
             // We are reducing the highest strains first to account for extreme difficulty spikes
             for (int i = 0; i < Math.Min(secStrains.Count, 10); i++)
             {
@@ -72,8 +70,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
                 difficulty += strain * weight;
                 weight *= 0.9;
             }
-
-            Console.WriteLine($"Difficulty in Combo: {difficulty}");
 
             return Math.Sqrt(difficulty * 1.06) * 0.0675;
         }

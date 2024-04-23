@@ -107,7 +107,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // if (effectiveMissCount > 0)
             //     aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), effectiveMissCount);
 
-            aimValue *= getComboScalingFactor(attributes);
+            // aimValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
