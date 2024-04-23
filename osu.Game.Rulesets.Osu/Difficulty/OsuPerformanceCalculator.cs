@@ -293,6 +293,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 currSpan.Add(strains[i]);
                 currObjects.Add(objects[i]);
                 combo += objects[i].Combo;
+            }
             for (; startIndex < lastComboIndex; startIndex++)
             {
                 yield return new Combo(new List<double>(currSpan), currObjects);
