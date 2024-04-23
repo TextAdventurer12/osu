@@ -311,7 +311,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (scoreMaxCombo < objects.Max(o => o.Combo))
                 return 0;
             IEnumerable<Combo> combos = MakeCombos(objects, strains, attributes);
-            if (combos.Count == 0)
+            if (combos.Count() == 0)
                 return 0;
             return combos.Min(c => c.DifficultyValue());
         }
