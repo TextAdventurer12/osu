@@ -284,7 +284,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             int i;
             int lastComboIndex = 0;
             for (lastComboIndex = 0; objects[lastComboIndex].CurrentMaxCombo + scoreMaxCombo < attributes.MaxCombo && lastComboIndex < objects.Count; lastComboIndex++);
-            Console.WriteLine($"Last Combo Index: {lastComboIndex}");
             List<double> currSpan = new List<double>();
             List<OsuDifficultyHitObject> currObjects = new List<OsuDifficultyHitObject>();
             int combo = 0;
@@ -294,8 +293,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 currSpan.Add(strains[i]);
                 currObjects.Add(objects[i]);
                 combo += objects[i].Combo;
-            }
-            Console.WriteLine($"first combo made, strainCount: {currSpan.Count}");
             for (; startIndex < lastComboIndex; startIndex++)
             {
                 yield return new Combo(new List<double>(currSpan), currObjects);
@@ -313,7 +310,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (scoreMaxCombo < objects.Max(o => o.Combo))
                 return 0;
             List<Combo> combos = MakeCombos(objects, strains, attributes).ToList();
-            Console.WriteLine($"Made {combos.Count()} combos");
             if (combos.Count == 0)
                 return 0;
             return combos.Min(c => c.DifficultyValue());
