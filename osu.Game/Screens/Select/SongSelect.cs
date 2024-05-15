@@ -286,7 +286,7 @@ namespace osu.Game.Screens.Select
                                                                 AutoSizeAxes = Axes.Y,
                                                                 Anchor = Anchor.Centre,
                                                                 Origin = Anchor.Centre,
-                                                                Padding = new MarginPadding(10)
+                                                                Padding = new MarginPadding(10),
                                                             },
                                                         }
                                                     },
@@ -425,7 +425,8 @@ namespace osu.Game.Screens.Select
             if (!AllowEditing)
                 throw new InvalidOperationException($"Attempted to edit when {nameof(AllowEditing)} is disabled");
 
-            Beatmap.Value = beatmaps.GetWorkingBeatmap(beatmapInfo ?? beatmapInfoNoDebounce);
+            // Forced refetch is important here to guarantee correct invalidation across all difficulties.
+            Beatmap.Value = beatmaps.GetWorkingBeatmap(beatmapInfo ?? beatmapInfoNoDebounce, true);
             this.Push(new EditorLoader());
         }
 
@@ -584,6 +585,11 @@ namespace osu.Game.Screens.Select
 
                 beatmapInfoPrevious = beatmap;
             }
+
+            // we can't run this in the debounced run due to the selected mods bindable not being debounced,
+            // since mods could be updated to the new ruleset instances while the decoupled bindable is held behind,
+            // therefore resulting in performing difficulty calculation with invalid states.
+            advancedStats.Ruleset.Value = ruleset;
 
             void run()
             {

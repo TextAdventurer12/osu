@@ -613,6 +613,23 @@ namespace osu.Game.Tests.Visual.UserInterface
         }
 
         [Test]
+        public void TestSearchBoxFocusToggleRespondsToExternalChanges()
+        {
+            AddStep("text search does not start active", () => configManager.SetValue(OsuSetting.ModSelectTextSearchStartsActive, false));
+            createScreen();
+
+            AddUntilStep("search text box not focused", () => !modSelectOverlay.SearchTextBox.HasFocus);
+
+            AddStep("press tab", () => InputManager.Key(Key.Tab));
+            AddAssert("search text box focused", () => modSelectOverlay.SearchTextBox.HasFocus);
+
+            AddStep("unfocus search text box externally", () => InputManager.ChangeFocus(null));
+
+            AddStep("press tab", () => InputManager.Key(Key.Tab));
+            AddAssert("search text box focused", () => modSelectOverlay.SearchTextBox.HasFocus);
+        }
+
+        [Test]
         public void TestTextSearchDoesNotBlockCustomisationPanelKeyboardInteractions()
         {
             AddStep("text search starts active", () => configManager.SetValue(OsuSetting.ModSelectTextSearchStartsActive, true));
@@ -857,6 +874,30 @@ namespace osu.Game.Tests.Visual.UserInterface
                                                                               .ChildrenOfType<RevertToDefaultButton<double>>().Single().TriggerClick());
             AddUntilStep("difficulty multiplier display shows correct value",
                 () => modSelectOverlay.ChildrenOfType<RankingInformationDisplay>().Single().ModMultiplier.Value, () => Is.EqualTo(0.3).Within(Precision.DOUBLE_EPSILON));
+        }
+
+        [Test]
+        public void TestModSettingsOrder()
+        {
+            createScreen();
+
+            AddStep("select DT + HD + DF", () => SelectedMods.Value = new Mod[] { new OsuModDoubleTime(), new OsuModHidden(), new OsuModDeflate() });
+            AddAssert("mod settings order: DT, HD, DF", () =>
+            {
+                var columns = this.ChildrenOfType<ModSettingsArea>().Single().ChildrenOfType<ModSettingsArea.ModSettingsColumn>();
+                return columns.ElementAt(0).Mod is OsuModDoubleTime &&
+                       columns.ElementAt(1).Mod is OsuModHidden &&
+                       columns.ElementAt(2).Mod is OsuModDeflate;
+            });
+
+            AddStep("replace DT with NC", () => SelectedMods.Value = SelectedMods.Value.Where(m => m is not ModDoubleTime).Append(new OsuModNightcore()).ToList());
+            AddAssert("mod settings order: NC, HD, DF", () =>
+            {
+                var columns = this.ChildrenOfType<ModSettingsArea>().Single().ChildrenOfType<ModSettingsArea.ModSettingsColumn>();
+                return columns.ElementAt(0).Mod is OsuModNightcore &&
+                       columns.ElementAt(1).Mod is OsuModHidden &&
+                       columns.ElementAt(2).Mod is OsuModDeflate;
+            });
         }
 
         private void waitForColumnLoad() => AddUntilStep("all column content loaded", () =>
