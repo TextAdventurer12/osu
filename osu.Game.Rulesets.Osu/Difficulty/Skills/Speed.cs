@@ -16,7 +16,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// </summary>
     public class Speed : OsuProbSkill
     {
-        protected override double skillMultiplier => 80000000000000;
+        protected override double skillMultiplier => 3000000000;
         protected override double FcProbability => 0.02;
         private double strainDecayBase => 0.3;
 
@@ -39,7 +39,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double totalStrain = currentStrain * currentRhythm;
 
-            return Math.Cbrt(totalStrain);
+            return Math.Sqrt(totalStrain);
         }
     }
 }

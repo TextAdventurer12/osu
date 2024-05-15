@@ -123,10 +123,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 aimValue *= sliderNerfFactor;
             }
 
-            aimValue *= accuracy;
-            // It is important to consider accuracy difficulty when scaling with accuracy.
-            aimValue *= 0.98 + Math.Pow(attributes.OverallDifficulty, 2) / 2500;
-
             return aimValue;
         }
 
@@ -157,8 +153,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 speedValue *= 1.0 + 0.04 * (12.0 - attributes.ApproachRate);
             }
 
-            // Scale speed with accuracy drops
+            // Scale speed with accuracy drops.
+            // A constant is added to make scaling less harsh around SS
             double errorCount = countOk + countMeh + countMiss;
+            errorCount += countGreat > 5 ? 5 : countGreat;
             speedValue *= calculateErrorPenalty(errorCount, attributes.SpeedErrorCountPolynomial);
 
             // Scale the speed value with # of 50s to punish doubletapping.
