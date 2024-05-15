@@ -150,18 +150,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             if (BaseObject is Spinner || lastObject is Spinner)
                 return;
 
-            // We will scale distances by this factor, so we can assume a uniform CircleSize among beatmaps.
-            float scalingFactor = NORMALISED_RADIUS / (float)BaseObject.Radius;
-
-            if (BaseObject.Radius < 30)
-            {
-                float smallCircleBonus = Math.Min(30 - (float)BaseObject.Radius, 5) / 50;
-                scalingFactor *= 1 + smallCircleBonus;
-            }
-
             Vector2 lastCursorPosition = getEndCursorPosition(lastObject);
 
-            LazyJumpDistance = (BaseObject.StackedPosition * scalingFactor - lastCursorPosition * scalingFactor).Length;
+            LazyJumpDistance = (BaseObject.StackedPosition  - lastCursorPosition).Length;
             MinimumJumpTime = StrainTime;
             MinimumJumpDistance = LazyJumpDistance;
 
@@ -192,7 +183,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
                 // Thus, the player is assumed to jump the minimum of these two distances in all cases.
                 //
 
-                float tailJumpDistance = Vector2.Subtract(lastSlider.TailCircle.StackedPosition, BaseObject.StackedPosition).Length * scalingFactor;
+                float tailJumpDistance = Vector2.Subtract(lastSlider.TailCircle.StackedPosition, BaseObject.StackedPosition).Length;
                 MinimumJumpDistance = Math.Max(0, Math.Min(LazyJumpDistance - (maximum_slider_radius - assumed_slider_radius), tailJumpDistance - maximum_slider_radius));
             }
 
@@ -278,10 +269,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
                 var currMovementObj = (OsuHitObject)nestedObjects[i];
 
                 Vector2 currMovement = Vector2.Subtract(currMovementObj.StackedPosition, currCursorPosition);
-                double currMovementLength = scalingFactor * currMovement.Length;
+                double currMovementLength = currMovement.Length;
 
                 // Amount of movement required so that the cursor position needs to be updated.
-                double requiredMovement = assumed_slider_radius;
+                double requiredMovement = assumed_slider_radius / scalingFactor;
 
                 if (i == nestedObjects.Count - 1)
                 {
@@ -294,7 +285,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
                     if (lazyMovement.Length < currMovement.Length)
                         currMovement = lazyMovement;
 
-                    currMovementLength = scalingFactor * currMovement.Length;
+                    currMovementLength = currMovement.Length;
                 }
                 else if (currMovementObj is SliderRepeat)
                 {

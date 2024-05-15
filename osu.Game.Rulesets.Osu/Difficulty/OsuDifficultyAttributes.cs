@@ -24,7 +24,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// The difficulty corresponding to the aim skill.
         /// </summary>
         [JsonProperty("aim_penalty_constants")]
-        public ExpPolynomial AimMissCountPolynomial { get; set; }
+        public ExpPolynomial AimErrorCountPolynomial { get; set; }
 
         /// <summary>
         /// The difficulty corresponding to the speed skill.
@@ -37,7 +37,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// Related to <see cref="SpeedDifficulty"/>
         /// </summary>
         [JsonProperty("speed_note_count")]
-        public double SpeedNoteCount { get; set; }
+        public ExpPolynomial SpeedErrorCountPolynomial { get; set; }
 
         /// <summary>
         /// The difficulty corresponding to the flashlight skill.
@@ -106,7 +106,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 yield return (ATTRIB_ID_FLASHLIGHT, FlashlightDifficulty);
 
             yield return (ATTRIB_ID_SLIDER_FACTOR, SliderFactor);
-            yield return (ATTRIB_ID_SPEED_NOTE_COUNT, SpeedNoteCount);
         }
 
         public override void FromDatabaseAttributes(IReadOnlyDictionary<int, double> values, IBeatmapOnlineInfo onlineInfo)
@@ -120,7 +119,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             StarRating = values[ATTRIB_ID_DIFFICULTY];
             FlashlightDifficulty = values.GetValueOrDefault(ATTRIB_ID_FLASHLIGHT);
             SliderFactor = values[ATTRIB_ID_SLIDER_FACTOR];
-            SpeedNoteCount = values[ATTRIB_ID_SPEED_NOTE_COUNT];
 
             DrainRate = onlineInfo.DrainRate;
             HitCircleCount = onlineInfo.CircleCount;

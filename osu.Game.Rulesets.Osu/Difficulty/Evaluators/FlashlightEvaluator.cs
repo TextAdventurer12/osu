@@ -36,7 +36,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrent = (OsuDifficultyHitObject)current;
             var osuHitObject = (OsuHitObject)(osuCurrent.BaseObject);
 
-            double scalingFactor = 52.0 / osuHitObject.Radius;
             double smallDistNerf = 1.0;
             double cumulativeStrainTime = 0.0;
 
@@ -63,12 +62,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                         smallDistNerf = Math.Min(1.0, jumpDistance / 75.0);
 
                     // We also want to nerf stacks so that only the first object of the stack is accounted for.
-                    double stackNerf = Math.Min(1.0, (currentObj.LazyJumpDistance / scalingFactor) / 25.0);
+                    double stackNerf = Math.Min(1.0, (currentObj.LazyJumpDistance) / 25.0);
 
                     // Bonus based on how visible the object is.
                     double opacityBonus = 1.0 + max_opacity_bonus * (1.0 - osuCurrent.OpacityAt(currentHitObject.StartTime, hidden));
 
-                    result += stackNerf * opacityBonus * scalingFactor * jumpDistance / cumulativeStrainTime;
+                    result += stackNerf * opacityBonus * jumpDistance / cumulativeStrainTime;
 
                     if (currentObj.Angle != null && osuCurrent.Angle != null)
                     {
@@ -94,8 +93,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             if (osuCurrent.BaseObject is Slider osuSlider)
             {
-                // Invert the scaling factor to determine the true travel distance independent of circle size.
-                double pixelTravelDistance = osuSlider.LazyTravelDistance / scalingFactor;
+                double pixelTravelDistance = osuSlider.LazyTravelDistance;
 
                 // Reward sliders based on velocity.
                 sliderBonus = Math.Pow(Math.Max(0.0, pixelTravelDistance / osuCurrent.TravelTime - min_velocity), 0.5);

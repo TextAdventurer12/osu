@@ -14,29 +14,23 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// <summary>
     /// Represents the skill required to press keys with regards to keeping up with the speed at which objects need to be hit.
     /// </summary>
-    public class Speed : OsuStrainSkill
+    public class Speed : OsuProbSkill
     {
-        private double skillMultiplier => 1375;
+        protected override double skillMultiplier => 80000000000000;
+        protected override double FcProbability => 0.02;
         private double strainDecayBase => 0.3;
 
         private double currentStrain;
         private double currentRhythm;
 
-        protected override int ReducedSectionCount => 5;
-        protected override double DifficultyMultiplier => 1.04;
-
-        private readonly List<double> objectStrains = new List<double>();
-
-        public Speed(Mod[] mods)
-            : base(mods)
+        public Speed(Mod[] mods, double radius)
+            : base(mods, radius)
         {
         }
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
 
-        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => (currentStrain * currentRhythm) * strainDecay(time - current.Previous(0).StartTime);
-
-        protected override double StrainValueAt(DifficultyHitObject current)
+        protected override double DeviationAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(((OsuDifficultyHitObject)current).StrainTime);
             currentStrain += SpeedEvaluator.EvaluateDifficultyOf(current) * skillMultiplier;
@@ -45,22 +39,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double totalStrain = currentStrain * currentRhythm;
 
-            objectStrains.Add(totalStrain);
-
-            return totalStrain;
-        }
-
-        public double RelevantNoteCount()
-        {
-            if (objectStrains.Count == 0)
-                return 0;
-
-            double maxStrain = objectStrains.Max();
-
-            if (maxStrain == 0)
-                return 0;
-
-            return objectStrains.Sum(strain => 1.0 / (1.0 + Math.Exp(-(strain / maxStrain * 12.0 - 6.0))));
+            return Math.Cbrt(totalStrain);
         }
     }
 }

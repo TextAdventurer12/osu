@@ -38,10 +38,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 return new OsuDifficultyAttributes { Mods = mods };
 
             double aimRating = Math.Sqrt(skills[0].DifficultyValue()) * difficulty_multiplier;
-            ExpPolynomial aimMissCountPolynomial = ((Aim)skills[0]).GetMissCountPolynomial();
+            ExpPolynomial aimErrorCountPolynomial = ((OsuProbSkill)skills[0]).GetErrorCountPolynomial();
             double aimRatingNoSliders = Math.Sqrt(skills[1].DifficultyValue()) * difficulty_multiplier;
             double speedRating = Math.Sqrt(skills[2].DifficultyValue()) * difficulty_multiplier;
-            double speedNotes = ((Speed)skills[2]).RelevantNoteCount();
+            ExpPolynomial speedErrorCountPolynomial = ((OsuProbSkill)skills[2]).GetErrorCountPolynomial();
 
             double flashlightRating = 0.0;
 
@@ -99,9 +99,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 StarRating = starRating,
                 Mods = mods,
                 AimDifficulty = aimRating,
-                AimMissCountPolynomial = aimMissCountPolynomial,
+                AimErrorCountPolynomial = aimErrorCountPolynomial,
                 SpeedDifficulty = speedRating,
-                SpeedNoteCount = speedNotes,
+                SpeedErrorCountPolynomial = speedErrorCountPolynomial,
                 FlashlightDifficulty = flashlightRating,
                 SliderFactor = sliderFactor,
                 ApproachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5,
@@ -133,11 +133,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         protected override Skill[] CreateSkills(IBeatmap beatmap, Mod[] mods, double clockRate)
         {
+            HitWindows hitWindows = new OsuHitWindows();
+            hitWindows.SetDifficulty(beatmap.Difficulty.OverallDifficulty);
+
+            double hitWindowGreat = hitWindows.WindowFor(HitResult.Great) / clockRate;
+            double radius = 109 - 9 * beatmap.Difficulty.CircleSize;
             var skills = new List<Skill>
             {
-                new Aim(mods, true),
-                new Aim(mods, false),
-                new Speed(mods)
+                new Aim(mods, radius, true),
+                new Aim(mods, radius, false),
+                new Speed(mods, hitWindowGreat / 2)
             };
 
             if (mods.Any(h => h is OsuModFlashlight))
