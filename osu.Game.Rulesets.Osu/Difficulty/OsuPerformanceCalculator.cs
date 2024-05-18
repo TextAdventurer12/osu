@@ -310,10 +310,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             if (scoreMaxCombo < objects.Max(o => o.Combo))
                 return 0;
-            IEnumerable<Combo> combos = MakeCombos(objects, strains, attributes);
+            if (scoreMaxCombo >= attributes.MaxCombo)
+                return 0;
+            IEnumerable<Combo> combos = MakeCombos(objects, strains, attributes).Where(c => c.difficulty > 0);
             if (combos.Count() == 0)
                 return 0;
-            return combos.Min(c => c.DifficultyValue());
+            return combos.Min(c => c.difficulty);
         }
 
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);

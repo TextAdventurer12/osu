@@ -19,6 +19,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
     {
         public List<double> strains;
         public List<OsuDifficultyHitObject> objects;
+        private double? _difficulty;
+        public double difficulty { get
+        {
+            if (_difficulty is null)
+                _difficulty = DifficultyValue();
+            return _difficulty.Value;
+        }
+        }
         public Combo(List<double> strains, List<OsuDifficultyHitObject> objects)
         {
             this.strains = new List<double>(strains);
