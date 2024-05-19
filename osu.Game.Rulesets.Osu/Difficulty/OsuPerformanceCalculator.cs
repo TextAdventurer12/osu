@@ -14,6 +14,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
         public static double performanceBaseMultiplier = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public static double shortLengthBonusMultiplier = 0.4;
+        public static double longLengthBonusMultiplier = 0.5;
+        public static double accuracyLengthBonusMax = 1.15;
+        public static double accuracyLengthBonusDivisor = 1000;
+        public static double longMapThreshold = 2000;
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -88,8 +93,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            double lengthBonus = 0.95 + shortLengthBonusMultiplier * Math.Min(1.0, totalHits / longMapThreshold) +
+                                 (totalHits > 2000 ? Math.Log10(totalHits / longMapThreshold) * longLengthBonusMultiplier : 0.0);
             aimValue *= lengthBonus;
 
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
@@ -141,8 +146,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            double lengthBonus = 0.95 + shortLengthBonusMultiplier * Math.Min(1.0, totalHits / longMapThreshold) +
+                                 (totalHits > 2000 ? Math.Log10(totalHits / longMapThreshold) * longLengthBonusMultiplier : 0.0);
             speedValue *= lengthBonus;
 
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
@@ -207,7 +212,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double accuracyValue = Math.Pow(1.52163, attributes.OverallDifficulty) * Math.Pow(betterAccuracyPercentage, 24) * 2.83;
 
             // Bonus for many hitcircles - it's harder to keep good accuracy up for longer.
-            accuracyValue *= Math.Min(1.15, Math.Pow(amountHitObjectsWithAccuracy / 1000.0, 0.3));
+            accuracyValue *= Math.Min(accuracyLengthBonusMax, Math.Pow(amountHitObjectsWithAccuracy / accuracyLengthBonusDivisor, 0.3));
 
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
