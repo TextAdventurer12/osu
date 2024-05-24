@@ -116,11 +116,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
             aimValue *= lengthBonus;
 
-            // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
             if (effectiveMissCount > 0)
-                aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), effectiveMissCount);
-
-            aimValue *= getComboScalingFactor(attributes);
+                aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -175,11 +172,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
             speedValue *= lengthBonus;
 
-            // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
             if (effectiveMissCount > 0)
-                speedValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
-
-            speedValue *= getComboScalingFactor(attributes);
+                speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
