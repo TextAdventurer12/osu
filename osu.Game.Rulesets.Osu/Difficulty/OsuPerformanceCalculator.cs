@@ -71,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = computeAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
-            double accuracyValue = computeAccuracyValue(score);
+            double accuracyValue = computeAccuracyValue(score, osuAttributes);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
@@ -120,7 +120,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax))
                 approachRateFactor = 0.0;
 
-            aimValue *= 1.0 + approachRateFactor;
+            aimValue *= 1.0 + approachRateFactor * lengthBonus;
 
             if (score.Mods.Any(m => m is OsuModBlinds))
                 aimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * attributes.DrainRate * attributes.DrainRate);
@@ -141,7 +141,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             aimValue *= 0.98 + Math.Pow(100.0 / 9, 2) / 2500; // OD 11 SS stays the same.
-            aimValue *= 1 / (1 + Math.Pow((double)deviation / 30, 4)); // Scale the aim value with deviation.
+            aimValue *= 1 / (1 + Math.Pow(effectiveDeviation(deviation.Value, attributes.ApproachRate) / 30, 4)); // Scale the aim value with deviation.
 
             return aimValue;
         }
@@ -167,7 +167,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (attributes.ApproachRate > 10.33)
                 approachRateFactor = 0.3 * (attributes.ApproachRate - 10.33);
 
-            speedValue *= 1.0 + approachRateFactor;
+            speedValue *= 1.0 + approachRateFactor * lengthBonus;
 
             if (score.Mods.Any(m => m is OsuModBlinds))
             {
@@ -194,17 +194,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= Math.Pow(0.99, countMeh < totalHits / 500.0 ? 0 : countMeh - totalHits / 500.0);
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
-            speedValue *= 1 / (1 + Math.Pow(speedDeviation / 20, 4)); // Scale the speed value with speed deviation.
+            speedValue *= 1 / (1 + Math.Pow(effectiveDeviation(speedDeviation, attributes.ApproachRate) / 20, 4)); // Scale the speed value with speed deviation.
 
             return speedValue;
         }
 
-        private double computeAccuracyValue(ScoreInfo score)
+        private double computeAccuracyValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (score.Mods.Any(h => h is OsuModRelax) || deviation == null)
                 return 0.0;
 
-            double accuracyValue = 121 * Math.Pow(7.5 / (double)deviation, 2);
+            double accuracyValue = 121 * Math.Pow(7.5 / effectiveDeviation(deviation.Value, attributes.ApproachRate), 2);
 
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
@@ -385,6 +385,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             return double.PositiveInfinity;
+        }
+        private double effectiveDeviation(double deviation, double ApproachRate)
+        {
+            double targetAR = 10.7;
+            double ARMultiplier = 1 / (3 + Math.Exp(-1.5 * (ApproachRate - targetAR))) + 0.66666667;
+            return deviation * ARMultiplier;
         }
 
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
