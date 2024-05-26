@@ -194,7 +194,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             speedValue *= Math.Pow(0.99, countMeh < totalHits / 500.0 ? 0 : countMeh - totalHits / 500.0);
 
             speedValue *= 0.95 + Math.Pow(100.0 / 9, 2) / 750; // OD 11 SS stays the same.
-            speedValue *= 1 / (1 + Math.Pow(effectiveDeviation(speedDeviation, attributes.ApproachRate) / 20, 4)); // Scale the speed value with speed deviation.
+            speedValue *= 1 / (1 + Math.Pow(effectiveSpeedDeviation(speedDeviation, attributes.ApproachRate) / 20, 4)); // Scale the speed value with speed deviation.
 
             return speedValue;
         }
@@ -388,9 +388,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         }
         private double effectiveDeviation(double deviation, double ApproachRate)
         {
-            double targetAR = 10.7;
-            double ARMultiplier = 1 / (3 + Math.Exp(-1.5 * (ApproachRate - targetAR))) + 0.66666667;
-            return deviation * ARMultiplier;
+            double MediumARMultiplier = 1 / (3 + Math.Exp(-1.5 * (ApproachRate - 10.7))) + 0.66666667;
+            double LowARMultiplier = 1 / (3 + Math.Exp(-1.5 * (ApproachRate - 6))) + 0.66666667;
+            return deviation * MediumARMultiplier * LowARMultiplier;
+        }
+        private double effectiveSpeedDeviation(double deviation, double ApproachRate)
+        {
+            double MediumARMultiplier = 1 / (4 + Math.Exp(-1.5 * (ApproachRate - 10.7))) + 0.75;
+            return deviation * MediumARMultiplier;
         }
 
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
