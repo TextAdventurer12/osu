@@ -118,6 +118,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 sliderBonus = osuLastObj.TravelDistance / osuLastObj.TravelTime;
             }
 
+            double flowBonus = Math.Pow((osuLastObj?.MinimumJumpDistance?? 0) / 150, 3.5);
+            // this is probably flow aim, in which case it has sufficient bonus from speed PP, so nerf aim strain and wide angle PP
+            if (flowBonus < 1)
+            {
+                wideAngleBonus *= 0.5 + 0.5 * Math.Sqrt(flowBonus);
+                aimStrain *= 0.5 + 0.5 * Math.Sqrt(flowBonus);
+            }
+
             // Add in acute angle bonus or wide angle bonus + velocity change bonus, whichever is larger.
             aimStrain += Math.Max(acuteAngleBonus * acute_angle_multiplier, wideAngleBonus * wide_angle_multiplier + velocityChangeBonus * velocity_change_multiplier);
 
@@ -125,10 +133,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (withSliderTravelDistance)
                 aimStrain += sliderBonus * slider_multiplier;
 
-            double flowBonus = Math.Pow((osuLastObj?.MinimumJumpDistance?? 0) / 150, 3.5);
-            // this score is probably flow aim, in which case it has sufficient bonus from speed PP, so nerf aim PP
-            if (flowBonus < 1)
-                aimStrain *= 0.5 + 0.5 * Math.Sqrt(flowBonus);
 
             return aimStrain;
         }
