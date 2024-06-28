@@ -55,14 +55,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double speedBonus = 1.0;
 
             if (strainTime < min_speed_bonus)
-                speedBonus = 1 + 0.4 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2.5);
+                speedBonus = 1 + 0.7 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2);
 
             double angleBonus = calculateAngleBonus(osuCurrObj.Angle ?? Math.PI);
 
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
 
             double distance = (travelDistance + osuCurrObj.MinimumJumpDistance) * angleBonus;
-            double distanceBonus = distance_multiplier * Math.Min(1, Math.Pow(distance / single_spacing_threshold, 3.5));
+            double distanceBonus = distance_multiplier * Math.Min(1, Math.Pow(distance / single_spacing_threshold, 2.5));
 
             double speedDifficulty = (speedBonus + distanceBonus) * doubletapness / strainTime;
 

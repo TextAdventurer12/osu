@@ -83,7 +83,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     {
                         acuteAngleBonus *= calcAcuteAngleBonus(lastAngle) // Multiply by previous angle, we don't want to buff unless this is a wiggle type pattern.
                                            * Math.Min(angleBonus, 125 / osuCurrObj.StrainTime) // The maximum velocity we buff is equal to 125 / strainTime
-                                           * Math.Min(1.5, osuCurrObj.StrainTime / 75 * Math.Pow((100 - osuCurrObj.StrainTime) / 25, 2)) // Scale with bpm, capped at ~440bpm 1/2
+                                           * (osuCurrObj.StrainTime / 75 * Math.Pow((100 - osuCurrObj.StrainTime) / 25, 2)) // Scale with bpm. Potentially cap it if some pattern breaks
                                            * Math.Pow(Math.Sin(Math.PI / 2 * (Math.Clamp(osuCurrObj.LazyJumpDistance, 50, 100) - 50) / 50), 2); // Buff distance exceeding 50 (radius) up to 100 (diameter).
                     }
 
