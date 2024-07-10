@@ -13,7 +13,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.27; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -67,10 +67,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
-                    Math.Pow(aimValue, 1.1) +
-                    Math.Pow(speedValue, 1.1) +
-                    Math.Pow(accuracyValue, 1.1) +
-                    Math.Pow(flashlightValue, 1.1), 1.0 / 1.1
+                    Math.Pow(aimValue, 1.3) +
+                    Math.Pow(speedValue, 1.3) +
+                    Math.Pow(accuracyValue, 1.3) +
+                    Math.Pow(flashlightValue, 1.3), 1.0 / 1.3
                 ) * multiplier;
 
             return new OsuPerformanceAttributes
@@ -88,7 +88,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
+            double lengthBonus = 0.98 + 0.4 * Math.Pow(Math.Min(0.95, totalHits / 2000.0), 1.5) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.2 : 0.0);
             aimValue *= lengthBonus;
 
@@ -141,7 +141,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
+            double lengthBonus = 0.98 + 0.4 * Math.Pow(Math.Min(0.95, totalHits / 2000.0), 1.5) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.2 : 0.0);
             speedValue *= lengthBonus;
 
