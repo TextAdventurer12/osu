@@ -70,9 +70,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double basePerformance =
                 Math.Pow(
-                    Math.Pow(baseAimPerformance, 1.3) +
-                    Math.Pow(baseSpeedPerformance, 1.3) +
-                    Math.Pow(baseFlashlightPerformance, 1.3), 1.0 / 1.3
+                    Math.Pow(baseAimPerformance, 1.1) +
+                    Math.Pow(baseSpeedPerformance, 1.1) +
+                    Math.Pow(baseFlashlightPerformance, 1.1), 1.0 / 1.1
                 );
 
             double starRating = basePerformance > 0.00001

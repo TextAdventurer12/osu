@@ -13,7 +13,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.27; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -67,10 +67,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double totalValue =
                 Math.Pow(
-                    Math.Pow(aimValue, 1.3) +
-                    Math.Pow(speedValue, 1.3) +
-                    Math.Pow(accuracyValue, 1.3) +
-                    Math.Pow(flashlightValue, 1.3), 1.0 / 1.3
+                    Math.Pow(aimValue, 1.1) +
+                    Math.Pow(speedValue, 1.1) +
+                    Math.Pow(accuracyValue, 1.1) +
+                    Math.Pow(flashlightValue, 1.1), 1.0 / 1.1
                 ) * multiplier;
 
             return new OsuPerformanceAttributes
@@ -204,7 +204,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             // Lots of arbitrary values from testing.
             // Considering to use derivation from perfect accuracy in a probabilistic manner - assume normal distribution.
-            double accuracyValue = Math.Pow(1.52163, attributes.OverallDifficulty) * Math.Pow(betterAccuracyPercentage, 24) * 2.83;
+            double accuracyValue = Math.Pow(1.52163, attributes.OverallDifficulty) * Math.Pow(betterAccuracyPercentage, 24) * 2.70;
 
             // Bonus for many hitcircles - it's harder to keep good accuracy up for longer.
             accuracyValue *= Math.Min(1.0, Math.Pow(amountHitObjectsWithAccuracy / 1000.0, 0.3));
