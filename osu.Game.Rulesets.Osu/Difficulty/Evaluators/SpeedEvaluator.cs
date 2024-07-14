@@ -75,7 +75,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 adjustedDistanceScale = 0.65 + angularVelocityBonus * 0.45;
             }
 
-            return (speedBonus + distanceBonus * adjustedDistanceScale) * doubletapness / strainTime;
+            return (speedBonus * (1 + distanceBonus * adjustedDistanceScale)) * doubletapness / strainTime;
         }
     }
 }
