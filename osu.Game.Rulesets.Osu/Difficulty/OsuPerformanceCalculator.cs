@@ -13,7 +13,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.2; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -88,9 +88,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthObjectCount = (attributes.AimDifficultStrainCount + totalHits) / 2;
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, lengthObjectCount / 2000.0) +
-                                 (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.5 : 0.0);
+            double lengthObjectCount = attributes.AimDifficultStrainCount * 3;
+            double lengthBonus = 0.9 + lengthObjectCount / 2000.0;
             aimValue *= lengthBonus;
   
             if (effectiveMissCount > 0)
@@ -141,9 +140,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
-            double lengthObjectCount = (attributes.SpeedDifficultStrainCount + totalHits) / 2;
+            double lengthObjectCount = (totalHits + attributes.SpeedDifficultStrainCount) / 2;
             double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, lengthObjectCount / 2000.0) +
-                                 (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.5 : 0.0);
+                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.4 : 0.0);
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
