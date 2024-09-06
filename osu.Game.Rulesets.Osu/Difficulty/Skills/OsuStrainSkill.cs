@@ -49,7 +49,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             // Sections with 0 strain are excluded to avoid worst-case time complexity of the following sort (e.g. /b/2351871).
             // These sections will not contribute to the difficulty.
-            var peaks = GetCurrentStrainPeaks().Where(p => p > 0);
+            var peaks = GetCurrentStrainPeaks().Where(p => p > 0).ToList();
+
+            // Scale difficulty by what order in the map they appear in
+            // Appear earlier = faster to 'retry spam' and so they contribute less difficulty
+            for (int i = 0; i < peaks.Count(); i++)
+                peaks[i] *= 1 + 0.1 * Math.Log10((i / 8.0) + 1);
 
             List<double> strains = peaks.OrderDescending().ToList();
 

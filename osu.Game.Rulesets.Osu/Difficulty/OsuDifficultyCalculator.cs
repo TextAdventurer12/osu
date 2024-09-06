@@ -22,7 +22,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuDifficultyCalculator : DifficultyCalculator
     {
-        private const double difficulty_multiplier = 0.0675;
+        // private const double difficulty_multiplier = 0.0675;
+        private const double difficulty_multiplier = 0.066;
 
         public override int Version => 20220902;
 
