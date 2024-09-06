@@ -89,7 +89,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double aimValue = Math.Pow(5.0 * Math.Max(1.0, attributes.AimDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
             double lengthObjectCount = attributes.AimDifficultStrainCount * 3;
-            double lengthBonus = 0.9 + lengthObjectCount / 2500.0;
+            double lengthBonus = 0.9 + lengthObjectCount / 2000.0;
             aimValue *= lengthBonus;
   
             if (effectiveMissCount > 0)
@@ -141,8 +141,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedValue = Math.Pow(5.0 * Math.Max(1.0, attributes.SpeedDifficulty / 0.0675) - 4.0, 3.0) / 100000.0;
 
             double lengthObjectCount = (totalHits + attributes.SpeedDifficultStrainCount) / 2;
-            double lengthBonus = 0.95 + 0.3 * Math.Min(1.0, lengthObjectCount / 2000.0) +
-                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.3 : 0.0);
+            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, lengthObjectCount / 2000.0) +
+                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.4 : 0.0);
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
