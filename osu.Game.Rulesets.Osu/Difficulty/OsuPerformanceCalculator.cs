@@ -142,7 +142,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
 
             double lengthObjectCount = (totalHits + attributes.SpeedDifficultStrainCount) / 2;
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, lengthObjectCount / 2000.0) +
+            double lengthBonus = 0.9 + 0.45 * Math.Min(1.0, lengthObjectCount / 2000.0) +
                      (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.4 : 0.0);
             speedValue *= lengthBonus;
 
