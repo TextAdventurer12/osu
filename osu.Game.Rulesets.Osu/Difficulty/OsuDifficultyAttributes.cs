@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -48,40 +49,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         public int SpinnerCount { get; set; }
 
         public override IEnumerable<(int attributeId, object value)> ToDatabaseAttributes()
-        {
-            foreach (var v in base.ToDatabaseAttributes())
-                yield return v;
-
-            yield return (ATTRIB_ID_AIM, AimDifficulty);
-            yield return (ATTRIB_ID_SPEED, SpeedDifficulty);
-            yield return (ATTRIB_ID_OVERALL_DIFFICULTY, OverallDifficulty);
-            yield return (ATTRIB_ID_APPROACH_RATE, ApproachRate);
-            yield return (ATTRIB_ID_DIFFICULTY, StarRating);
-
-            if (ShouldSerializeFlashlightDifficulty())
-                yield return (ATTRIB_ID_FLASHLIGHT, FlashlightDifficulty);
-
-            yield return (ATTRIB_ID_SLIDER_FACTOR, SliderFactor);
-            yield return (ATTRIB_ID_SPEED_NOTE_COUNT, SpeedNoteCount);
+        {            
+            throw new NotImplementedException();
         }
 
         public override void FromDatabaseAttributes(IReadOnlyDictionary<int, double> values, IBeatmapOnlineInfo onlineInfo)
         {
-            base.FromDatabaseAttributes(values, onlineInfo);
-
-            AimDifficulty = values[ATTRIB_ID_AIM];
-            SpeedDifficulty = values[ATTRIB_ID_SPEED];
-            OverallDifficulty = values[ATTRIB_ID_OVERALL_DIFFICULTY];
-            ApproachRate = values[ATTRIB_ID_APPROACH_RATE];
-            StarRating = values[ATTRIB_ID_DIFFICULTY];
-            FlashlightDifficulty = values.GetValueOrDefault(ATTRIB_ID_FLASHLIGHT);
-            SliderFactor = values[ATTRIB_ID_SLIDER_FACTOR];
-            SpeedNoteCount = values[ATTRIB_ID_SPEED_NOTE_COUNT];
-
-            DrainRate = onlineInfo.DrainRate;
-            HitCircleCount = onlineInfo.CircleCount;
-            SliderCount = onlineInfo.SliderCount;
-            SpinnerCount = onlineInfo.SpinnerCount;
+            throw new NotImplementedException();
         }
 
         #region Newtonsoft.Json implicit ShouldSerialize() methods

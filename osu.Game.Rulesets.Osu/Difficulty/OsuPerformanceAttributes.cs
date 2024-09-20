@@ -13,13 +13,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         public double Aim { get; set; }
 
         [JsonProperty("speed")]
-        public double Speed { get; set; }
+        public double Tap { get; set; }
 
         [JsonProperty("accuracy")]
         public double Accuracy { get; set; }
-
-        [JsonProperty("flashlight")]
-        public double Flashlight { get; set; }
 
         [JsonProperty("effective_miss_count")]
         public double EffectiveMissCount { get; set; }
@@ -30,9 +27,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 yield return attribute;
 
             yield return new PerformanceDisplayAttribute(nameof(Aim), "Aim", Aim);
-            yield return new PerformanceDisplayAttribute(nameof(Speed), "Speed", Speed);
+            yield return new PerformanceDisplayAttribute(nameof(Tap), "Tap", Tap);
             yield return new PerformanceDisplayAttribute(nameof(Accuracy), "Accuracy", Accuracy);
-            yield return new PerformanceDisplayAttribute(nameof(Flashlight), "Flashlight Bonus", Flashlight);
         }
     }
 }

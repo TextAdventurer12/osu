@@ -29,8 +29,8 @@ namespace osu.Game.Rulesets.Difficulty
         /// </summary>
         protected IBeatmap Beatmap { get; private set; }
 
-        private Mod[] playableMods;
-        private double clockRate;
+        protected Mod[] playableMods;
+        protected double clockRate;
 
         private readonly IRulesetInfo ruleset;
         private readonly IWorkingBeatmap beatmap;
@@ -60,7 +60,7 @@ namespace osu.Game.Rulesets.Difficulty
         /// <param name="mods">The mods that should be applied to the beatmap.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A structure describing the difficulty of the beatmap.</returns>
-        public DifficultyAttributes Calculate([NotNull] IEnumerable<Mod> mods, CancellationToken cancellationToken = default)
+        public virtual DifficultyAttributes Calculate([NotNull] IEnumerable<Mod> mods, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             preProcess(mods, cancellationToken);
@@ -166,7 +166,7 @@ namespace osu.Game.Rulesets.Difficulty
         /// </summary>
         /// <param name="mods">The original list of <see cref="Mod"/>s.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        private void preProcess([NotNull] IEnumerable<Mod> mods, CancellationToken cancellationToken = default)
+        protected void preProcess([NotNull] IEnumerable<Mod> mods, CancellationToken cancellationToken = default)
         {
             playableMods = mods.Select(m => m.DeepClone()).ToArray();
 

@@ -70,7 +70,7 @@ namespace osu.Game.Rulesets.Osu.Objects
 
         public double? LegacyLastTickOffset { get; set; }
 
-        public List<IList<HitSampleInfo>> NodeSamples { get; set; } = new List<IList<HitSampleInfo>>();
+        public IList<IList<HitSampleInfo>> NodeSamples { get; set; } = new List<IList<HitSampleInfo>>();
 
         [JsonIgnore]
         public IList<HitSampleInfo> TailSamples { get; private set; }
