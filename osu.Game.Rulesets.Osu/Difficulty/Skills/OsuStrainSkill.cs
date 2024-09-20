@@ -13,12 +13,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     public abstract class OsuStrainSkill : StrainSkill
     {
         /// <summary>
-        /// The default multiplier applied by <see cref="OsuStrainSkill"/> to the final difficulty value after all other calculations.
-        /// May be overridden via <see cref="DifficultyMultiplier"/>.
-        /// </summary>
-        public const double DEFAULT_DIFFICULTY_MULTIPLIER = 1.06;
-
-        /// <summary>
         /// The number of sections with the highest strains, which the peak strain reductions will apply to.
         /// This is done in order to decrease their impact on the overall difficulty of the map for this skill.
         /// </summary>
