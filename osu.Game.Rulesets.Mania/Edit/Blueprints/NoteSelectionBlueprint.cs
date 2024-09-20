@@ -7,21 +7,12 @@ using osu.Game.Rulesets.Mania.Objects;
 
 namespace osu.Game.Rulesets.Mania.Edit.Blueprints
 {
-    public class NoteSelectionBlueprint : ManiaSelectionBlueprint<Note>
+    public partial class NoteSelectionBlueprint : ManiaSelectionBlueprint<Note>
     {
         public NoteSelectionBlueprint(Note note)
             : base(note)
         {
             AddInternal(new EditNotePiece { RelativeSizeAxes = Axes.X });
-        }
-
-        protected override void Update()
-        {
-            base.Update();
-
-            // Todo: This shouldn't exist, mania should not reference the drawable hitobject directly.
-            if (DrawableObject.IsLoaded)
-                Size = DrawableObject.DrawSize;
         }
     }
 }

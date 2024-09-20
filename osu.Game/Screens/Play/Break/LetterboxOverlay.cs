@@ -9,40 +9,32 @@ using osuTK.Graphics;
 
 namespace osu.Game.Screens.Play.Break
 {
-    public class LetterboxOverlay : CompositeDrawable
+    public partial class LetterboxOverlay : CompositeDrawable
     {
-        private const int height = 350;
-
         private static readonly Color4 transparent_black = new Color4(0, 0, 0, 0);
 
         public LetterboxOverlay()
         {
+            const int height = 150;
+
             RelativeSizeAxes = Axes.Both;
             InternalChildren = new Drawable[]
             {
-                new Container
+                new Box
                 {
                     Anchor = Anchor.TopLeft,
                     Origin = Anchor.TopLeft,
                     RelativeSizeAxes = Axes.X,
                     Height = height,
-                    Child = new Box
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                        Colour = ColourInfo.GradientVertical(Color4.Black, transparent_black),
-                    }
+                    Colour = ColourInfo.GradientVertical(Color4.Black, transparent_black),
                 },
-                new Container
+                new Box
                 {
                     Anchor = Anchor.BottomLeft,
                     Origin = Anchor.BottomLeft,
                     RelativeSizeAxes = Axes.X,
                     Height = height,
-                    Child = new Box
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                        Colour = ColourInfo.GradientVertical(transparent_black, Color4.Black),
-                    }
+                    Colour = ColourInfo.GradientVertical(transparent_black, Color4.Black),
                 }
             };
         }

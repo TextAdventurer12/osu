@@ -9,11 +9,12 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
-using osu.Game.Graphics.Sprites;
+using osu.Framework.Localisation;
+using osu.Framework.Graphics.Containers;
 
 namespace osu.Game.Graphics.Cursor
 {
-    public class OsuTooltipContainer : TooltipContainer
+    public partial class OsuTooltipContainer : TooltipContainer
     {
         protected override ITooltip CreateTooltip() => new OsuTooltip();
 
@@ -24,20 +25,22 @@ namespace osu.Game.Graphics.Cursor
 
         protected override double AppearDelay => (1 - CurrentTooltip.Alpha) * base.AppearDelay; // reduce appear delay if the tooltip is already partly visible.
 
-        public class OsuTooltip : Tooltip
+        public partial class OsuTooltip : Tooltip
         {
+            private const float max_width = 500;
+
             private readonly Box background;
-            private readonly OsuSpriteText text;
+            private readonly TextFlowContainer text;
             private bool instantMovement = true;
 
-            public override bool SetContent(object content)
+            private LocalisableString lastContent;
+
+            public override void SetContent(LocalisableString content)
             {
-                if (!(content is string contentString))
-                    return false;
+                if (content.Equals(lastContent))
+                    return;
 
-                if (contentString == text.Text) return true;
-
-                text.Text = contentString;
+                text.Text = content;
 
                 if (IsPresent)
                 {
@@ -47,7 +50,7 @@ namespace osu.Game.Graphics.Cursor
                 else
                     AutoSizeDuration = 0;
 
-                return true;
+                lastContent = content;
             }
 
             public OsuTooltip()
@@ -69,10 +72,14 @@ namespace osu.Game.Graphics.Cursor
                         RelativeSizeAxes = Axes.Both,
                         Alpha = 0.9f,
                     },
-                    text = new OsuSpriteText
+                    text = new TextFlowContainer(f =>
                     {
-                        Padding = new MarginPadding(5),
-                        Font = OsuFont.GetFont(weight: FontWeight.Regular)
+                        f.Font = OsuFont.GetFont(weight: FontWeight.Regular);
+                    })
+                    {
+                        Margin = new MarginPadding(5),
+                        AutoSizeAxes = Axes.Both,
+                        MaximumSize = new Vector2(max_width, float.PositiveInfinity),
                     }
                 };
             }

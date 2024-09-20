@@ -5,6 +5,7 @@ using System;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.UI;
@@ -30,18 +31,20 @@ namespace osu.Game.Rulesets.Mods
         };
 
         [SettingSource("Direction", "The direction of rotation")]
-        public Bindable<RotationDirection> Direction { get; } = new Bindable<RotationDirection>(RotationDirection.Clockwise);
+        public Bindable<RotationDirection> Direction { get; } = new Bindable<RotationDirection>();
 
         public override string Name => "Barrel Roll";
         public override string Acronym => "BR";
-        public override string Description => "The whole playfield is on a wheel!";
+        public override LocalisableString Description => "The whole playfield is on a wheel!";
         public override double ScoreMultiplier => 1;
 
-        public override string SettingDescription => $"{SpinSpeed.Value} rpm {Direction.Value.GetDescription().ToLowerInvariant()}";
+        public override string SettingDescription => $"{SpinSpeed.Value:N2} rpm {Direction.Value.GetDescription().ToLowerInvariant()}";
+
+        private PlayfieldAdjustmentContainer playfieldAdjustmentContainer = null!;
 
         public void Update(Playfield playfield)
         {
-            playfield.Rotation = CurrentRotation = (Direction.Value == RotationDirection.Counterclockwise ? -1 : 1) * 360 * (float)(playfield.Time.Current / 60000 * SpinSpeed.Value);
+            playfieldAdjustmentContainer.Rotation = CurrentRotation = (Direction.Value == RotationDirection.Counterclockwise ? -1 : 1) * 360 * (float)(playfield.Time.Current / 60000 * SpinSpeed.Value);
         }
 
         public void ApplyToDrawableRuleset(DrawableRuleset<TObject> drawableRuleset)
@@ -49,9 +52,11 @@ namespace osu.Game.Rulesets.Mods
             // scale the playfield to allow all hitobjects to stay within the visible region.
 
             var playfieldSize = drawableRuleset.Playfield.DrawSize;
-            var minSide = MathF.Min(playfieldSize.X, playfieldSize.Y);
-            var maxSide = MathF.Max(playfieldSize.X, playfieldSize.Y);
-            drawableRuleset.Playfield.Scale = new Vector2(minSide / maxSide);
+            float minSide = MathF.Min(playfieldSize.X, playfieldSize.Y);
+            float maxSide = MathF.Max(playfieldSize.X, playfieldSize.Y);
+
+            playfieldAdjustmentContainer = drawableRuleset.PlayfieldAdjustmentContainer;
+            playfieldAdjustmentContainer.Scale = new Vector2(minSide / maxSide);
         }
     }
 }

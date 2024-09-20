@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-
-#nullable enable
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Rulesets.Edit;
 
 namespace osu.Game.Online.Chat
 {
@@ -29,7 +29,7 @@ namespace osu.Game.Online.Chat
         //      http[s]://<domain>.<tld>[:port][/path][?query][#fragment]
         private static readonly Regex advanced_link_regex = new Regex(
             // protocol
-            @"(?<link>[a-z]*?:\/\/" +
+            @"(?<link>(https?|osu(mp)?):\/\/" +
             // domain + tld
             @"(?<domain>(?:[a-z0-9]\.|[a-z0-9][a-z0-9-]*[a-z0-9]\.)*[a-z0-9-]*[a-z0-9]" +
             // port (optional)
@@ -42,9 +42,6 @@ namespace osu.Game.Online.Chat
             @"(?:#(?:[a-z0-9$_\+!\*\',;:\(\)@&=\/~-]|%[0-9a-f]{2})*)?)?)",
             RegexOptions.IgnoreCase);
 
-        // 00:00:000 (1,2,3) - test
-        private static readonly Regex time_regex = new Regex(@"\d\d:\d\d:\d\d\d? [^-]*");
-
         // #osu
         private static readonly Regex channel_regex = new Regex(@"(#[a-zA-Z]+[a-zA-Z0-9]+)");
 
@@ -56,6 +53,7 @@ namespace osu.Game.Online.Chat
         /// </summary>
         public static string WebsiteRootUrl
         {
+            get => websiteRootUrl;
             set => websiteRootUrl = value
                                     .Trim('/') // trim potential trailing slash/
                                     .Split('/').Last(); // only keep domain name, ignoring protocol.
@@ -69,14 +67,14 @@ namespace osu.Game.Online.Chat
 
             foreach (Match m in regex.Matches(result.Text, startIndex))
             {
-                var index = m.Index - captureOffset;
+                int index = m.Index - captureOffset;
 
-                var displayText = string.Format(display,
+                string displayText = string.Format(display,
                     m.Groups[0],
                     m.Groups["text"].Value,
                     m.Groups["url"].Value).Trim();
 
-                var linkText = string.Format(link,
+                string linkText = string.Format(link,
                     m.Groups[0],
                     m.Groups["text"].Value,
                     m.Groups["url"].Value).Trim();
@@ -87,8 +85,8 @@ namespace osu.Game.Online.Chat
                 if (escapeChars != null)
                     displayText = escapeChars.Aggregate(displayText, (current, c) => current.Replace($"\\{c}", c.ToString()));
 
-                // Check for encapsulated links
-                if (result.Links.Find(l => (l.Index <= index && l.Index + l.Length >= index + m.Length) || (index <= l.Index && index + m.Length >= l.Index + l.Length)) == null)
+                // Check for overlapping links
+                if (!result.Links.Exists(l => l.Overlaps(index, m.Length)))
                 {
                     result.Text = result.Text.Remove(index, m.Length).Insert(index, displayText);
 
@@ -108,9 +106,9 @@ namespace osu.Game.Online.Chat
         {
             foreach (Match m in regex.Matches(result.Text, startIndex))
             {
-                var index = m.Index;
-                var linkText = m.Groups["link"].Value;
-                var indexLength = linkText.Length;
+                int index = m.Index;
+                string linkText = m.Groups["link"].Value;
+                int indexLength = linkText.Length;
 
                 var details = GetLinkDetails(linkText);
                 var link = new Link(linkText, index, indexLength, details.Action, details.Argument);
@@ -125,7 +123,7 @@ namespace osu.Game.Online.Chat
 
         public static LinkDetails GetLinkDetails(string url)
         {
-            var args = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            string[] args = url.Split('/', StringSplitOptions.RemoveEmptyEntries);
             args[0] = args[0].TrimEnd(':');
 
             switch (args[0])
@@ -133,9 +131,9 @@ namespace osu.Game.Online.Chat
                 case "http":
                 case "https":
                     // length > 3 since all these links need another argument to work
-                    if (args.Length > 3 && args[1].EndsWith(websiteRootUrl, StringComparison.OrdinalIgnoreCase))
+                    if (args.Length > 3 && args[1].EndsWith(WebsiteRootUrl, StringComparison.OrdinalIgnoreCase))
                     {
-                        var mainArg = args[3];
+                        string mainArg = args[3];
 
                         switch (args[2])
                         {
@@ -144,7 +142,7 @@ namespace osu.Game.Online.Chat
                             case "beatmaps":
                             {
                                 string trimmed = mainArg.Split('?').First();
-                                if (int.TryParse(trimmed, out var id))
+                                if (int.TryParse(trimmed, out int id))
                                     return new LinkDetails(LinkAction.OpenBeatmap, id.ToString());
 
                                 break;
@@ -154,7 +152,11 @@ namespace osu.Game.Online.Chat
                             case "beatmapsets":
                             case "d":
                             {
-                                if (args.Length > 4 && int.TryParse(args[4], out var id))
+                                if (mainArg == "discussions")
+                                    // handle discussion links externally for now
+                                    return new LinkDetails(LinkAction.External, url);
+
+                                if (args.Length > 4 && int.TryParse(args[4], out int id))
                                     // https://osu.ppy.sh/beatmapsets/1154158#osu/2768184
                                     return new LinkDetails(LinkAction.OpenBeatmap, id.ToString());
 
@@ -168,10 +170,28 @@ namespace osu.Game.Online.Chat
 
                             case "u":
                             case "users":
-                                return new LinkDetails(LinkAction.OpenUserProfile, mainArg);
+                                return getUserLink(mainArg);
 
                             case "wiki":
                                 return new LinkDetails(LinkAction.OpenWiki, string.Join('/', args.Skip(3)));
+
+                            case "home":
+                                if (mainArg != "changelog")
+                                    // handle link other than changelog as external for now
+                                    return new LinkDetails(LinkAction.External, url);
+
+                                switch (args.Length)
+                                {
+                                    case 4:
+                                        // https://osu.ppy.sh/home/changelog
+                                        return new LinkDetails(LinkAction.OpenChangelog, string.Empty);
+
+                                    case 6:
+                                        // https://osu.ppy.sh/home/changelog/lazer/2021.1006
+                                        return new LinkDetails(LinkAction.OpenChangelog, $"{args[4]}/{args[5]}");
+                                }
+
+                                break;
                         }
                     }
 
@@ -208,12 +228,10 @@ namespace osu.Game.Online.Chat
                             break;
 
                         case "u":
-                            linkType = LinkAction.OpenUserProfile;
-                            break;
+                            return getUserLink(args[2]);
 
                         default:
-                            linkType = LinkAction.External;
-                            break;
+                            return new LinkDetails(LinkAction.External, url);
                     }
 
                     return new LinkDetails(linkType, args[2]);
@@ -223,6 +241,14 @@ namespace osu.Game.Online.Chat
             }
 
             return new LinkDetails(LinkAction.External, url);
+        }
+
+        private static LinkDetails getUserLink(string argument)
+        {
+            if (int.TryParse(argument, out int userId))
+                return new LinkDetails(LinkAction.OpenUserProfile, new APIUser { Id = userId });
+
+            return new LinkDetails(LinkAction.OpenUserProfile, new APIUser { Username = argument });
         }
 
         private static MessageFormatterResult format(string toFormat, int startIndex = 0, int space = 3)
@@ -239,22 +265,19 @@ namespace osu.Game.Online.Chat
             handleMatches(old_link_regex, "{1}", "{2}", result, startIndex, escapeChars: new[] { '(', ')' });
 
             // handle wiki links
-            handleMatches(wiki_regex, "{1}", "https://osu.ppy.sh/wiki/{1}", result, startIndex);
+            handleMatches(wiki_regex, "{1}", $"https://{WebsiteRootUrl}/wiki/{{1}}", result, startIndex);
 
             // handle bare links
             handleAdvanced(advanced_link_regex, result, startIndex);
 
             // handle editor times
-            handleMatches(time_regex, "{0}", "osu://edit/{0}", result, startIndex, LinkAction.OpenEditorTimestamp);
+            handleMatches(EditorTimestampParser.TIME_REGEX_STRICT, "{0}", $@"{OsuGameBase.OSU_PROTOCOL}edit/{{0}}", result, startIndex, LinkAction.OpenEditorTimestamp);
 
             // handle channels
-            handleMatches(channel_regex, "{0}", "osu://chan/{0}", result, startIndex, LinkAction.OpenChannel);
+            handleMatches(channel_regex, "{0}", $@"{OsuGameBase.OSU_PROTOCOL}chan/{{0}}", result, startIndex, LinkAction.OpenChannel);
 
-            var empty = "";
-            while (space-- > 0)
-                empty += "\0";
-
-            handleMatches(emoji_regex, empty, "{0}", result, startIndex);
+            // see: https://github.com/ppy/osu/pull/24190
+            result.Text = Regex.Replace(result.Text, emoji_regex.ToString(), "[emoji]");
 
             return result;
         }
@@ -297,9 +320,9 @@ namespace osu.Game.Online.Chat
     {
         public readonly LinkAction Action;
 
-        public readonly string Argument;
+        public readonly object Argument;
 
-        public LinkDetails(LinkAction action, string argument)
+        public LinkDetails(LinkAction action, object argument)
         {
             Action = action;
             Argument = argument;
@@ -316,8 +339,12 @@ namespace osu.Game.Online.Chat
         JoinMultiplayerMatch,
         Spectate,
         OpenUserProfile,
+        SearchBeatmapSet,
         OpenWiki,
         Custom,
+        OpenChangelog,
+        FilterBeatmapSetGenre,
+        FilterBeatmapSetLanguage,
     }
 
     public class Link : IComparable<Link>
@@ -326,9 +353,9 @@ namespace osu.Game.Online.Chat
         public int Index;
         public int Length;
         public LinkAction Action;
-        public string Argument;
+        public object Argument;
 
-        public Link(string url, int startIndex, int length, LinkAction action, string argument)
+        public Link(string url, int startIndex, int length, LinkAction action, object argument)
         {
             Url = url;
             Index = startIndex;
@@ -337,8 +364,10 @@ namespace osu.Game.Online.Chat
             Argument = argument;
         }
 
-        public bool Overlaps(Link otherLink) => Index < otherLink.Index + otherLink.Length && otherLink.Index < Index + Length;
+        public bool Overlaps(Link otherLink) => Overlaps(otherLink.Index, otherLink.Length);
 
-        public int CompareTo(Link otherLink) => Index > otherLink.Index ? 1 : -1;
+        public bool Overlaps(int otherIndex, int otherLength) => Index < otherIndex + otherLength && otherIndex < Index + Length;
+
+        public int CompareTo(Link? otherLink) => Index > otherLink?.Index ? 1 : -1;
     }
 }

@@ -3,35 +3,21 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Animations;
-using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Game.Skinning;
-using osuTK;
 
 namespace osu.Game.Rulesets.Catch.Skinning.Legacy
 {
-    public class LegacyCatcherOld : CompositeDrawable, ICatcherSprite
+    public partial class LegacyCatcherOld : LegacyCatcher
     {
-        public Texture CurrentTexture => (InternalChild as TextureAnimation)?.CurrentFrame ?? (InternalChild as Sprite)?.Texture;
-
         public LegacyCatcherOld()
         {
-            RelativeSizeAxes = Axes.Both;
+            AutoSizeAxes = Axes.Both;
         }
 
         [BackgroundDependencyLoader]
         private void load(ISkinSource skin)
         {
-            InternalChild = skin.GetAnimation(@"fruit-ryuuta", true, true, true).With(d =>
-            {
-                d.Anchor = Anchor.TopCentre;
-                d.Origin = Anchor.TopCentre;
-                d.RelativeSizeAxes = Axes.Both;
-                d.Size = Vector2.One;
-                d.FillMode = FillMode.Fit;
-            });
+            InternalChild = skin.GetAnimation(@"fruit-ryuuta", true, true, true) ?? Empty();
         }
     }
 }

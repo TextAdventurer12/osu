@@ -15,76 +15,64 @@ using osuTK;
 
 namespace osu.Game.Screens.Play.HUD
 {
-    public class ModDisplay : Container, IHasCurrentValue<IReadOnlyList<Mod>>
+    /// <summary>
+    /// Displays a single-line horizontal auto-sized flow of mods. For cases where wrapping is required, use <see cref="ModFlowDisplay"/> instead.
+    /// </summary>
+    public partial class ModDisplay : CompositeDrawable, IHasCurrentValue<IReadOnlyList<Mod>>
     {
         private const int fade_duration = 1000;
 
         public ExpansionMode ExpansionMode = ExpansionMode.ExpandOnHover;
 
-        private readonly Bindable<IReadOnlyList<Mod>> current = new Bindable<IReadOnlyList<Mod>>();
+        private readonly BindableWithCurrent<IReadOnlyList<Mod>> current = new BindableWithCurrent<IReadOnlyList<Mod>>(Array.Empty<Mod>());
 
         public Bindable<IReadOnlyList<Mod>> Current
         {
-            get => current;
+            get => current.Current;
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(value));
+                ArgumentNullException.ThrowIfNull(value);
 
-                current.UnbindBindings();
-                current.BindTo(value);
+                current.Current = value;
             }
         }
 
+        private readonly bool showExtendedInformation;
         private readonly FillFlowContainer<ModIcon> iconsContainer;
 
-        public ModDisplay()
+        public ModDisplay(bool showExtendedInformation = true)
         {
+            this.showExtendedInformation = showExtendedInformation;
+
             AutoSizeAxes = Axes.Both;
 
-            Child = new FillFlowContainer
+            InternalChild = iconsContainer = new ReverseChildIDFillFlowContainer<ModIcon>
             {
-                Anchor = Anchor.TopCentre,
-                Origin = Anchor.TopCentre,
                 AutoSizeAxes = Axes.Both,
-                Direction = FillDirection.Vertical,
-                Children = new Drawable[]
-                {
-                    iconsContainer = new ReverseChildIDFillFlowContainer<ModIcon>
-                    {
-                        Anchor = Anchor.TopCentre,
-                        Origin = Anchor.TopCentre,
-                        AutoSizeAxes = Axes.Both,
-                        Direction = FillDirection.Horizontal,
-                    },
-                },
+                Direction = FillDirection.Horizontal,
             };
-        }
-
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-            Current.UnbindAll();
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            Current.BindValueChanged(mods =>
-            {
-                iconsContainer.Clear();
-
-                if (mods.NewValue != null)
-                {
-                    foreach (Mod mod in mods.NewValue)
-                        iconsContainer.Add(new ModIcon(mod) { Scale = new Vector2(0.6f) });
-
-                    appearTransform();
-                }
-            }, true);
+            Current.BindValueChanged(updateDisplay, true);
 
             iconsContainer.FadeInFromZero(fade_duration, Easing.OutQuint);
+
+            if (ExpansionMode == ExpansionMode.AlwaysExpanded || ExpansionMode == ExpansionMode.AlwaysContracted)
+                FinishTransforms(true);
+        }
+
+        private void updateDisplay(ValueChangedEvent<IReadOnlyList<Mod>> mods)
+        {
+            iconsContainer.Clear();
+
+            foreach (Mod mod in mods.NewValue.AsOrdered())
+                iconsContainer.Add(new ModIcon(mod, showExtendedInformation: showExtendedInformation) { Scale = new Vector2(0.6f) });
+
+            appearTransform();
         }
 
         private void appearTransform()

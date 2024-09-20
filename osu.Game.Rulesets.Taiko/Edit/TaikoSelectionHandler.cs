@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using osu.Game.Screens.Edit.Compose.Components;
 
 namespace osu.Game.Rulesets.Taiko.Edit
 {
-    public class TaikoSelectionHandler : EditorSelectionHandler
+    public partial class TaikoSelectionHandler : EditorSelectionHandler
     {
         private readonly Bindable<TernaryState> selectionRimState = new Bindable<TernaryState>();
         private readonly Bindable<TernaryState> selectionStrongState = new Bindable<TernaryState>();
@@ -53,6 +53,9 @@ namespace osu.Game.Rulesets.Taiko.Edit
 
         public void SetStrongState(bool state)
         {
+            if (SelectedItems.OfType<Hit>().All(h => h.IsStrong == state))
+                return;
+
             EditorBeatmap.PerformOnSelection(h =>
             {
                 if (!(h is Hit taikoHit)) return;
@@ -67,6 +70,9 @@ namespace osu.Game.Rulesets.Taiko.Edit
 
         public void SetRimState(bool state)
         {
+            if (SelectedItems.OfType<Hit>().All(h => h.Type == (state ? HitType.Rim : HitType.Centre)))
+                return;
+
             EditorBeatmap.PerformOnSelection(h =>
             {
                 if (h is Hit taikoHit)

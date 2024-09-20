@@ -1,22 +1,24 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
+using Markdig.Extensions.CustomContainers;
 using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Containers.Markdown;
 using osu.Game.Graphics.Containers.Markdown;
-using osu.Game.Online.API;
 
 namespace osu.Game.Overlays.Wiki.Markdown
 {
-    public class WikiMarkdownContainer : OsuMarkdownContainer
+    public partial class WikiMarkdownContainer : OsuMarkdownContainer
     {
-        [Resolved]
-        private IAPIProvider api { get; set; }
+        protected override OsuMarkdownContainerOptions Options => new OsuMarkdownContainerOptions
+        {
+            Footnotes = true,
+            CustomContainers = true,
+            BlockAttributes = true
+        };
 
         public string CurrentPath
         {
@@ -27,6 +29,11 @@ namespace osu.Game.Overlays.Wiki.Markdown
         {
             switch (markdownObject)
             {
+                case CustomContainer:
+                    // infoboxes are parsed into CustomContainer objects, but we don't have support for infoboxes yet.
+                    // todo: add support for infobox.
+                    break;
+
                 case YamlFrontMatterBlock yamlFrontMatterBlock:
                     container.Add(new WikiNoticeContainer(yamlFrontMatterBlock));
                     break;
@@ -45,9 +52,9 @@ namespace osu.Game.Overlays.Wiki.Markdown
             base.AddMarkdownComponent(markdownObject, container, level);
         }
 
-        public override MarkdownTextFlowContainer CreateTextFlow() => new WikiMarkdownTextFlowContainer();
+        public override OsuMarkdownTextFlowContainer CreateTextFlow() => new WikiMarkdownTextFlowContainer();
 
-        private class WikiMarkdownTextFlowContainer : OsuMarkdownTextFlowContainer
+        private partial class WikiMarkdownTextFlowContainer : OsuMarkdownTextFlowContainer
         {
             protected override void AddImage(LinkInline linkInline) => AddDrawable(new WikiMarkdownImage(linkInline));
         }

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
@@ -15,24 +17,22 @@ using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Objects.Drawables
 {
-    public class DrawableSliderRepeat : DrawableOsuHitObject, ITrackSnaking, IHasMainCirclePiece
+    public partial class DrawableSliderRepeat : DrawableOsuHitObject
     {
         public new SliderRepeat HitObject => (SliderRepeat)base.HitObject;
 
         [CanBeNull]
         public Slider Slider => DrawableSlider?.HitObject;
 
-        protected DrawableSlider DrawableSlider => (DrawableSlider)ParentHitObject;
+        public DrawableSlider DrawableSlider => (DrawableSlider)ParentHitObject;
 
         private double animDuration;
 
         public SkinnableDrawable CirclePiece { get; private set; }
 
-        public ReverseArrowPiece Arrow { get; private set; }
+        public SkinnableDrawable Arrow { get; private set; }
 
         private Drawable scaleContainer;
-
-        public override bool DisplayResult => false;
 
         public DrawableSliderRepeat()
             : base(null)
@@ -48,9 +48,9 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         private void load()
         {
             Origin = Anchor.Centre;
-            Size = new Vector2(OsuHitObject.OBJECT_RADIUS * 2);
+            Size = OsuHitObject.OBJECT_DIMENSIONS;
 
-            InternalChild = scaleContainer = new Container
+            AddInternal(scaleContainer = new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Anchor = Anchor.Centre,
@@ -58,14 +58,18 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 Children = new Drawable[]
                 {
                     // no default for this; only visible in legacy skins.
-                    CirclePiece = new SkinnableDrawable(new OsuSkinComponent(OsuSkinComponents.SliderTailHitCircle), _ => Empty())
+                    CirclePiece = new SkinnableDrawable(new OsuSkinComponentLookup(OsuSkinComponents.SliderTailHitCircle), _ => Empty())
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                     },
-                    Arrow = new ReverseArrowPiece(),
+                    Arrow = new SkinnableDrawable(new OsuSkinComponentLookup(OsuSkinComponents.ReverseArrow), _ => new DefaultReverseArrow())
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                    },
                 }
-            };
+            });
 
             ScaleBindable.BindValueChanged(scale => scaleContainer.Scale = new Vector2(scale.NewValue));
         }
@@ -75,22 +79,22 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             base.OnApply();
 
             Position = HitObject.Position - DrawableSlider.Position;
+            hasRotation = false;
         }
 
-        protected override void CheckForResult(bool userTriggered, double timeOffset)
-        {
-            if (HitObject.StartTime <= Time.Current)
-                ApplyResult(r => r.Type = DrawableSlider.Tracking.Value ? r.Judgement.MaxResult : r.Judgement.MinResult);
-        }
+        protected override void CheckForResult(bool userTriggered, double timeOffset) => DrawableSlider.SliderInputManager.TryJudgeNestedObject(this, timeOffset);
 
         protected override void UpdateInitialTransforms()
         {
+            // When snaking in is enabled, the first end circle needs to be delayed until the snaking completes.
+            bool delayFadeIn = DrawableSlider.SliderBody?.SnakingIn.Value == true && HitObject.RepeatIndex == 0;
+
             animDuration = Math.Min(300, HitObject.SpanDuration);
 
-            this.Animate(
-                d => d.FadeIn(animDuration),
-                d => d.ScaleTo(0.5f).ScaleTo(1f, animDuration * 2, Easing.OutElasticHalf)
-            );
+            this
+                .FadeOut()
+                .Delay(delayFadeIn ? (Slider?.TimePreempt ?? 0) / 3 : 0)
+                .FadeIn(HitObject.RepeatIndex == 0 ? HitObject.TimeFadeIn : animDuration);
         }
 
         protected override void UpdateHitStateTransforms(ArmedState state)
@@ -109,11 +113,6 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
 
                 case ArmedState.Hit:
                     this.FadeOut(animDuration, Easing.Out);
-
-                    const float final_scale = 1.5f;
-
-                    Arrow.ScaleTo(Scale * final_scale, animDuration, Easing.Out);
-                    CirclePiece.ScaleTo(Scale * final_scale, animDuration, Easing.Out);
                     break;
             }
         }
@@ -148,7 +147,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 break;
             }
 
-            float aimRotation = MathUtils.RadiansToDegrees(MathF.Atan2(aimRotationVector.Y - Position.Y, aimRotationVector.X - Position.X));
+            float aimRotation = float.RadiansToDegrees(MathF.Atan2(aimRotationVector.Y - Position.Y, aimRotationVector.X - Position.X));
             while (Math.Abs(aimRotation - Arrow.Rotation) > 180)
                 aimRotation += aimRotation < Arrow.Rotation ? 360 : -360;
 

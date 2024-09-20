@@ -9,13 +9,13 @@ using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.Catch.Difficulty.Skills
 {
-    public class Movement : StrainSkill
+    public class Movement : StrainDecaySkill
     {
         private const float absolute_player_positioning_error = 16f;
         private const float normalized_hitobject_radius = 41.0f;
         private const double direction_change_bonus = 21.0;
 
-        protected override double SkillMultiplier => 900;
+        protected override double SkillMultiplier => 1;
         protected override double StrainDecayBase => 0.2;
 
         protected override double DecayWeight => 0.94;

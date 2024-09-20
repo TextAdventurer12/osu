@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -13,7 +13,17 @@ namespace osu.Game.Rulesets.Osu.Edit
     {
         private readonly List<ICheck> checks = new List<ICheck>
         {
-            new CheckOffscreenObjects()
+            // Compose
+            new CheckOffscreenObjects(),
+            new CheckTooShortSpinners(),
+
+            // Spread
+            new CheckTimeDistanceEquality(),
+            new CheckLowDiffOverlaps(),
+            new CheckTooShortSliders(),
+
+            // Settings
+            new CheckOsuAbnormalDifficultySettings(),
         };
 
         public IEnumerable<Issue> Run(BeatmapVerifierContext context)

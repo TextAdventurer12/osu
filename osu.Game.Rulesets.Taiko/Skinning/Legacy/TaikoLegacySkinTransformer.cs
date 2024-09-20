@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Audio.Sample;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Audio;
 using osu.Game.Rulesets.Scoring;
@@ -15,30 +14,29 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
 {
     public class TaikoLegacySkinTransformer : LegacySkinTransformer
     {
-        private Lazy<bool> hasExplosion;
+        public override bool IsProvidingLegacyResources => base.IsProvidingLegacyResources || hasHitCircle || hasBarLeft;
 
-        public TaikoLegacySkinTransformer(ISkinSource source)
-            : base(source)
+        private readonly Lazy<bool> hasExplosion;
+
+        private bool hasHitCircle => GetTexture("taikohitcircle") != null;
+        private bool hasBarLeft => GetTexture("taiko-bar-left") != null;
+
+        public TaikoLegacySkinTransformer(ISkin skin)
+            : base(skin)
         {
-            Source.SourceChanged += sourceChanged;
-            sourceChanged();
+            hasExplosion = new Lazy<bool>(() => GetTexture(getHitName(TaikoSkinComponents.TaikoExplosionGreat)) != null);
         }
 
-        private void sourceChanged()
+        public override Drawable? GetDrawableComponent(ISkinComponentLookup lookup)
         {
-            hasExplosion = new Lazy<bool>(() => Source.GetTexture(getHitName(TaikoSkinComponents.TaikoExplosionGreat)) != null);
-        }
-
-        public override Drawable GetDrawableComponent(ISkinComponent component)
-        {
-            if (component is GameplaySkinComponent<HitResult>)
+            if (lookup is SkinComponentLookup<HitResult>)
             {
                 // if a taiko skin is providing explosion sprites, hide the judgements completely
                 if (hasExplosion.Value)
                     return Drawable.Empty().With(d => d.Expire());
             }
 
-            if (component is TaikoSkinComponent taikoComponent)
+            if (lookup is TaikoSkinComponentLookup taikoComponent)
             {
                 switch (taikoComponent.Component)
                 {
@@ -49,21 +47,27 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
                         return null;
 
                     case TaikoSkinComponents.InputDrum:
-                        if (GetTexture("taiko-bar-left") != null)
+                        if (hasBarLeft)
                             return new LegacyInputDrum();
 
                         return null;
 
+                    case TaikoSkinComponents.DrumSamplePlayer:
+                        return null;
+
                     case TaikoSkinComponents.CentreHit:
                     case TaikoSkinComponents.RimHit:
-
-                        if (GetTexture("taikohitcircle") != null)
+                        if (hasHitCircle)
                             return new LegacyHit(taikoComponent.Component);
 
                         return null;
 
                     case TaikoSkinComponents.DrumRollTick:
                         return this.GetAnimation("sliderscorepoint", false, false);
+
+                    case TaikoSkinComponents.Swell:
+                        // todo: support taiko legacy swell (https://github.com/ppy/osu/issues/13601).
+                        return null;
 
                     case TaikoSkinComponents.HitTarget:
                         if (GetTexture("taikobigcircle") != null)
@@ -91,7 +95,6 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
                         return null;
 
                     case TaikoSkinComponents.TaikoExplosionMiss:
-
                         var missSprite = this.GetAnimation(getHitName(taikoComponent.Component), true, false);
                         if (missSprite != null)
                             return new LegacyHitExplosion(missSprite);
@@ -100,8 +103,7 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
 
                     case TaikoSkinComponents.TaikoExplosionOk:
                     case TaikoSkinComponents.TaikoExplosionGreat:
-
-                        var hitName = getHitName(taikoComponent.Component);
+                        string hitName = getHitName(taikoComponent.Component);
                         var hitSprite = this.GetAnimation(hitName, true, false);
 
                         if (hitSprite != null)
@@ -129,10 +131,19 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
 
                     case TaikoSkinComponents.Mascot:
                         return new DrawableTaikoMascot();
+
+                    case TaikoSkinComponents.KiaiGlow:
+                        if (GetTexture("taiko-glow") != null)
+                            return new LegacyKiaiGlow();
+
+                        return null;
+
+                    default:
+                        throw new UnsupportedSkinComponentException(lookup);
                 }
             }
 
-            return Source.GetDrawableComponent(component);
+            return base.GetDrawableComponent(lookup);
         }
 
         private string getHitName(TaikoSkinComponents component)
@@ -152,15 +163,13 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
             throw new ArgumentOutOfRangeException(nameof(component), $"Invalid component type: {component}");
         }
 
-        public override ISample GetSample(ISampleInfo sampleInfo)
+        public override ISample? GetSample(ISampleInfo sampleInfo)
         {
             if (sampleInfo is HitSampleInfo hitSampleInfo)
-                return Source.GetSample(new LegacyTaikoSampleInfo(hitSampleInfo));
+                return base.GetSample(new LegacyTaikoSampleInfo(hitSampleInfo));
 
             return base.GetSample(sampleInfo);
         }
-
-        public override IBindable<TValue> GetConfig<TLookup, TValue>(TLookup lookup) => Source.GetConfig<TLookup, TValue>(lookup);
 
         private class LegacyTaikoSampleInfo : HitSampleInfo
         {
@@ -174,11 +183,8 @@ namespace osu.Game.Rulesets.Taiko.Skinning.Legacy
             {
                 get
                 {
-                    foreach (var name in base.LookupNames)
+                    foreach (string name in base.LookupNames)
                         yield return name.Insert(name.LastIndexOf('/') + 1, "taiko-");
-
-                    foreach (var name in base.LookupNames)
-                        yield return name;
                 }
             }
         }

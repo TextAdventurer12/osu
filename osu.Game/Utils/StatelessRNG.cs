@@ -37,7 +37,7 @@ namespace osu.Game.Utils
         {
             unchecked
             {
-                var combined = ((ulong)(uint)series << 32) | (uint)seed;
+                ulong combined = ((ulong)(uint)series << 32) | (uint)seed;
                 // The xor operation is to not map (0, 0) to 0.
                 return mix(combined ^ 0x12345678);
             }
@@ -58,7 +58,7 @@ namespace osu.Game.Utils
         /// </param>
         public static int NextInt(int maxValue, int seed, int series = 0)
         {
-            if (maxValue <= 0) throw new ArgumentOutOfRangeException(nameof(maxValue));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxValue);
 
             return (int)(NextULong(seed, series) % (ulong)maxValue);
         }

@@ -1,22 +1,22 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Graphics;
-using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
@@ -25,27 +25,21 @@ using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
-    internal class TimelineBlueprintContainer : EditorBlueprintContainer
+    internal partial class TimelineBlueprintContainer : EditorBlueprintContainer
     {
         [Resolved(CanBeNull = true)]
         private Timeline timeline { get; set; }
 
-        [Resolved]
-        private OsuColour colours { get; set; }
-
-        private DragEvent lastDragEvent;
         private Bindable<HitObject> placement;
         private SelectionBlueprint<HitObject> placementBlueprint;
 
-        private SelectableAreaBackground backgroundBox;
+        private bool hitObjectDragged;
 
-        // we only care about checking vertical validity.
-        // this allows selecting and dragging selections before time=0.
-        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
-        {
-            float localY = ToLocalSpace(screenSpacePos).Y;
-            return DrawRectangle.Top <= localY && DrawRectangle.Bottom >= localY;
-        }
+        /// <remarks>
+        /// Positional input must be received outside the container's bounds,
+        /// in order to handle timeline blueprints which are stacked offscreen.
+        /// </remarks>
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => timeline.ReceivePositionalInputAt(screenSpacePos);
 
         public TimelineBlueprintContainer(HitObjectComposer composer)
             : base(composer)
@@ -60,7 +54,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [BackgroundDependencyLoader]
         private void load()
         {
-            AddInternal(backgroundBox = new SelectableAreaBackground
+            AddInternal(new SelectableAreaBackground
             {
                 Colour = Color4.Black,
                 Depth = float.MaxValue,
@@ -71,7 +65,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            DragBox.Alpha = 0;
 
             placement = Beatmap.PlacementObject.GetBoundCopy();
             placement.ValueChanged += placementChanged;
@@ -83,52 +76,39 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 if (placementBlueprint != null)
                 {
-                    SelectionBlueprints.Remove(placementBlueprint);
+                    SelectionBlueprints.Remove(placementBlueprint, true);
                     placementBlueprint = null;
                 }
             }
             else
             {
-                placementBlueprint = CreateBlueprintFor(obj.NewValue);
+                placementBlueprint = CreateBlueprintFor(obj.NewValue).AsNonNull();
 
-                placementBlueprint.Colour = Color4.MediumPurple;
+                placementBlueprint.Colour = OsuColour.Gray(0.9f);
 
+                // TODO: this is out of order, causing incorrect stacking height.
                 SelectionBlueprints.Add(placementBlueprint);
             }
         }
 
         protected override Container<SelectionBlueprint<HitObject>> CreateSelectionBlueprintContainer() => new TimelineSelectionBlueprintContainer { RelativeSizeAxes = Axes.Both };
 
-        protected override bool OnHover(HoverEvent e)
+        protected override bool OnDragStart(DragStartEvent e)
         {
-            backgroundBox.FadeColour(colours.BlueLighter, 120, Easing.OutQuint);
-            return base.OnHover(e);
+            if (!base.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
+                return false;
+
+            return base.OnDragStart(e);
         }
 
-        protected override void OnHoverLost(HoverLostEvent e)
-        {
-            backgroundBox.FadeColour(Color4.Black, 600, Easing.OutQuint);
-            base.OnHoverLost(e);
-        }
-
-        protected override void OnDrag(DragEvent e)
-        {
-            handleScrollViaDrag(e);
-
-            base.OnDrag(e);
-        }
-
-        protected override void OnDragEnd(DragEndEvent e)
-        {
-            base.OnDragEnd(e);
-            lastDragEvent = null;
-        }
+        private float dragTimeAccumulated;
 
         protected override void Update()
         {
-            // trigger every frame so drags continue to update selection while playback is scrolling the timeline.
-            if (lastDragEvent != null)
-                OnDrag(lastDragEvent);
+            if (IsDragged || hitObjectDragged)
+                handleScrollViaDrag();
+            else
+                dragTimeAccumulated = 0;
 
             if (Composer != null && timeline != null)
             {
@@ -141,6 +121,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             updateStacking();
         }
 
+        private readonly Stack<HitObject> currentConcurrentObjects = new Stack<HitObject>();
+
         private void updateStacking()
         {
             // because only blueprints of objects which are alive (via pooling) are displayed in the timeline, it's feasible to do this every-update.
@@ -150,10 +132,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             // after the stack gets this tall, we can presume there is space underneath to draw subsequent blueprints.
             const int stack_reset_count = 3;
 
-            Stack<HitObject> currentConcurrentObjects = new Stack<HitObject>();
+            currentConcurrentObjects.Clear();
 
-            foreach (var b in SelectionBlueprints.Reverse())
+            for (int i = SelectionBlueprints.Count - 1; i >= 0; i--)
             {
+                var b = SelectionBlueprints[i];
+
                 // remove objects from the stack as long as their end time is in the past.
                 while (currentConcurrentObjects.TryPeek(out HitObject hitObject))
                 {
@@ -183,34 +167,86 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             return new TimelineHitObjectBlueprint(item)
             {
-                OnDragHandled = handleScrollViaDrag
+                OnDragHandled = e => hitObjectDragged = e != null,
             };
         }
 
-        protected override DragBox CreateDragBox(Action<RectangleF> performSelect) => new TimelineDragBox(performSelect);
+        protected sealed override DragBox CreateDragBox() => new TimelineDragBox();
 
-        private void handleScrollViaDrag(DragEvent e)
+        protected override void UpdateSelectionFromDragBox()
         {
-            lastDragEvent = e;
+            Composer.BlueprintContainer.CommitIfPlacementActive();
 
-            if (lastDragEvent == null)
-                return;
+            var dragBox = (TimelineDragBox)DragBox;
+            double minTime = dragBox.MinTime;
+            double maxTime = dragBox.MaxTime;
 
-            if (timeline != null)
+            SelectedItems.RemoveAll(hitObject => !shouldBeSelected(hitObject));
+
+            foreach (var hitObject in Beatmap.HitObjects.Except(SelectedItems).Where(shouldBeSelected))
             {
-                var timelineQuad = timeline.ScreenSpaceDrawQuad;
-                var mouseX = e.ScreenSpaceMousePosition.X;
+                Composer.Playfield.SetKeepAlive(hitObject, true);
+                SelectedItems.Add(hitObject);
+            }
 
-                // scroll if in a drag and dragging outside visible extents
-                if (mouseX > timelineQuad.TopRight.X)
-                    timeline.ScrollBy((float)((mouseX - timelineQuad.TopRight.X) / 10 * Clock.ElapsedFrameTime));
-                else if (mouseX < timelineQuad.TopLeft.X)
-                    timeline.ScrollBy((float)((mouseX - timelineQuad.TopLeft.X) / 10 * Clock.ElapsedFrameTime));
+            bool shouldBeSelected(HitObject hitObject)
+            {
+                double midTime = (hitObject.StartTime + hitObject.GetEndTime()) / 2;
+                return minTime <= midTime && midTime <= maxTime;
             }
         }
 
-        private class SelectableAreaBackground : CompositeDrawable
+        private void handleScrollViaDrag()
         {
+            // The amount of time dragging before we reach maximum drag speed.
+            const float time_ramp_multiplier = 5000;
+
+            // A maximum drag speed to ensure things don't get out of hand.
+            const float max_velocity = 10;
+
+            if (timeline == null) return;
+
+            var mousePos = timeline.ToLocalSpace(InputManager.CurrentState.Mouse.Position);
+
+            // for better UX do not require the user to drag all the way to the edge and beyond to initiate a drag-scroll.
+            // this is especially important in scenarios like fullscreen, where mouse confine will usually be on
+            // and the user physically *won't be able to* drag beyond the edge of the timeline
+            // (since its left edge is co-incident with the window edge).
+            const float scroll_tolerance = 40;
+
+            float leftBound = timeline.BoundingBox.TopLeft.X + scroll_tolerance;
+            float rightBound = timeline.BoundingBox.TopRight.X - scroll_tolerance;
+
+            float amount = 0;
+
+            if (mousePos.X > rightBound)
+                amount = mousePos.X - rightBound;
+            else if (mousePos.X < leftBound)
+                amount = mousePos.X - leftBound;
+
+            if (amount == 0)
+            {
+                dragTimeAccumulated = 0;
+                return;
+            }
+
+            amount = Math.Sign(amount) * Math.Min(max_velocity, MathF.Pow(Math.Clamp(Math.Abs(amount), 0, scroll_tolerance), 2));
+            dragTimeAccumulated += (float)Clock.ElapsedFrameTime;
+
+            timeline.ScrollBy(amount * (float)Clock.ElapsedFrameTime * Math.Min(1, dragTimeAccumulated / time_ramp_multiplier));
+        }
+
+        private partial class SelectableAreaBackground : CompositeDrawable
+        {
+            [Resolved]
+            private OsuColour colours { get; set; }
+
+            public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+            {
+                float localY = ToLocalSpace(screenSpacePos).Y;
+                return DrawRectangle.Top <= localY && DrawRectangle.Bottom >= localY;
+            }
+
             [BackgroundDependencyLoader]
             private void load()
             {
@@ -234,118 +270,21 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     }
                 });
             }
-        }
 
-        internal class TimelineSelectionHandler : EditorSelectionHandler, IKeyBindingHandler<GlobalAction>
-        {
-            // for now we always allow movement. snapping is provided by the Timeline's "distance" snap implementation
-            public override bool HandleMovement(MoveSelectionEvent<HitObject> moveEvent) => true;
-
-            public bool OnPressed(GlobalAction action)
+            protected override bool OnHover(HoverEvent e)
             {
-                switch (action)
-                {
-                    case GlobalAction.EditorNudgeLeft:
-                        nudgeSelection(-1);
-                        return true;
-
-                    case GlobalAction.EditorNudgeRight:
-                        nudgeSelection(1);
-                        return true;
-                }
-
-                return false;
+                this.FadeColour(colours.BlueLighter, 120, Easing.OutQuint);
+                return base.OnHover(e);
             }
 
-            public void OnReleased(GlobalAction action)
+            protected override void OnHoverLost(HoverLostEvent e)
             {
-            }
-
-            /// <summary>
-            /// Nudge the current selection by the specified multiple of beat divisor lengths,
-            /// based on the timing at the first object in the selection.
-            /// </summary>
-            /// <param name="amount">The direction and count of beat divisor lengths to adjust.</param>
-            private void nudgeSelection(int amount)
-            {
-                var selected = EditorBeatmap.SelectedHitObjects;
-
-                if (selected.Count == 0)
-                    return;
-
-                var timingPoint = EditorBeatmap.ControlPointInfo.TimingPointAt(selected.First().StartTime);
-                double adjustment = timingPoint.BeatLength / EditorBeatmap.BeatDivisor * amount;
-
-                EditorBeatmap.PerformOnSelection(h =>
-                {
-                    h.StartTime += adjustment;
-                    EditorBeatmap.Update(h);
-                });
+                this.FadeColour(Color4.Black, 600, Easing.OutQuint);
+                base.OnHoverLost(e);
             }
         }
 
-        private class TimelineDragBox : DragBox
-        {
-            // the following values hold the start and end X positions of the drag box in the timeline's local space,
-            // but with zoom unapplied in order to be able to compensate for positional changes
-            // while the timeline is being zoomed in/out.
-            private float? selectionStart;
-            private float selectionEnd;
-
-            [Resolved]
-            private Timeline timeline { get; set; }
-
-            public TimelineDragBox(Action<RectangleF> performSelect)
-                : base(performSelect)
-            {
-            }
-
-            protected override Drawable CreateBox() => new Box
-            {
-                RelativeSizeAxes = Axes.Y,
-                Alpha = 0.3f
-            };
-
-            public override bool HandleDrag(MouseButtonEvent e)
-            {
-                selectionStart ??= e.MouseDownPosition.X / timeline.CurrentZoom;
-
-                // only calculate end when a transition is not in progress to avoid bouncing.
-                if (Precision.AlmostEquals(timeline.CurrentZoom, timeline.Zoom))
-                    selectionEnd = e.MousePosition.X / timeline.CurrentZoom;
-
-                updateDragBoxPosition();
-                return true;
-            }
-
-            private void updateDragBoxPosition()
-            {
-                if (selectionStart == null)
-                    return;
-
-                float rescaledStart = selectionStart.Value * timeline.CurrentZoom;
-                float rescaledEnd = selectionEnd * timeline.CurrentZoom;
-
-                Box.X = Math.Min(rescaledStart, rescaledEnd);
-                Box.Width = Math.Abs(rescaledStart - rescaledEnd);
-
-                var boxScreenRect = Box.ScreenSpaceDrawQuad.AABBFloat;
-
-                // we don't care about where the hitobjects are vertically. in cases like stacking display, they may be outside the box without this adjustment.
-                boxScreenRect.Y -= boxScreenRect.Height;
-                boxScreenRect.Height *= 2;
-
-                PerformSelection?.Invoke(boxScreenRect);
-            }
-
-            public override void Hide()
-            {
-                base.Hide();
-                selectionStart = null;
-            }
-        }
-
-        protected class TimelineSelectionBlueprintContainer : Container<SelectionBlueprint<HitObject>>
+        protected partial class TimelineSelectionBlueprintContainer : Container<SelectionBlueprint<HitObject>>
         {
             protected override Container<SelectionBlueprint<HitObject>> Content { get; }
 

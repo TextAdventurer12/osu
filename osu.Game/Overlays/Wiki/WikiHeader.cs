@@ -1,18 +1,23 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Localisation;
+using osu.Game.Graphics;
+using osu.Game.Localisation;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Resources.Localisation.Web;
 
 namespace osu.Game.Overlays.Wiki
 {
-    public class WikiHeader : BreadcrumbControlOverlayHeader
+    public partial class WikiHeader : BreadcrumbControlOverlayHeader
     {
-        private const string index_page_string = "index";
-        private const string index_path = "Main_Page";
+        public static LocalisableString IndexPageString => LayoutStrings.HeaderHelpIndex;
 
         public readonly Bindable<APIWikiPage> WikiPageData = new Bindable<APIWikiPage>();
 
@@ -21,8 +26,8 @@ namespace osu.Game.Overlays.Wiki
 
         public WikiHeader()
         {
-            TabControl.AddItem(index_page_string);
-            Current.Value = index_page_string;
+            TabControl.AddItem(IndexPageString);
+            Current.Value = IndexPageString;
 
             WikiPageData.BindValueChanged(onWikiPageChange);
             Current.BindValueChanged(onCurrentChange);
@@ -36,11 +41,11 @@ namespace osu.Game.Overlays.Wiki
             TabControl.Clear();
             Current.Value = null;
 
-            TabControl.AddItem(index_page_string);
+            TabControl.AddItem(IndexPageString);
 
-            if (e.NewValue.Path == index_path)
+            if (e.NewValue.Path == WikiOverlay.INDEX_PATH)
             {
-                Current.Value = index_page_string;
+                Current.Value = IndexPageString;
                 return;
             }
 
@@ -51,12 +56,12 @@ namespace osu.Game.Overlays.Wiki
             Current.Value = e.NewValue.Title;
         }
 
-        private void onCurrentChange(ValueChangedEvent<string> e)
+        private void onCurrentChange(ValueChangedEvent<LocalisableString?> e)
         {
             if (e.NewValue == TabControl.Items.LastOrDefault())
                 return;
 
-            if (e.NewValue == index_page_string)
+            if (e.NewValue == IndexPageString)
             {
                 ShowIndexPage?.Invoke();
                 return;
@@ -69,13 +74,13 @@ namespace osu.Game.Overlays.Wiki
 
         protected override OverlayTitle CreateTitle() => new WikiHeaderTitle();
 
-        private class WikiHeaderTitle : OverlayTitle
+        private partial class WikiHeaderTitle : OverlayTitle
         {
             public WikiHeaderTitle()
             {
-                Title = "wiki";
-                Description = "knowledge base";
-                IconTexture = "Icons/Hexacons/wiki";
+                Title = PageTitleStrings.MainWikiControllerDefault;
+                Description = NamedOverlayComponentStrings.WikiDescription;
+                Icon = OsuIcon.Wiki;
             }
         }
     }

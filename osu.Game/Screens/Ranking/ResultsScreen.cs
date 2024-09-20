@@ -3,161 +3,197 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Bindings;
+using osu.Framework.Input.Events;
 using osu.Framework.Screens;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
+using osu.Game.Localisation;
 using osu.Game.Online.API;
+using osu.Game.Online.Placeholders;
+using osu.Game.Overlays;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play;
+using osu.Game.Screens.Ranking.Expanded.Accuracy;
 using osu.Game.Screens.Ranking.Statistics;
 using osuTK;
 
 namespace osu.Game.Screens.Ranking
 {
-    public abstract class ResultsScreen : ScreenWithBeatmapBackground, IKeyBindingHandler<GlobalAction>
+    public abstract partial class ResultsScreen : ScreenWithBeatmapBackground, IKeyBindingHandler<GlobalAction>
     {
         protected const float BACKGROUND_BLUR = 20;
         private static readonly float screen_height = 768 - TwoLayerButton.SIZE_EXTENDED.Y;
 
         public override bool DisallowExternalBeatmapRulesetChanges => true;
 
-        // Temporary for now to stop dual transitions. Should respect the current toolbar mode, but there's no way to do so currently.
-        public override bool HideOverlaysOnEnter => true;
+        public override bool? AllowGlobalTrackControl => true;
 
-        public readonly Bindable<ScoreInfo> SelectedScore = new Bindable<ScoreInfo>();
+        protected override OverlayActivation InitialOverlayActivationMode => OverlayActivation.UserTriggered;
 
-        public readonly ScoreInfo Score;
+        public readonly Bindable<ScoreInfo?> SelectedScore = new Bindable<ScoreInfo?>();
 
-        protected ScorePanelList ScorePanelList { get; private set; }
+        public readonly ScoreInfo? Score;
 
-        [Resolved(CanBeNull = true)]
-        private Player player { get; set; }
+        protected ScorePanelList ScorePanelList { get; private set; } = null!;
+
+        protected VerticalScrollContainer VerticalScrollContent { get; private set; } = null!;
 
         [Resolved]
-        private IAPIProvider api { get; set; }
+        private Player? player { get; set; }
 
-        private StatisticsPanel statisticsPanel;
-        private Drawable bottomPanel;
-        private Container<ScorePanel> detachedPanelContainer;
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
 
-        private bool fetchedInitialScores;
-        private APIRequest nextPageRequest;
+        protected StatisticsPanel StatisticsPanel { get; private set; } = null!;
 
-        private readonly bool allowRetry;
-        private readonly bool allowWatchingReplay;
+        private Drawable bottomPanel = null!;
+        private Container<ScorePanel> detachedPanelContainer = null!;
 
-        protected ResultsScreen(ScoreInfo score, bool allowRetry, bool allowWatchingReplay = true)
+        private bool lastFetchCompleted;
+
+        /// <summary>
+        /// Whether the user can retry the beatmap from the results screen.
+        /// </summary>
+        public bool AllowRetry { get; init; }
+
+        /// <summary>
+        /// Whether the user can watch the replay of the completed play from the results screen.
+        /// </summary>
+        public bool AllowWatchingReplay { get; init; } = true;
+
+        /// <summary>
+        /// Whether the user's personal statistics should be shown on the extended statistics panel
+        /// after clicking the score panel associated with the <see cref="Score"/> being presented.
+        /// Requires <see cref="Score"/> to be present.
+        /// </summary>
+        public bool ShowUserStatistics { get; init; }
+
+        private Sample? popInSample;
+
+        protected ResultsScreen(ScoreInfo? score)
         {
             Score = score;
-            this.allowRetry = allowRetry;
-            this.allowWatchingReplay = allowWatchingReplay;
 
             SelectedScore.Value = score;
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(AudioManager audio)
         {
             FillFlowContainer buttons;
 
-            InternalChild = new GridContainer
+            popInSample = audio.Samples.Get(@"UI/overlay-pop-in");
+
+            InternalChild = new PopoverContainer
             {
                 RelativeSizeAxes = Axes.Both,
-                Content = new[]
+                Child = new GridContainer
                 {
-                    new Drawable[]
+                    RelativeSizeAxes = Axes.Both,
+                    Content = new[]
                     {
-                        new VerticalScrollContainer
+                        new Drawable[]
                         {
-                            RelativeSizeAxes = Axes.Both,
-                            ScrollbarVisible = false,
-                            Child = new Container
+                            VerticalScrollContent = new VerticalScrollContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Children = new Drawable[]
-                                {
-                                    statisticsPanel = new StatisticsPanel
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Score = { BindTarget = SelectedScore }
-                                    },
-                                    ScorePanelList = new ScorePanelList
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        SelectedScore = { BindTarget = SelectedScore },
-                                        PostExpandAction = () => statisticsPanel.ToggleVisibility()
-                                    },
-                                    detachedPanelContainer = new Container<ScorePanel>
-                                    {
-                                        RelativeSizeAxes = Axes.Both
-                                    },
-                                }
-                            }
-                        },
-                    },
-                    new[]
-                    {
-                        bottomPanel = new Container
-                        {
-                            Anchor = Anchor.BottomLeft,
-                            Origin = Anchor.BottomLeft,
-                            RelativeSizeAxes = Axes.X,
-                            Height = TwoLayerButton.SIZE_EXTENDED.Y,
-                            Alpha = 0,
-                            Children = new Drawable[]
-                            {
-                                new Box
+                                ScrollbarVisible = false,
+                                Child = new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Colour = Color4Extensions.FromHex("#333")
-                                },
-                                buttons = new FillFlowContainer
+                                    Children = new Drawable[]
+                                    {
+                                        StatisticsPanel = createStatisticsPanel().With(panel =>
+                                        {
+                                            panel.RelativeSizeAxes = Axes.Both;
+                                            panel.Score.BindTarget = SelectedScore;
+                                        }),
+                                        ScorePanelList = new ScorePanelList
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            SelectedScore = { BindTarget = SelectedScore },
+                                            PostExpandAction = () => StatisticsPanel.ToggleVisibility()
+                                        },
+                                        detachedPanelContainer = new Container<ScorePanel>
+                                        {
+                                            RelativeSizeAxes = Axes.Both
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                        new[]
+                        {
+                            bottomPanel = new Container
+                            {
+                                Anchor = Anchor.BottomLeft,
+                                Origin = Anchor.BottomLeft,
+                                RelativeSizeAxes = Axes.X,
+                                Height = TwoLayerButton.SIZE_EXTENDED.Y,
+                                Alpha = 0,
+                                Children = new Drawable[]
                                 {
-                                    Anchor = Anchor.Centre,
-                                    Origin = Anchor.Centre,
-                                    AutoSizeAxes = Axes.Both,
-                                    Spacing = new Vector2(5),
-                                    Direction = FillDirection.Horizontal
+                                    new Box
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Colour = Color4Extensions.FromHex("#333")
+                                    },
+                                    buttons = new FillFlowContainer
+                                    {
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                        AutoSizeAxes = Axes.Both,
+                                        Spacing = new Vector2(5),
+                                        Direction = FillDirection.Horizontal
+                                    },
                                 }
                             }
                         }
+                    },
+                    RowDimensions = new[]
+                    {
+                        new Dimension(),
+                        new Dimension(GridSizeMode.AutoSize)
                     }
-                },
-                RowDimensions = new[]
-                {
-                    new Dimension(),
-                    new Dimension(GridSizeMode.AutoSize)
                 }
             };
 
             if (Score != null)
             {
                 // only show flair / animation when arriving after watching a play that isn't autoplay.
-                bool shouldFlair = player != null && Score.Mods.All(m => m.UserPlayable);
+                bool shouldFlair = player != null && !Score.User.IsBot;
 
                 ScorePanelList.AddScore(Score, shouldFlair);
+                // this is mostly for medal display.
+                // we don't want the medal animation to trample on the results screen animation, so we (ab)use `OverlayActivationMode`
+                // to give the results screen enough time to play the animation out before the medals can be shown.
+                Scheduler.AddDelayed(() => OverlayActivationMode.Value = OverlayActivation.All, shouldFlair ? AccuracyCircle.TOTAL_DURATION + 1000 : 0);
             }
 
-            if (allowWatchingReplay)
+            if (AllowWatchingReplay)
             {
-                buttons.Add(new ReplayDownloadButton(null)
+                buttons.Add(new ReplayDownloadButton(SelectedScore.Value)
                 {
                     Score = { BindTarget = SelectedScore },
                     Width = 300
                 });
             }
 
-            if (player != null && allowRetry)
+            if (player != null && AllowRetry)
             {
                 buttons.Add(new RetryButton { Width = 300 });
 
@@ -167,10 +203,16 @@ namespace osu.Game.Screens.Ranking
                     {
                         if (!this.IsCurrentScreen()) return;
 
-                        player?.Restart();
+                        player?.Restart(true);
                     },
                 });
             }
+
+            if (Score?.BeatmapInfo != null)
+                buttons.Add(new CollectionButton(Score.BeatmapInfo));
+
+            if (Score?.BeatmapInfo?.BeatmapSet != null && Score.BeatmapInfo.BeatmapSet.OnlineID > 0)
+                buttons.Add(new FavouriteButton(Score.BeatmapInfo.BeatmapSet));
         }
 
         protected override void LoadComplete()
@@ -182,15 +224,17 @@ namespace osu.Game.Screens.Ranking
             if (req != null)
                 api.Queue(req);
 
-            statisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
+            StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
         }
 
         protected override void Update()
         {
             base.Update();
 
-            if (fetchedInitialScores && nextPageRequest == null)
+            if (lastFetchCompleted)
             {
+                APIRequest? nextPageRequest = null;
+
                 if (ScorePanelList.IsScrolledToStart)
                     nextPageRequest = FetchNextPage(-1, fetchScoresCallback);
                 else if (ScorePanelList.IsScrolledToEnd)
@@ -198,10 +242,7 @@ namespace osu.Game.Screens.Ranking
 
                 if (nextPageRequest != null)
                 {
-                    // Scheduled after children to give the list a chance to update its scroll position and not potentially trigger a second request too early.
-                    nextPageRequest.Success += () => ScheduleAfterChildren(() => nextPageRequest = null);
-                    nextPageRequest.Failure += _ => ScheduleAfterChildren(() => nextPageRequest = null);
-
+                    lastFetchCompleted = false;
                     api.Queue(nextPageRequest);
                 }
             }
@@ -212,7 +253,7 @@ namespace osu.Game.Screens.Ranking
         /// </summary>
         /// <param name="scoresCallback">A callback which should be called when fetching is completed. Scheduling is not required.</param>
         /// <returns>An <see cref="APIRequest"/> responsible for the fetch operation. This will be queued and performed automatically.</returns>
-        protected virtual APIRequest FetchScores(Action<IEnumerable<ScoreInfo>> scoresCallback) => null;
+        protected virtual APIRequest? FetchScores(Action<IEnumerable<ScoreInfo>> scoresCallback) => null;
 
         /// <summary>
         /// Performs a fetch of the next page of scores. This is invoked every frame until a non-null <see cref="APIRequest"/> is returned.
@@ -220,19 +261,36 @@ namespace osu.Game.Screens.Ranking
         /// <param name="direction">The fetch direction. -1 to fetch scores greater than the current start of the list, and 1 to fetch scores lower than the current end of the list.</param>
         /// <param name="scoresCallback">A callback which should be called when fetching is completed. Scheduling is not required.</param>
         /// <returns>An <see cref="APIRequest"/> responsible for the fetch operation. This will be queued and performed automatically.</returns>
-        protected virtual APIRequest FetchNextPage(int direction, Action<IEnumerable<ScoreInfo>> scoresCallback) => null;
+        protected virtual APIRequest? FetchNextPage(int direction, Action<IEnumerable<ScoreInfo>> scoresCallback) => null;
+
+        /// <summary>
+        /// Creates the <see cref="Statistics.StatisticsPanel"/> to be used to display extended information about scores.
+        /// </summary>
+        private StatisticsPanel createStatisticsPanel()
+        {
+            return ShowUserStatistics && Score != null
+                ? new UserStatisticsPanel(Score)
+                : new StatisticsPanel();
+        }
 
         private void fetchScoresCallback(IEnumerable<ScoreInfo> scores) => Schedule(() =>
         {
             foreach (var s in scores)
                 addScore(s);
 
-            fetchedInitialScores = true;
+            // allow a frame for scroll container to adjust its dimensions with the added scores before fetching again.
+            Schedule(() => lastFetchCompleted = true);
+
+            if (ScorePanelList.IsEmpty)
+            {
+                // This can happen if for example a beatmap that is part of a playlist hasn't been played yet.
+                VerticalScrollContent.Add(new MessagePlaceholder(LeaderboardStrings.NoRecordsYet));
+            }
         });
 
-        public override void OnEntering(IScreen last)
+        public override void OnEntering(ScreenTransitionEvent e)
         {
-            base.OnEntering(last);
+            base.OnEntering(e);
 
             ApplyToBackground(b =>
             {
@@ -241,12 +299,19 @@ namespace osu.Game.Screens.Ranking
             });
 
             bottomPanel.FadeTo(1, 250);
+
+            popInSample?.Play();
         }
 
-        public override bool OnExiting(IScreen next)
+        public override bool OnExiting(ScreenExitEvent e)
         {
-            if (base.OnExiting(next))
+            if (base.OnExiting(e))
                 return true;
+
+            // This is a stop-gap safety against components holding references to gameplay after exiting the gameplay flow.
+            // Right now, HitEvents are only used up to the results screen. If this changes in the future we need to remove
+            // HitObject references from HitEvent.
+            Score?.HitEvents.Clear();
 
             this.FadeOut(100);
             return false;
@@ -254,9 +319,9 @@ namespace osu.Game.Screens.Ranking
 
         public override bool OnBackButton()
         {
-            if (statisticsPanel.State.Value == Visibility.Visible)
+            if (StatisticsPanel.State.Value == Visibility.Visible)
             {
-                statisticsPanel.Hide();
+                StatisticsPanel.Hide();
                 return true;
             }
 
@@ -271,12 +336,13 @@ namespace osu.Game.Screens.Ranking
                 panel.Alpha = 0;
         }
 
-        private ScorePanel detachedPanel;
+        private ScorePanel? detachedPanel;
 
         private void onStatisticsStateChanged(ValueChangedEvent<Visibility> state)
         {
             if (state.NewValue == Visibility.Visible)
             {
+                Debug.Assert(SelectedScore.Value != null);
                 // Detach the panel in its original location, and move into the desired location in the local container.
                 var expandedPanel = ScorePanelList.GetPanelForScore(SelectedScore.Value);
                 var screenSpacePos = expandedPanel.ScreenSpaceDrawQuad.TopLeft;
@@ -286,10 +352,10 @@ namespace osu.Game.Screens.Ranking
                 detachedPanelContainer.Add(expandedPanel);
 
                 // Move into its original location in the local container first, then to the final location.
-                var origLocation = detachedPanelContainer.ToLocalSpace(screenSpacePos).X;
+                float origLocation = detachedPanelContainer.ToLocalSpace(screenSpacePos).X;
                 expandedPanel.MoveToX(origLocation)
                              .Then()
-                             .MoveToX(StatisticsPanel.SIDE_PADDING, 150, Easing.OutQuint);
+                             .MoveToX(StatisticsPanel.SIDE_PADDING, 400, Easing.OutElasticQuarter);
 
                 // Hide contracted panels.
                 foreach (var contracted in ScorePanelList.GetScorePanels().Where(p => p.State == PanelState.Contracted))
@@ -297,7 +363,7 @@ namespace osu.Game.Screens.Ranking
                 ScorePanelList.HandleInput = false;
 
                 // Dim background.
-                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.1f), 150));
+                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.4f), 400, Easing.OutQuint));
 
                 detachedPanel = expandedPanel;
             }
@@ -306,14 +372,14 @@ namespace osu.Game.Screens.Ranking
                 var screenSpacePos = detachedPanel.ScreenSpaceDrawQuad.TopLeft;
 
                 // Remove from the local container and re-attach.
-                detachedPanelContainer.Remove(detachedPanel);
+                detachedPanelContainer.Remove(detachedPanel, false);
                 ScorePanelList.Attach(detachedPanel);
 
                 // Move into its original location in the attached container first, then to the final location.
-                var origLocation = detachedPanel.Parent.ToLocalSpace(screenSpacePos);
-                detachedPanel.MoveTo(origLocation)
+                float origLocation = detachedPanel.Parent!.ToLocalSpace(screenSpacePos).X;
+                detachedPanel.MoveToX(origLocation)
                              .Then()
-                             .MoveTo(new Vector2(0, origLocation.Y), 150, Easing.OutQuint);
+                             .MoveToX(0, 250, Easing.OutElasticQuarter);
 
                 // Show contracted panels.
                 foreach (var contracted in ScorePanelList.GetScorePanels().Where(p => p.State == PanelState.Contracted))
@@ -321,29 +387,42 @@ namespace osu.Game.Screens.Ranking
                 ScorePanelList.HandleInput = true;
 
                 // Un-dim background.
-                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.5f), 150));
+                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.5f), 250, Easing.OutQuint));
 
                 detachedPanel = null;
             }
         }
 
-        public bool OnPressed(GlobalAction action)
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {
-            switch (action)
+            if (e.Repeat)
+                return false;
+
+            switch (e.Action)
             {
+                case GlobalAction.QuickExit:
+                    if (this.IsCurrentScreen())
+                    {
+                        this.Exit();
+                        return true;
+                    }
+
+                    break;
+
                 case GlobalAction.Select:
-                    statisticsPanel.ToggleVisibility();
+                    if (SelectedScore.Value != null)
+                        StatisticsPanel.ToggleVisibility();
                     return true;
             }
 
             return false;
         }
 
-        public void OnReleased(GlobalAction action)
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
         }
 
-        private class VerticalScrollContainer : OsuScrollContainer
+        protected partial class VerticalScrollContainer : OsuScrollContainer
         {
             protected override Container<Drawable> Content => content;
 
@@ -351,6 +430,8 @@ namespace osu.Game.Screens.Ranking
 
             public VerticalScrollContainer()
             {
+                Masking = false;
+
                 base.Content.Add(content = new Container { RelativeSizeAxes = Axes.X });
             }
 

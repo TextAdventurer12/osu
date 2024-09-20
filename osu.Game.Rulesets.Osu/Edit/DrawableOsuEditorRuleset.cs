@@ -2,23 +2,18 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
-using System.Linq;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
-using osu.Framework.Graphics;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Game.Beatmaps;
-using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.Objects.Drawables;
-using osu.Game.Rulesets.Osu.Objects.Drawables;
-using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.UI;
+using osu.Game.Screens.Edit;
 using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Edit
 {
-    public class DrawableOsuEditorRuleset : DrawableOsuRuleset
+    public partial class DrawableOsuEditorRuleset : DrawableOsuRuleset
     {
         public DrawableOsuEditorRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             : base(ruleset, beatmap, mods)
@@ -29,73 +24,33 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public override PlayfieldAdjustmentContainer CreatePlayfieldAdjustmentContainer() => new OsuPlayfieldAdjustmentContainer { Size = Vector2.One };
 
-        private class OsuEditorPlayfield : OsuPlayfield
+        private partial class OsuEditorPlayfield : OsuPlayfield
         {
-            private Bindable<bool> hitAnimations;
+            [Resolved]
+            private EditorBeatmap editorBeatmap { get; set; } = null!;
 
-            protected override GameplayCursorContainer CreateCursor() => null;
+            protected override GameplayCursorContainer? CreateCursor() => null;
 
-            [BackgroundDependencyLoader]
-            private void load(OsuConfigManager config)
+            public OsuEditorPlayfield()
             {
-                hitAnimations = config.GetBindable<bool>(OsuSetting.EditorHitAnimations);
+                HitPolicy = new AnyOrderHitPolicy();
             }
 
-            protected override void OnNewDrawableHitObject(DrawableHitObject d)
+            protected override void LoadComplete()
             {
-                d.ApplyCustomUpdateState += updateState;
+                base.LoadComplete();
+
+                editorBeatmap.BeatmapReprocessed += onBeatmapReprocessed;
             }
 
-            /// <summary>
-            /// Hit objects are intentionally made to fade out at a constant slower rate than in gameplay.
-            /// This allows a mapper to gain better historical context and use recent hitobjects as reference / snap points.
-            /// </summary>
-            private const double editor_hit_object_fade_out_extension = 700;
+            private void onBeatmapReprocessed() => ApplyCircleSizeToPlayfieldBorder(editorBeatmap);
 
-            private void updateState(DrawableHitObject hitObject, ArmedState state)
+            protected override void Dispose(bool isDisposing)
             {
-                if (state == ArmedState.Idle || hitAnimations.Value)
-                    return;
+                base.Dispose(isDisposing);
 
-                if (hitObject is DrawableHitCircle circle)
-                {
-                    circle.ApproachCircle
-                          .FadeOutFromOne(editor_hit_object_fade_out_extension * 4)
-                          .Expire();
-
-                    circle.ApproachCircle.ScaleTo(1.1f, 300, Easing.OutQuint);
-                }
-
-                if (hitObject is IHasMainCirclePiece mainPieceContainer)
-                {
-                    // clear any explode animation logic.
-                    mainPieceContainer.CirclePiece.ApplyTransformsAt(hitObject.HitStateUpdateTime, true);
-                    mainPieceContainer.CirclePiece.ClearTransformsAfter(hitObject.HitStateUpdateTime, true);
-                }
-
-                if (hitObject is DrawableSliderRepeat repeat)
-                {
-                    repeat.Arrow.ApplyTransformsAt(hitObject.HitStateUpdateTime, true);
-                    repeat.Arrow.ClearTransformsAfter(hitObject.HitStateUpdateTime, true);
-                }
-
-                // adjust the visuals of top-level object types to make them stay on screen for longer than usual.
-                switch (hitObject)
-                {
-                    case DrawableSlider _:
-                    case DrawableHitCircle _:
-                        // Get the existing fade out transform
-                        var existing = hitObject.Transforms.LastOrDefault(t => t.TargetMember == nameof(Alpha));
-
-                        if (existing == null)
-                            return;
-
-                        hitObject.RemoveTransform(existing);
-
-                        using (hitObject.BeginAbsoluteSequence(hitObject.HitStateUpdateTime))
-                            hitObject.FadeOut(editor_hit_object_fade_out_extension).Expire();
-                        break;
-                }
+                if (editorBeatmap.IsNotNull())
+                    editorBeatmap.BeatmapReprocessed -= onBeatmapReprocessed;
             }
         }
     }

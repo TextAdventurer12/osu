@@ -4,12 +4,16 @@
 using System;
 using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Audio;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Framework.Utils;
 using osu.Game.Scoring;
 using osu.Game.Screens.Ranking.Contracted;
 using osu.Game.Screens.Ranking.Expanded;
@@ -19,7 +23,7 @@ using osuTK.Graphics;
 
 namespace osu.Game.Screens.Ranking
 {
-    public class ScorePanel : CompositeDrawable, IStateful<PanelState>
+    public partial class ScorePanel : CompositeDrawable, IStateful<PanelState>
     {
         /// <summary>
         /// Width of the panel when contracted.
@@ -76,43 +80,57 @@ namespace osu.Game.Screens.Ranking
         private static readonly Color4 contracted_top_layer_colour = Color4Extensions.FromHex("#353535");
         private static readonly Color4 contracted_middle_layer_colour = Color4Extensions.FromHex("#353535");
 
-        public event Action<PanelState> StateChanged;
+        public event Action<PanelState>? StateChanged;
+
+        /// <summary>
+        /// The position of the score in the rankings.
+        /// </summary>
+        public readonly Bindable<int?> ScorePosition = new Bindable<int?>();
 
         /// <summary>
         /// An action to be invoked if this <see cref="ScorePanel"/> is clicked while in an expanded state.
         /// </summary>
-        public Action PostExpandAction;
+        public Action? PostExpandAction;
 
         public readonly ScoreInfo Score;
 
+        [Resolved]
+        private OsuGameBase game { get; set; } = null!;
+
+        private AudioContainer audioContent = null!;
+
         private bool displayWithFlair;
 
-        private Container content;
+        private Container topLayerContainer = null!;
+        private Drawable topLayerBackground = null!;
+        private Container topLayerContentContainer = null!;
+        private Drawable? topLayerContent;
 
-        private Container topLayerContainer;
-        private Drawable topLayerBackground;
-        private Container topLayerContentContainer;
-        private Drawable topLayerContent;
+        private Container middleLayerContainer = null!;
+        private Drawable middleLayerBackground = null!;
+        private Container middleLayerContentContainer = null!;
+        private Drawable? middleLayerContent;
 
-        private Container middleLayerContainer;
-        private Drawable middleLayerBackground;
-        private Container middleLayerContentContainer;
-        private Drawable middleLayerContent;
+        private ScorePanelTrackingContainer? trackingContainer;
+
+        private DrawableSample? samplePanelFocus;
 
         public ScorePanel(ScoreInfo score, bool isNewLocalScore = false)
         {
             Score = score;
             displayWithFlair = isNewLocalScore;
+
+            ScorePosition.Value = score.Position;
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(AudioManager audio)
         {
             // ScorePanel doesn't include the top extruding area in its own size.
             // Adding a manual offset here allows the expanded version to take on an "acceptable" vertical centre when at 100% UI scale.
             const float vertical_fudge = 20;
 
-            InternalChild = content = new Container
+            InternalChild = audioContent = new AudioContainer
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
@@ -164,7 +182,8 @@ namespace osu.Game.Screens.Ranking
                             },
                             middleLayerContentContainer = new Container { RelativeSizeAxes = Axes.Both }
                         }
-                    }
+                    },
+                    samplePanelFocus = new DrawableSample(audio.Samples.Get(@"Results/score-panel-focus"))
                 }
             };
         }
@@ -192,10 +211,30 @@ namespace osu.Game.Screens.Ranking
                 state = value;
 
                 if (IsLoaded)
+                {
                     updateState();
+
+                    if (value == PanelState.Expanded)
+                        playAppearSample();
+                }
 
                 StateChanged?.Invoke(value);
             }
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            audioContent.Balance.Value = (Math.Clamp(ScreenSpaceDrawQuad.Centre.X / game.ScreenSpaceDrawQuad.Width, -1, 1) * 2 - 1) * OsuGameBase.SFX_STEREO_STRENGTH;
+        }
+
+        private void playAppearSample()
+        {
+            var channel = samplePanelFocus?.GetChannel();
+            if (channel == null) return;
+
+            channel.Frequency.Value = 0.99 + RNG.NextDouble(0.2);
+            channel.Play();
         }
 
         private void updateState()
@@ -211,8 +250,9 @@ namespace osu.Game.Screens.Ranking
                     topLayerBackground.FadeColour(expanded_top_layer_colour, RESIZE_DURATION, Easing.OutQuint);
                     middleLayerBackground.FadeColour(expanded_middle_layer_colour, RESIZE_DURATION, Easing.OutQuint);
 
-                    topLayerContentContainer.Add(topLayerContent = new ExpandedPanelTopContent(Score.User).With(d => d.Alpha = 0));
-                    middleLayerContentContainer.Add(middleLayerContent = new ExpandedPanelMiddleContent(Score, displayWithFlair).With(d => d.Alpha = 0));
+                    bool firstLoad = topLayerContent == null;
+                    topLayerContentContainer.Add(topLayerContent = new ExpandedPanelTopContent(Score.User, firstLoad) { Alpha = 0 });
+                    middleLayerContentContainer.Add(middleLayerContent = new ExpandedPanelMiddleContent(Score, displayWithFlair) { Alpha = 0 });
 
                     // only the first expanded display should happen with flair.
                     displayWithFlair = false;
@@ -224,17 +264,22 @@ namespace osu.Game.Screens.Ranking
                     topLayerBackground.FadeColour(contracted_top_layer_colour, RESIZE_DURATION, Easing.OutQuint);
                     middleLayerBackground.FadeColour(contracted_middle_layer_colour, RESIZE_DURATION, Easing.OutQuint);
 
-                    topLayerContentContainer.Add(topLayerContent = new ContractedPanelTopContent(Score).With(d => d.Alpha = 0));
-                    middleLayerContentContainer.Add(middleLayerContent = new ContractedPanelMiddleContent(Score).With(d => d.Alpha = 0));
+                    topLayerContentContainer.Add(topLayerContent = new ContractedPanelTopContent
+                    {
+                        ScorePosition = { BindTarget = ScorePosition },
+                        Alpha = 0
+                    });
+
+                    middleLayerContentContainer.Add(middleLayerContent = new ContractedPanelMiddleContent(Score) { Alpha = 0 });
                     break;
             }
 
-            content.ResizeTo(Size, RESIZE_DURATION, Easing.OutQuint);
+            audioContent.ResizeTo(Size, RESIZE_DURATION, Easing.OutQuint);
 
             bool topLayerExpanded = topLayerContainer.Y < 0;
 
             // If the top layer was already expanded, then we don't need to wait for the resize and can instead transform immediately. This looks better when changing the panel state.
-            using (BeginDelayedSequence(topLayerExpanded ? 0 : RESIZE_DURATION + TOP_LAYER_EXPAND_DELAY, true))
+            using (BeginDelayedSequence(topLayerExpanded ? 0 : RESIZE_DURATION + TOP_LAYER_EXPAND_DELAY))
             {
                 topLayerContainer.FadeIn();
 
@@ -286,8 +331,6 @@ namespace osu.Game.Screens.Ranking
             => base.ReceivePositionalInputAt(screenSpacePos)
                || topLayerContainer.ReceivePositionalInputAt(screenSpacePos)
                || middleLayerContainer.ReceivePositionalInputAt(screenSpacePos);
-
-        private ScorePanelTrackingContainer trackingContainer;
 
         /// <summary>
         /// Creates a <see cref="ScorePanelTrackingContainer"/> which this <see cref="ScorePanel"/> can reside inside.

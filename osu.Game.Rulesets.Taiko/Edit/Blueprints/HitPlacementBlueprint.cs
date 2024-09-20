@@ -10,7 +10,7 @@ using osuTK.Input;
 
 namespace osu.Game.Rulesets.Taiko.Edit.Blueprints
 {
-    public class HitPlacementBlueprint : PlacementBlueprint
+    public partial class HitPlacementBlueprint : PlacementBlueprint
     {
         private readonly HitPiece piece;
 
@@ -21,26 +21,23 @@ namespace osu.Game.Rulesets.Taiko.Edit.Blueprints
         {
             InternalChild = piece = new HitPiece
             {
-                Size = new Vector2(TaikoHitObject.DEFAULT_SIZE * TaikoPlayfield.DEFAULT_HEIGHT)
+                Size = new Vector2(TaikoHitObject.DEFAULT_SIZE * TaikoPlayfield.BASE_HEIGHT)
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            BeginPlacement();
         }
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
-            switch (e.Button)
-            {
-                case MouseButton.Left:
-                    HitObject.Type = HitType.Centre;
-                    EndPlacement(true);
-                    return true;
+            if (e.Button != MouseButton.Left)
+                return false;
 
-                case MouseButton.Right:
-                    HitObject.Type = HitType.Rim;
-                    EndPlacement(true);
-                    return true;
-            }
-
-            return false;
+            EndPlacement(true);
+            return true;
         }
 
         public override void UpdateTimeAndPosition(SnapResult result)

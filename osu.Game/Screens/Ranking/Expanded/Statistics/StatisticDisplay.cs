@@ -3,10 +3,12 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 
@@ -15,18 +17,18 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
     /// <summary>
     /// A statistic from the score to be displayed in the <see cref="ExpandedPanelMiddleContent"/>.
     /// </summary>
-    public abstract class StatisticDisplay : CompositeDrawable
+    public abstract partial class StatisticDisplay : CompositeDrawable
     {
-        protected SpriteText HeaderText { get; private set; }
+        protected SpriteText HeaderText { get; private set; } = null!;
 
-        private readonly string header;
-        private Drawable content;
+        private readonly LocalisableString header;
+        private Drawable content = null!;
 
         /// <summary>
         /// Creates a new <see cref="StatisticDisplay"/>.
         /// </summary>
         /// <param name="header">The name of the statistic.</param>
-        protected StatisticDisplay(string header)
+        protected StatisticDisplay(LocalisableString header)
         {
             this.header = header;
             RelativeSizeAxes = Axes.X;
@@ -60,7 +62,7 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
                                 Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
-                                Text = header.ToUpperInvariant(),
+                                Text = header.ToUpper(),
                             }
                         }
                     },

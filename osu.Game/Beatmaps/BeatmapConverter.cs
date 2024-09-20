@@ -1,10 +1,14 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using osu.Framework.Lists;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 
@@ -40,7 +44,18 @@ namespace osu.Game.Beatmaps
         public IBeatmap Convert(CancellationToken cancellationToken = default)
         {
             // We always operate on a clone of the original beatmap, to not modify it game-wide
-            return ConvertBeatmap(Beatmap.Clone(), cancellationToken);
+            var original = Beatmap.Clone();
+
+            // Shallow clone isn't enough to ensure we don't mutate beatmap info unexpectedly.
+            // Can potentially be removed after `Beatmap.Difficulty` doesn't save back to `Beatmap.BeatmapInfo`.
+            original.BeatmapInfo = original.BeatmapInfo.Clone();
+            original.ControlPointInfo = original.ControlPointInfo.DeepClone();
+
+            // Used in osu!mania conversion.
+            original.Breaks = new SortedList<BreakPeriod>(Comparer<BreakPeriod>.Default);
+            original.Breaks.AddRange(Beatmap.Breaks);
+
+            return ConvertBeatmap(original, cancellationToken);
         }
 
         /// <summary>
@@ -57,6 +72,7 @@ namespace osu.Game.Beatmaps
             beatmap.ControlPointInfo = original.ControlPointInfo;
             beatmap.HitObjects = convertHitObjects(original.HitObjects, original, cancellationToken).OrderBy(s => s.StartTime).ToList();
             beatmap.Breaks = original.Breaks;
+            beatmap.UnhandledEventLines = original.UnhandledEventLines;
 
             return beatmap;
         }

@@ -3,16 +3,17 @@
 
 using System;
 using Android.App;
-using Android.OS;
+using Microsoft.Maui.Devices;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.Updater;
 using osu.Game.Utils;
-using Xamarin.Essentials;
 
 namespace osu.Android
 {
-    public class OsuGameAndroid : OsuGame
+    public partial class OsuGameAndroid : OsuGame
     {
         [Cached]
         private readonly OsuGameActivity gameActivity;
@@ -27,7 +28,7 @@ namespace osu.Android
         {
             get
             {
-                var packageInfo = Application.Context.ApplicationContext.PackageManager.GetPackageInfo(Application.Context.ApplicationContext.PackageName, 0);
+                var packageInfo = Application.Context.ApplicationContext!.PackageManager!.GetPackageInfo(Application.Context.ApplicationContext.PackageName!, 0).AsNonNull();
 
                 try
                 {
@@ -40,9 +41,9 @@ namespace osu.Android
                     // Basic conversion format (as done in Fastfile): 2020.606.0 -> 202006060
 
                     // https://stackoverflow.com/questions/52977079/android-sdk-28-versioncode-in-packageinfo-has-been-deprecated
-                    string versionName = string.Empty;
+                    string versionName;
 
-                    if (Build.VERSION.SdkInt >= BuildVersionCodes.P)
+                    if (OperatingSystem.IsAndroidVersionAtLeast(28))
                     {
                         versionName = packageInfo.LongVersionCode.ToString();
                         // ensure we only read the trailing portion of long (the part we are interested in).
@@ -63,7 +64,7 @@ namespace osu.Android
                 {
                 }
 
-                return new Version(packageInfo.VersionName);
+                return new Version(packageInfo.VersionName.AsNonNull());
             }
         }
 
@@ -73,15 +74,21 @@ namespace osu.Android
             LoadComponentAsync(new GameplayScreenRotationLocker(), Add);
         }
 
-        protected override UpdateManager CreateUpdateManager() => new SimpleUpdateManager();
+        public override void SetHost(GameHost host)
+        {
+            base.SetHost(host);
+            host.Window.CursorState |= CursorState.Hidden;
+        }
+
+        protected override UpdateManager CreateUpdateManager() => new MobileUpdateNotifier();
 
         protected override BatteryInfo CreateBatteryInfo() => new AndroidBatteryInfo();
 
         private class AndroidBatteryInfo : BatteryInfo
         {
-            public override double ChargeLevel => Battery.ChargeLevel;
+            public override double? ChargeLevel => Battery.ChargeLevel;
 
-            public override bool IsCharging => Battery.PowerSource != BatteryPowerSource.Battery;
+            public override bool OnBattery => Battery.PowerSource == BatteryPowerSource.Battery;
         }
     }
 }

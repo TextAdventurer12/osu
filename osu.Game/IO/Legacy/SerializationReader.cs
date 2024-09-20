@@ -1,13 +1,11 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 
 namespace osu.Game.IO.Legacy
@@ -25,15 +23,6 @@ namespace osu.Game.IO.Legacy
         }
 
         public int RemainingBytes => (int)(stream.Length - stream.Position);
-
-        /// <summary> Static method to take a SerializationInfo object (an input to an ISerializable constructor)
-        /// and produce a SerializationReader from which serialized objects can be read </summary>.
-        public static SerializationReader GetReader(SerializationInfo info)
-        {
-            byte[] byteArray = (byte[])info.GetValue("X", typeof(byte[]));
-            MemoryStream ms = new MemoryStream(byteArray);
-            return new SerializationReader(ms);
-        }
 
         /// <summary> Reads a string from the buffer.  Overrides the base implementation so it can cope with nulls. </summary>
         public override string ReadString()
@@ -134,173 +123,87 @@ namespace osu.Game.IO.Legacy
 
             switch (t)
             {
-                case ObjType.boolType:
+                case ObjType.BoolType:
                     return ReadBoolean();
 
-                case ObjType.byteType:
+                case ObjType.ByteType:
                     return ReadByte();
 
-                case ObjType.uint16Type:
+                case ObjType.UInt16Type:
                     return ReadUInt16();
 
-                case ObjType.uint32Type:
+                case ObjType.UInt32Type:
                     return ReadUInt32();
 
-                case ObjType.uint64Type:
+                case ObjType.UInt64Type:
                     return ReadUInt64();
 
-                case ObjType.sbyteType:
+                case ObjType.SByteType:
                     return ReadSByte();
 
-                case ObjType.int16Type:
+                case ObjType.Int16Type:
                     return ReadInt16();
 
-                case ObjType.int32Type:
+                case ObjType.Int32Type:
                     return ReadInt32();
 
-                case ObjType.int64Type:
+                case ObjType.Int64Type:
                     return ReadInt64();
 
-                case ObjType.charType:
+                case ObjType.CharType:
                     return ReadChar();
 
-                case ObjType.stringType:
+                case ObjType.StringType:
                     return base.ReadString();
 
-                case ObjType.singleType:
+                case ObjType.SingleType:
                     return ReadSingle();
 
-                case ObjType.doubleType:
+                case ObjType.DoubleType:
                     return ReadDouble();
 
-                case ObjType.decimalType:
+                case ObjType.DecimalType:
                     return ReadDecimal();
 
-                case ObjType.dateTimeType:
+                case ObjType.DateTimeType:
                     return ReadDateTime();
 
-                case ObjType.byteArrayType:
+                case ObjType.ByteArrayType:
                     return ReadByteArray();
 
-                case ObjType.charArrayType:
+                case ObjType.CharArrayType:
                     return ReadCharArray();
 
-                case ObjType.otherType:
-                    return DynamicDeserializer.Deserialize(BaseStream);
+                case ObjType.OtherType:
+                    throw new IOException("Deserialization of arbitrary type is not supported.");
 
                 default:
                     return null;
             }
         }
-
-        public static class DynamicDeserializer
-        {
-            private static VersionConfigToNamespaceAssemblyObjectBinder versionBinder;
-            private static BinaryFormatter formatter;
-
-            private static void initialize()
-            {
-                versionBinder = new VersionConfigToNamespaceAssemblyObjectBinder();
-                formatter = new BinaryFormatter
-                {
-                    // AssemblyFormat = FormatterAssemblyStyle.Simple,
-                    Binder = versionBinder
-                };
-            }
-
-            public static object Deserialize(Stream stream)
-            {
-                if (formatter == null)
-                    initialize();
-
-                Debug.Assert(formatter != null, "formatter != null");
-
-                // ReSharper disable once PossibleNullReferenceException
-                return formatter.Deserialize(stream);
-            }
-
-            #region Nested type: VersionConfigToNamespaceAssemblyObjectBinder
-
-            public sealed class VersionConfigToNamespaceAssemblyObjectBinder : SerializationBinder
-            {
-                private readonly Dictionary<string, Type> cache = new Dictionary<string, Type>();
-
-                public override Type BindToType(string assemblyName, string typeName)
-                {
-                    if (cache.TryGetValue(assemblyName + typeName, out var typeToDeserialize))
-                        return typeToDeserialize;
-
-                    List<Type> tmpTypes = new List<Type>();
-                    Type genType = null;
-
-                    if (typeName.Contains("System.Collections.Generic") && typeName.Contains("[["))
-                    {
-                        string[] splitTyps = typeName.Split('[');
-
-                        foreach (string typ in splitTyps)
-                        {
-                            if (typ.Contains("Version"))
-                            {
-                                string asmTmp = typ.Substring(typ.IndexOf(',') + 1);
-                                string asmName = asmTmp.Remove(asmTmp.IndexOf(']')).Trim();
-                                string typName = typ.Remove(typ.IndexOf(','));
-                                tmpTypes.Add(BindToType(asmName, typName));
-                            }
-                            else if (typ.Contains("Generic"))
-                            {
-                                genType = BindToType(assemblyName, typ);
-                            }
-                        }
-
-                        if (genType != null && tmpTypes.Count > 0)
-                        {
-                            return genType.MakeGenericType(tmpTypes.ToArray());
-                        }
-                    }
-
-                    string toAssemblyName = assemblyName.Split(',')[0];
-                    Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-                    foreach (Assembly a in assemblies)
-                    {
-                        if (a.FullName.Split(',')[0] == toAssemblyName)
-                        {
-                            typeToDeserialize = a.GetType(typeName);
-                            break;
-                        }
-                    }
-
-                    cache.Add(assemblyName + typeName, typeToDeserialize);
-
-                    return typeToDeserialize;
-                }
-            }
-
-            #endregion
-        }
     }
 
     public enum ObjType : byte
     {
-        nullType,
-        boolType,
-        byteType,
-        uint16Type,
-        uint32Type,
-        uint64Type,
-        sbyteType,
-        int16Type,
-        int32Type,
-        int64Type,
-        charType,
-        stringType,
-        singleType,
-        doubleType,
-        decimalType,
-        dateTimeType,
-        byteArrayType,
-        charArrayType,
-        otherType,
-        ILegacySerializableType
+        NullType,
+        BoolType,
+        ByteType,
+        UInt16Type,
+        UInt32Type,
+        UInt64Type,
+        SByteType,
+        Int16Type,
+        Int32Type,
+        Int64Type,
+        CharType,
+        StringType,
+        SingleType,
+        DoubleType,
+        DecimalType,
+        DateTimeType,
+        ByteArrayType,
+        CharArrayType,
+        OtherType,
+        LegacySerializableType
     }
 }

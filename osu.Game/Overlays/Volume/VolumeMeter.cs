@@ -1,44 +1,83 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Globalization;
+using JetBrains.Annotations;
+using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
-using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
 using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Volume
 {
-    public class VolumeMeter : Container, IKeyBindingHandler<GlobalAction>
+    public partial class VolumeMeter : Container, IStateful<SelectionState>
     {
         private CircularProgress volumeCircle;
         private CircularProgress volumeCircleGlow;
 
+        protected static readonly Vector2 LABEL_SIZE = new Vector2(120, 20);
+
         public BindableDouble Bindable { get; } = new BindableDouble { MinValue = 0, MaxValue = 1, Precision = 0.01 };
-        private readonly float circleSize;
+
+        protected readonly float CircleSize;
+
         private readonly Color4 meterColour;
         private readonly string name;
 
         private OsuSpriteText text;
         private BufferedContainer maxGlow;
 
+        private Container selectedGlowContainer;
+
+        private Sample hoverSample;
+        private Sample notchSample;
+        private double sampleLastPlaybackTime;
+
+        [CanBeNull]
+        public event Action<SelectionState> StateChanged;
+
+        private SelectionState state;
+
+        public SelectionState State
+        {
+            get => state;
+            set
+            {
+                if (state == value)
+                    return;
+
+                state = value;
+                StateChanged?.Invoke(value);
+
+                updateSelectedState();
+            }
+        }
+
+        private const float transition_length = 500;
+
         public VolumeMeter(string name, float circleSize, Color4 meterColour)
         {
-            this.circleSize = circleSize;
+            CircleSize = circleSize;
             this.meterColour = meterColour;
             this.name = name;
 
@@ -46,8 +85,12 @@ namespace osu.Game.Overlays.Volume
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours)
+        private void load(OsuColour colours, AudioManager audio)
         {
+            hoverSample = audio.Samples.Get($@"UI/{HoverSampleSet.Button.GetDescription()}-hover");
+            notchSample = audio.Samples.Get(@"UI/notch-tick");
+            sampleLastPlaybackTime = Time.Current;
+
             Color4 backgroundColour = colours.Gray1;
 
             CircularProgress bgProgress;
@@ -62,12 +105,11 @@ namespace osu.Game.Overlays.Volume
             {
                 new Container
                 {
-                    Size = new Vector2(circleSize),
+                    Size = new Vector2(CircleSize),
                     Children = new Drawable[]
                     {
                         new BufferedContainer
                         {
-                            Alpha = 0.9f,
                             RelativeSizeAxes = Axes.Both,
                             Children = new Drawable[]
                             {
@@ -97,7 +139,7 @@ namespace osu.Game.Overlays.Volume
                                         {
                                             Anchor = Anchor.Centre,
                                             Origin = Anchor.Centre,
-                                            Name = "Progress under covers for smoothing",
+                                            Name = @"Progress under covers for smoothing",
                                             RelativeSizeAxes = Axes.Both,
                                             Rotation = 180,
                                             Child = volumeCircle = new CircularProgress
@@ -109,7 +151,7 @@ namespace osu.Game.Overlays.Volume
                                 },
                                 new Circle
                                 {
-                                    Name = "Inner Cover",
+                                    Name = @"Inner Cover",
                                     Anchor = Anchor.Centre,
                                     Origin = Anchor.Centre,
                                     RelativeSizeAxes = Axes.Both,
@@ -118,7 +160,7 @@ namespace osu.Game.Overlays.Volume
                                 },
                                 new Container
                                 {
-                                    Name = "Progress overlay for glow",
+                                    Name = @"Progress overlay for glow",
                                     Anchor = Anchor.Centre,
                                     Origin = Anchor.Centre,
                                     RelativeSizeAxes = Axes.Both,
@@ -139,11 +181,29 @@ namespace osu.Game.Overlays.Volume
                                 },
                             },
                         },
+                        selectedGlowContainer = new CircularContainer
+                        {
+                            Masking = true,
+                            RelativeSizeAxes = Axes.Both,
+                            Alpha = 0,
+                            Child = new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Alpha = 0,
+                                AlwaysPresent = true,
+                            },
+                            EdgeEffect = new EdgeEffectParameters
+                            {
+                                Type = EdgeEffectType.Glow,
+                                Colour = meterColour.Opacity(0.1f),
+                                Radius = 10,
+                            }
+                        },
                         maxGlow = (text = new OsuSpriteText
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
-                            Font = OsuFont.Numeric.With(size: 0.16f * circleSize)
+                            Font = OsuFont.Numeric.With(size: 0.16f * CircleSize)
                         }).WithEffect(new GlowEffect
                         {
                             Colour = Color4.Transparent,
@@ -153,17 +213,16 @@ namespace osu.Game.Overlays.Volume
                 },
                 new Container
                 {
-                    Size = new Vector2(120, 20),
+                    Size = LABEL_SIZE,
                     CornerRadius = 10,
                     Masking = true,
-                    Margin = new MarginPadding { Left = circleSize + 10 },
+                    Margin = new MarginPadding { Left = CircleSize + 10 },
                     Origin = Anchor.CentreLeft,
                     Anchor = Anchor.CentreLeft,
                     Children = new Drawable[]
                     {
                         new Box
                         {
-                            Alpha = 0.9f,
                             RelativeSizeAxes = Axes.Both,
                             Colour = backgroundColour,
                         },
@@ -178,22 +237,12 @@ namespace osu.Game.Overlays.Volume
                 }
             };
 
-            Bindable.ValueChanged += volume =>
-            {
-                this.TransformTo("DisplayVolume",
-                    volume.NewValue,
-                    400,
-                    Easing.OutQuint);
-            };
+            Bindable.BindValueChanged(volume => { this.TransformTo(nameof(DisplayVolume), volume.NewValue, 400, Easing.OutQuint); }, true);
 
-            bgProgress.Current.Value = 0.75f;
+            bgProgress.Progress = 0.75f;
         }
 
-        protected override void LoadComplete()
-        {
-            base.LoadComplete();
-            Bindable.TriggerChange();
-        }
+        private int? displayVolumeInt;
 
         private double displayVolume;
 
@@ -204,6 +253,11 @@ namespace osu.Game.Overlays.Volume
             {
                 displayVolume = value;
 
+                int intValue = (int)Math.Round(displayVolume * 100);
+                bool intVolumeChanged = intValue != displayVolumeInt;
+
+                displayVolumeInt = intValue;
+
                 if (displayVolume >= 0.995f)
                 {
                     text.Text = "MAX";
@@ -212,12 +266,34 @@ namespace osu.Game.Overlays.Volume
                 else
                 {
                     maxGlow.EffectColour = Color4.Transparent;
-                    text.Text = Math.Round(displayVolume * 100).ToString(CultureInfo.CurrentCulture);
+                    text.Text = intValue.ToString(CultureInfo.CurrentCulture);
                 }
 
-                volumeCircle.Current.Value = displayVolume * 0.75f;
-                volumeCircleGlow.Current.Value = displayVolume * 0.75f;
+                volumeCircle.Progress = displayVolume * 0.75f;
+                volumeCircleGlow.Progress = displayVolume * 0.75f;
+
+                if (intVolumeChanged && IsLoaded)
+                    Scheduler.AddOnce(playTickSound);
             }
+        }
+
+        private void playTickSound()
+        {
+            const int tick_debounce_time = 30;
+
+            if (Time.Current - sampleLastPlaybackTime <= tick_debounce_time)
+                return;
+
+            var channel = notchSample.GetChannel();
+
+            channel.Frequency.Value = 0.99f + RNG.NextDouble(0.02f) + displayVolume * 0.1f;
+
+            // intentionally pitched down, even when hitting max.
+            if (displayVolumeInt == 0 || displayVolumeInt == 100)
+                channel.Frequency.Value -= 0.5f;
+
+            channel.Play();
+            sampleLastPlaybackTime = Time.Current;
         }
 
         public double Volume
@@ -243,6 +319,33 @@ namespace osu.Game.Overlays.Volume
 
         private void resetAcceleration() => accelerationModifier = 1;
 
+        private float dragDelta;
+
+        protected override bool OnDragStart(DragStartEvent e)
+        {
+            dragDelta = 0;
+            adjustFromDrag(e.Delta);
+            return true;
+        }
+
+        protected override void OnDrag(DragEvent e)
+        {
+            adjustFromDrag(e.Delta);
+            base.OnDrag(e);
+        }
+
+        private void adjustFromDrag(Vector2 delta)
+        {
+            const float mouse_drag_divisor = 200;
+
+            dragDelta += delta.Y / mouse_drag_divisor;
+
+            if (Math.Abs(dragDelta) < 0.01) return;
+
+            Volume -= dragDelta;
+            dragDelta = 0;
+        }
+
         private void adjust(double delta, bool isPrecise)
         {
             if (delta == 0)
@@ -256,11 +359,11 @@ namespace osu.Game.Overlays.Volume
             delta *= accelerationModifier;
             accelerationModifier = Math.Min(max_acceleration, accelerationModifier * acceleration_multiplier);
 
-            var precision = Bindable.Precision;
+            double precision = Bindable.Precision;
 
             if (isPrecise)
             {
-                scrollAccumulation += delta * adjust_step * 0.1;
+                scrollAccumulation += delta * adjust_step;
 
                 while (Precision.AlmostBigger(Math.Abs(scrollAccumulation), precision))
                 {
@@ -280,40 +383,41 @@ namespace osu.Game.Overlays.Volume
             return true;
         }
 
-        private const float transition_length = 500;
+        protected override bool OnMouseMove(MouseMoveEvent e)
+        {
+            State = SelectionState.Selected;
+            return base.OnMouseMove(e);
+        }
 
         protected override bool OnHover(HoverEvent e)
         {
-            this.ScaleTo(1.04f, transition_length, Easing.OutExpo);
+            State = SelectionState.Selected;
             return false;
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            this.ScaleTo(1f, transition_length, Easing.OutExpo);
         }
 
-        public bool OnPressed(GlobalAction action)
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
-            if (!IsHovered)
-                return false;
+        }
 
-            switch (action)
+        private void updateSelectedState()
+        {
+            switch (state)
             {
-                case GlobalAction.SelectPrevious:
-                    adjust(1, false);
-                    return true;
+                case SelectionState.Selected:
+                    this.ScaleTo(1.04f, transition_length, Easing.OutExpo);
+                    selectedGlowContainer.FadeIn(transition_length, Easing.OutExpo);
+                    hoverSample?.Play();
+                    break;
 
-                case GlobalAction.SelectNext:
-                    adjust(-1, false);
-                    return true;
+                case SelectionState.NotSelected:
+                    this.ScaleTo(1f, transition_length, Easing.OutExpo);
+                    selectedGlowContainer.FadeOut(transition_length, Easing.OutExpo);
+                    break;
             }
-
-            return false;
-        }
-
-        public void OnReleased(GlobalAction action)
-        {
         }
     }
 }

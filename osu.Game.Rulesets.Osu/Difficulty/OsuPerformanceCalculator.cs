@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -8,7 +8,7 @@ using MathNet.Numerics;
 using MathNet.Numerics.Interpolation;
 using osu.Framework.Extensions;
 using osu.Game.Rulesets.Difficulty;
-using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Difficulty.Skills;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
@@ -18,7 +18,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public new OsuDifficultyAttributes Attributes => (OsuDifficultyAttributes)base.Attributes;
 
         /// <summary>
         /// Aim, tap and acc values are combined using power mean with this as the exponent.
@@ -47,53 +46,33 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         private double greatWindow;
 
         private double effectiveMissCount;
+        private OsuDifficultyAttributes Attributes;
 
-        public OsuPerformanceCalculator(Ruleset ruleset, DifficultyAttributes attributes, ScoreInfo score)
-            : base(ruleset, attributes, score)
+        public OsuPerformanceCalculator()
+            : base(new OsuRuleset())
         {
         }
 
-        public override double Calculate(Dictionary<string, double> categoryRatings = null)
+        protected override PerformanceAttributes CreatePerformanceAttributes(ScoreInfo score, DifficultyAttributes attributes)
         {
-            mods = Score.Mods;
-            accuracy = Score.Accuracy;
-            scoreMaxCombo = Score.MaxCombo;
-            countGreat = Score.Statistics.GetOrDefault(HitResult.Great);
-            countOk = Score.Statistics.GetOrDefault(HitResult.Ok);
-            countMeh = Score.Statistics.GetOrDefault(HitResult.Meh);
-            countMiss = Score.Statistics.GetOrDefault(HitResult.Miss);
+            Attributes = (OsuDifficultyAttributes)attributes;
 
-            greatWindow = 79.5 - 6 * Attributes.OverallDifficulty;
+            accuracy = score.Accuracy;
+            scoreMaxCombo = score.MaxCombo;
+            countGreat = score.Statistics.GetValueOrDefault(HitResult.Great);
+            countOk = score.Statistics.GetValueOrDefault(HitResult.Ok);
+            countMeh = score.Statistics.GetValueOrDefault(HitResult.Meh);
+            countMiss = score.Statistics.GetValueOrDefault(HitResult.Miss);
+            effectiveMissCount = calculateEffectiveMissCount(osuAttributes);
+            greatWindow = 79.5 - 6 * osuAttributes.OverallDifficulty;
 
-            double multiplier = 2.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things
+            double multiplier = 2.14;
 
-            // guess the number of misses + slider breaks from combo
-            double comboBasedMissCount;
-
-            if (Attributes.SliderCount == 0)
-            {
-                if (scoreMaxCombo < Attributes.MaxCombo)
-                    comboBasedMissCount = (double)Attributes.MaxCombo / scoreMaxCombo;
-                else
-                    comboBasedMissCount = 0;
-            }
-            else
-            {
-                double fullComboThreshold = Attributes.MaxCombo - 0.1 * Attributes.SliderCount;
-                if (scoreMaxCombo < fullComboThreshold)
-                    comboBasedMissCount = fullComboThreshold / scoreMaxCombo;
-                else
-                    comboBasedMissCount = Math.Pow((Attributes.MaxCombo - scoreMaxCombo) / (0.1 * Attributes.SliderCount), 3);
-            }
-
-            effectiveMissCount = Math.Max(countMiss, comboBasedMissCount);
-
-            // Custom multipliers for NoFail and SpunOut.
-            if (mods.Any(m => m is OsuModNoFail))
+            if (score.Mods.Any(m => m is OsuModNoFail))
                 multiplier *= Math.Max(0.90, 1.0 - 0.02 * effectiveMissCount);
 
-            if (mods.Any(m => m is OsuModSpunOut))
-                multiplier *= 1.0 - Math.Pow((double)Attributes.SpinnerCount / totalHits, 0.85);
+            if (score.Mods.Any(m => m is OsuModSpunOut) && totalHits > 0)
+                multiplier *= 1.0 - Math.Pow((double)osuAttributes.SpinnerCount / totalHits, 0.85);
 
             double aimValue = computeAimValue();
             double tapValue = computeTapValue();
@@ -249,7 +228,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             return tapValue;
         }
 
-        private double computeAccuracyValue()
+        private double computeAccuracyValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             double fingerControlDiff = Attributes.FingerControlDifficulty;
 
@@ -274,14 +253,63 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double lengthFactor = Attributes.Length < 120 ? SpecialFunctions.Logistic((Attributes.Length - 300) / 60.0) + SpecialFunctions.Logistic(2.5) - SpecialFunctions.Logistic(-2.5) : SpecialFunctions.Logistic(Attributes.Length / 60.0);
             accuracyValue *= lengthFactor;
 
-            if (mods.Any(m => m is OsuModHidden))
+            // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
+            if (score.Mods.Any(m => m is OsuModBlinds))
+                accuracyValue *= 1.14;
+            else if (score.Mods.Any(m => m is OsuModHidden || m is OsuModTraceable))
                 accuracyValue *= 1.08;
-            if (mods.Any(m => m is OsuModFlashlight))
+
+            if (score.Mods.Any(m => m is OsuModFlashlight))
                 accuracyValue *= 1.02;
 
             return accuracyValue;
         }
 
+        private double computeFlashlightValue(ScoreInfo score, OsuDifficultyAttributes attributes)
+        {
+            if (!score.Mods.Any(h => h is OsuModFlashlight))
+                return 0.0;
+
+            double flashlightValue = Flashlight.DifficultyToPerformance(attributes.FlashlightDifficulty);
+
+            // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
+            if (effectiveMissCount > 0)
+                flashlightValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
+
+            flashlightValue *= getComboScalingFactor(attributes);
+
+            // Account for shorter maps having a higher ratio of 0 combo/100 combo flashlight radius.
+            flashlightValue *= 0.7 + 0.1 * Math.Min(1.0, totalHits / 200.0) +
+                               (totalHits > 200 ? 0.2 * Math.Min(1.0, (totalHits - 200) / 200.0) : 0.0);
+
+            // Scale the flashlight value with accuracy _slightly_.
+            flashlightValue *= 0.5 + accuracy / 2.0;
+            // It is important to also consider accuracy difficulty when doing that.
+            flashlightValue *= 0.98 + Math.Pow(attributes.OverallDifficulty, 2) / 2500;
+
+            return flashlightValue;
+        }
+
+        private double calculateEffectiveMissCount(OsuDifficultyAttributes attributes)
+        {
+            // Guess the number of misses + slider breaks from combo
+            double comboBasedMissCount = 0.0;
+
+            if (attributes.SliderCount > 0)
+            {
+                double fullComboThreshold = attributes.MaxCombo - 0.1 * attributes.SliderCount;
+                if (scoreMaxCombo < fullComboThreshold)
+                    comboBasedMissCount = fullComboThreshold / Math.Max(1.0, scoreMaxCombo);
+            }
+
+            // Clamp miss count to maximum amount of possible breaks
+            comboBasedMissCount = Math.Min(comboBasedMissCount, countOk + countMeh + countMiss);
+
+            return Math.Max(countMiss, comboBasedMissCount);
+        }
+
+        private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
+        private int totalHits => countGreat + countOk + countMeh + countMiss;
         private double getModifiedAcc()
         {
             // Treat 300 as 300, 100 as 200, 50 as 100

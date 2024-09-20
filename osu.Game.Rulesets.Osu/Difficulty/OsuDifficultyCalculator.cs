@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +29,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private const double star_rating_exponent = 0.83;
 
-        public OsuDifficultyCalculator(Ruleset ruleset, WorkingBeatmap beatmap)
+        public override int Version => 20220902;
+
+        public OsuDifficultyCalculator(IRulesetInfo ruleset, IWorkingBeatmap beatmap)
             : base(ruleset, beatmap)
         {
         }
@@ -66,13 +70,23 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             int hitCirclesCount = beatmap.HitObjects.Count(h => h is HitCircle);
             int sliderCount = beatmap.HitObjects.Count(h => h is Slider);
+            int sliderCount = beatmap.HitObjects.Count(h => h is Slider);
             int spinnerCount = beatmap.HitObjects.Count(h => h is Spinner);
 
             int beatmapMaxCombo = beatmap.HitObjects.Count;
             // Add the ticks + tail of the slider. 1 is subtracted because the "headcircle" would be counted twice (once for the slider itself in the line above)
             beatmapMaxCombo += beatmap.HitObjects.OfType<Slider>().Sum(s => s.NestedHitObjects.Count - 1);
 
-            return new OsuDifficultyAttributes
+            int beatmapMaxCombo = beatmap.HitObjects.Count;
+            // Add the ticks + tail of the slider. 1 is subtracted because the "headcircle" would be counted twice (once for the slider itself in the line above)
+            beatmapMaxCombo += beatmap.HitObjects.OfType<Slider>().Sum(s => s.NestedHitObjects.Count - 1);
+
+            HitWindows hitWindows = new OsuHitWindows();
+            hitWindows.SetDifficulty(beatmap.Difficulty.OverallDifficulty);
+
+            double hitWindowGreat = hitWindows.WindowFor(HitResult.Great) / clockRate;
+
+            OsuDifficultyAttributes attributes = new OsuDifficultyAttributes
             {
                 StarRating = combinedStarRating,
                 Mods = mods,
@@ -104,6 +118,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 SliderCount = sliderCount,
                 SpinnerCount = spinnerCount
             };
+
+            return attributes;
         }
 
         protected override IEnumerable<DifficultyHitObject> CreateDifficultyHitObjects(IBeatmap beatmap, double clockRate)
@@ -123,10 +139,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         protected override Mod[] DifficultyAdjustmentMods => new Mod[]
         {
+            new OsuModTouchDevice(),
             new OsuModDoubleTime(),
             new OsuModHalfTime(),
             new OsuModEasy(),
             new OsuModHardRock(),
+            new OsuModFlashlight(),
+            new MultiMod(new OsuModFlashlight(), new OsuModHidden())
         };
     }
 }

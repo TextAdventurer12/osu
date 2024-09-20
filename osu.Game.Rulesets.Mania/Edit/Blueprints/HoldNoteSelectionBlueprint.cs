@@ -2,27 +2,35 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Graphics;
+using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.Mania.Edit.Blueprints.Components;
 using osu.Game.Rulesets.Mania.Objects;
-using osu.Game.Rulesets.Mania.Objects.Drawables;
-using osu.Game.Rulesets.UI.Scrolling;
+using osu.Game.Screens.Edit;
 using osuTK;
 
 namespace osu.Game.Rulesets.Mania.Edit.Blueprints
 {
-    public class HoldNoteSelectionBlueprint : ManiaSelectionBlueprint<HoldNote>
+    public partial class HoldNoteSelectionBlueprint : ManiaSelectionBlueprint<HoldNote>
     {
-        public new DrawableHoldNote DrawableObject => (DrawableHoldNote)base.DrawableObject;
-
-        private readonly IBindable<ScrollingDirection> direction = new Bindable<ScrollingDirection>();
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
 
         [Resolved]
-        private OsuColour colours { get; set; }
+        private IEditorChangeHandler? changeHandler { get; set; }
+
+        [Resolved]
+        private EditorBeatmap? editorBeatmap { get; set; }
+
+        [Resolved]
+        private IPositionSnapProvider? positionSnapProvider { get; set; }
+
+        private EditHoldNoteEndPiece head = null!;
+        private EditHoldNoteEndPiece tail = null!;
 
         public HoldNoteSelectionBlueprint(HoldNote hold)
             : base(hold)
@@ -30,14 +38,47 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
         }
 
         [BackgroundDependencyLoader]
-        private void load(IScrollingInfo scrollingInfo)
+        private void load()
         {
-            direction.BindTo(scrollingInfo.Direction);
-
             InternalChildren = new Drawable[]
             {
-                new HoldNoteNoteOverlay(this, HoldNotePosition.Start),
-                new HoldNoteNoteOverlay(this, HoldNotePosition.End),
+                head = new EditHoldNoteEndPiece
+                {
+                    RelativeSizeAxes = Axes.X,
+                    DragStarted = () => changeHandler?.BeginChange(),
+                    Dragging = pos =>
+                    {
+                        double endTimeBeforeDrag = HitObject.EndTime;
+                        double proposedStartTime = positionSnapProvider?.FindSnappedPositionAndTime(pos).Time ?? HitObjectContainer.TimeAtScreenSpacePosition(pos);
+                        double proposedEndTime = endTimeBeforeDrag;
+
+                        if (proposedStartTime >= proposedEndTime)
+                            return;
+
+                        HitObject.StartTime = proposedStartTime;
+                        HitObject.EndTime = proposedEndTime;
+                        editorBeatmap?.Update(HitObject);
+                    },
+                    DragEnded = () => changeHandler?.EndChange(),
+                },
+                tail = new EditHoldNoteEndPiece
+                {
+                    RelativeSizeAxes = Axes.X,
+                    DragStarted = () => changeHandler?.BeginChange(),
+                    Dragging = pos =>
+                    {
+                        double proposedStartTime = HitObject.StartTime;
+                        double proposedEndTime = positionSnapProvider?.FindSnappedPositionAndTime(pos).Time ?? HitObjectContainer.TimeAtScreenSpacePosition(pos);
+
+                        if (proposedStartTime >= proposedEndTime)
+                            return;
+
+                        HitObject.StartTime = proposedStartTime;
+                        HitObject.EndTime = proposedEndTime;
+                        editorBeatmap?.Update(HitObject);
+                    },
+                    DragEnded = () => changeHandler?.EndChange(),
+                },
                 new Container
                 {
                     RelativeSizeAxes = Axes.Both,
@@ -58,21 +99,13 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
         {
             base.Update();
 
-            // Todo: This shouldn't exist, mania should not reference the drawable hitobject directly.
-            if (DrawableObject.IsLoaded)
-            {
-                Size = DrawableObject.DrawSize + new Vector2(0, DrawableObject.Tail.DrawHeight);
-
-                // This is a side-effect of not matching the hitobject's anchors/origins, which is kinda hard to do
-                // When scrolling upwards our origin is already at the top of the head note (which is the intended location),
-                // but when scrolling downwards our origin is at the _bottom_ of the tail note (where we need to be at the _top_ of the tail note)
-                if (direction.Value == ScrollingDirection.Down)
-                    Y -= DrawableObject.Tail.DrawHeight;
-            }
+            head.Y = HitObjectContainer.PositionAtTime(HitObject.Head.StartTime, HitObject.StartTime);
+            tail.Y = HitObjectContainer.PositionAtTime(HitObject.Tail.StartTime, HitObject.StartTime);
+            Height = HitObjectContainer.LengthAtTime(HitObject.StartTime, HitObject.EndTime) + tail.DrawHeight;
         }
 
         public override Quad SelectionQuad => ScreenSpaceDrawQuad;
 
-        public override Vector2 ScreenSpaceSelectionPoint => DrawableObject.Head.ScreenSpaceDrawQuad.Centre;
+        public override Vector2 ScreenSpaceSelectionPoint => head.ScreenSpaceDrawQuad.Centre;
     }
 }
