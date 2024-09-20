@@ -58,6 +58,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             Attributes = (OsuDifficultyAttributes)attributes;
 
+            mods = score.Mods;
             accuracy = score.Accuracy;
             scoreMaxCombo = score.MaxCombo;
             countGreat = score.Statistics.GetValueOrDefault(HitResult.Great);
@@ -95,7 +96,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             if (Attributes.TotalObjectCount <= 1)
                 return 0;
-
             // Get player's throughput according to combo
             int comboTpCount = Attributes.ComboThroughputs.Length;
             var comboPercentages = Generate.LinearSpaced(comboTpCount, 1.0 / comboTpCount, 1);
