@@ -14,6 +14,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double acute_angle_multiplier = 1.95;
         private const double slider_multiplier = 1.35;
         private const double velocity_change_multiplier = 0.75;
+        private const double raw_aim_multiplier = 0.07;
 
         /// <summary>
         /// Evaluates the difficulty of aiming the current object, based on:
@@ -34,7 +35,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuLastLastObj = (OsuDifficultyHitObject)current.Previous(1);
 
             // Calculate the velocity to the current hitobject, which starts with a base distance / time assuming the last object is a hitcircle.
-            double currVelocity = osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime;
+            // Raise distance to a power to counter the d/t^2 effect of strain decay
+            double currVelocity = Math.Pow(osuCurrObj.LazyJumpDistance, 1.5) / osuCurrObj.StrainTime;
 
             // But if the last object is a slider, then we extend the travel velocity through the slider into the current object.
             if (osuLastObj.BaseObject is Slider && withSliderTravelDistance)
@@ -61,7 +63,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double sliderBonus = 0;
             double velocityChangeBonus = 0;
 
-            double aimStrain = currVelocity; // Start strain with regular velocity.
+            // Scale raw aim with adusted velocity and angle bonus
+            // More acute = easier to snap
+            double rawAim = currVelocity * (0.6 + 0.4 * calcWideAngleBonus(osuCurrObj.Angle?? 0));
+
+            double aimStrain = rawAim * raw_aim_multiplier; // Start strain with raw aim.
 
             if (Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime) < 1.25 * Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime)) // If rhythms are the same.
             {
