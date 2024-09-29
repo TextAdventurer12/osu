@@ -23,11 +23,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         /// </summary>
         protected virtual double ReducedStrainBaseline => 0.75;
 
-        /// <summary>
-        /// The final multiplier to be applied to <see cref="DifficultyValue"/> after all other calculations.
-        /// </summary>
-        protected virtual double DifficultyMultiplier => DEFAULT_DIFFICULTY_MULTIPLIER;
-
         protected List<double> ObjectStrains = new List<double>();
         protected double Difficulty;
 
@@ -62,7 +57,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 weight *= DecayWeight;
             }
 
-            return Difficulty * DifficultyMultiplier;
+            return Difficulty;
         }
 
         /// <summary>
