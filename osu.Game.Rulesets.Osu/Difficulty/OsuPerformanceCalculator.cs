@@ -14,7 +14,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.14; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.195; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -90,9 +90,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
 
             double lengthObjectCount = attributes.AimDifficultStrainCount * 3;
-            double lengthBonus = 0.9 + lengthObjectCount / 2000.0;
+            double lengthBonus = 0.9 + Math.Min(1.0, lengthObjectCount / 2000.0) +
+                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) : 0.0);
             aimValue *= lengthBonus;
-  
+
             if (effectiveMissCount > 0)
                 aimValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
 
@@ -143,12 +144,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double lengthObjectCount = (totalHits + attributes.SpeedDifficultStrainCount) / 2;
             double lengthBonus = 0.9 + 0.45 * Math.Min(1.0, lengthObjectCount / 2000.0) +
-                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.4 : 0.0);
+                     (lengthObjectCount > 2000 ? Math.Log10(lengthObjectCount / 2000.0) * 0.3 : 0.0);
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
                 speedValue *= 0.97 * Math.Pow(1 - Math.Pow(effectiveMissCount / totalHits, 0.775), Math.Pow(effectiveMissCount, .875));
-            
+
             speedValue *= getComboScalingFactor(attributes);
 
             double approachRateFactor = 0.0;
