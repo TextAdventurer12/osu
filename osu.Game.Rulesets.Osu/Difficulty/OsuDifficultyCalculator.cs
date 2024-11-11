@@ -66,6 +66,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 flashlightRating *= 0.7;
             }
 
+			double aimLengthObjectCount = aimRelevantObjectCount * 4;		
+            double aimLengthBonus = (aimLengthObjectCount < 100 ? 0.75 + aimLengthObjectCount / 460.0 : 0.9 + aimLengthObjectCount / 1500.0);
+			aimRating *= Math.Cbrt(aimLengthBonus);
+
+            double speedLengthObjectCount = 3 * speedRelevantObjectCount;
+            double speedLengthBonus = 0.9 + 0.5 * Math.Min(1.0, speedLengthObjectCount / 1500.0) +
+                     (speedLengthObjectCount > 1500 ? Math.Log10(speedLengthObjectCount / 1500.0) * 0.3 : 0.0);
+            speedRating *= Math.Cbrt(speedLengthBonus);
+
+
             double baseAimPerformance = OsuStrainSkill.DifficultyToPerformance(aimRating);
             double baseSpeedPerformance = OsuStrainSkill.DifficultyToPerformance(speedRating);
             double baseFlashlightPerformance = 0.0;

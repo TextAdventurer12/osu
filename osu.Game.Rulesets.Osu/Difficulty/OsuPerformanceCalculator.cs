@@ -136,10 +136,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
 
-            double lengthObjectCount = attributes.AimRelevantObjectCount * 4;
-            double lengthBonus = (lengthObjectCount < 100 ? 0.75 + lengthObjectCount / 460.0 : 0.9 + lengthObjectCount / 1500.0);
-            aimValue *= lengthBonus;
-
             if (effectiveMissCount > 0)
                 aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
 
@@ -199,11 +195,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 return 0.0;
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
-
-            double lengthObjectCount = 3 * attributes.SpeedRelevantObjectCount;
-            double lengthBonus = 0.9 + 0.5 * Math.Min(1.0, lengthObjectCount / 1500.0) +
-                     (lengthObjectCount > 1500 ? Math.Log10(lengthObjectCount / 1500.0) * 0.3 : 0.0);
-            speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
                 speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
