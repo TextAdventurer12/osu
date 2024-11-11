@@ -50,6 +50,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimDifficultyStrainCount = ((OsuStrainSkill)skills[0]).CountDifficultStrains();
             double speedDifficultyStrainCount = ((OsuStrainSkill)skills[2]).CountDifficultStrains();
+			double aimRelevantObjectCount = ((OsuStrainSkill)skills[0]).CountRelevantObjects();
+			double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
 
             if (mods.Any(m => m is OsuModTouchDevice))
             {
@@ -105,6 +107,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 SliderFactor = sliderFactor,
                 AimDifficultStrainCount = aimDifficultyStrainCount,
                 SpeedDifficultStrainCount = speedDifficultyStrainCount,
+				AimRelevantObjectCount = aimRelevantObjectCount,
+				SpeedRelevantObjectCount = speedRelevantObjectCount,
                 ApproachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5,
                 OverallDifficulty = (80 - hitWindowGreat) / 6,
                 DrainRate = drainRate,
