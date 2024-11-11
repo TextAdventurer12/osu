@@ -50,6 +50,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimDifficultyStrainCount = ((OsuStrainSkill)skills[0]).CountDifficultStrains();
             double speedDifficultyStrainCount = ((OsuStrainSkill)skills[2]).CountDifficultStrains();
+			double aimRelevantObjectCount = ((OsuStrainSkill)skills[0]).CountRelevantObjects();
+			double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
 
             if (mods.Any(m => m is OsuModTouchDevice))
             {
@@ -63,6 +65,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 speedRating = 0.0;
                 flashlightRating *= 0.7;
             }
+
+			double aimLengthObjectCount = aimRelevantObjectCount * 4;		
+            double aimLengthBonus = (aimLengthObjectCount < 100 ? 0.75 + aimLengthObjectCount / 460.0 : 0.9 + aimLengthObjectCount / 1500.0);
+			aimRating *= Math.Cbrt(aimLengthBonus);
+
+            double speedLengthObjectCount = 3 * speedRelevantObjectCount;
+            double speedLengthBonus = 0.9 + 0.5 * Math.Min(1.0, speedLengthObjectCount / 1500.0) +
+                     (speedLengthObjectCount > 1500 ? Math.Log10(speedLengthObjectCount / 1500.0) * 0.3 : 0.0);
+            speedRating *= Math.Cbrt(speedLengthBonus);
+
 
             double baseAimPerformance = OsuStrainSkill.DifficultyToPerformance(aimRating);
             double baseSpeedPerformance = OsuStrainSkill.DifficultyToPerformance(speedRating);
@@ -105,6 +117,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 SliderFactor = sliderFactor,
                 AimDifficultStrainCount = aimDifficultyStrainCount,
                 SpeedDifficultStrainCount = speedDifficultyStrainCount,
+				AimRelevantObjectCount = aimRelevantObjectCount,
+				SpeedRelevantObjectCount = speedRelevantObjectCount,
                 ApproachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5,
                 OverallDifficulty = (80 - hitWindowGreat) / 6,
                 DrainRate = drainRate,

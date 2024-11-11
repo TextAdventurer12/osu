@@ -136,10 +136,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
 
-            double lengthObjectCount = attributes.AimDifficultStrainCount * 4;
-            double lengthBonus = (lengthObjectCount < 100 ? 0.75 + lengthObjectCount / 460.0 : 0.9 + lengthObjectCount / 1500.0);
-            aimValue *= lengthBonus;
-
             if (effectiveMissCount > 0)
                 aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
 
@@ -199,11 +195,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 return 0.0;
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
-
-            double lengthObjectCount = 3 * attributes.SpeedDifficultStrainCount;
-            double lengthBonus = 0.9 + 0.5 * Math.Min(1.0, lengthObjectCount / 1500.0) +
-                     (lengthObjectCount > 1500 ? Math.Log10(lengthObjectCount / 1500.0) * 0.3 : 0.0);
-            speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
                 speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
@@ -308,7 +299,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         // Miss penalty assumes that a player will miss on the hardest parts of a map,
         // so we use the amount of relatively difficult sections to adjust miss penalty
         // to make it more punishing on maps with lower amount of hard sections.
-        private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / ((4 + 20.0 / difficultStrainCount) * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
+        private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / (4 * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalImperfectHits => countOk + countMeh + countMiss;
