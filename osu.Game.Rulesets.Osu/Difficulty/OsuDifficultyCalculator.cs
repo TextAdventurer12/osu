@@ -46,13 +46,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (mods.Any(h => h is OsuModFlashlight))
                 flashlightRating = Math.Sqrt(skills[3].DifficultyValue()) * difficulty_multiplier;
 
-            double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
-
             double aimDifficultyStrainCount = ((OsuStrainSkill)skills[0]).CountTopWeightedStrains();
             double speedDifficultyStrainCount = ((OsuStrainSkill)skills[2]).CountTopWeightedStrains();
-            double aimRelevantObjectCount = ((OsuStrainSkill)skills[0]).CountRelevantObjects();
-            double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
-
             if (mods.Any(m => m is OsuModTouchDevice))
             {
                 aimRating = Math.Pow(aimRating, 0.8);
@@ -66,13 +61,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 flashlightRating *= 0.7;
             }
 
+
+            double aimRelevantObjectCount = ((OsuStrainSkill)skills[0]).CountRelevantObjects();
+            double aimNoSlidersRelevantObjectCount = ((OsuStrainSkill)skills[1]).CountRelevantObjects();
+            double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
+
             double aimLengthBonus = (aimRelevantObjectCount < 25 ? 0.8 + aimRelevantObjectCount / 150.0 : 0.9 + aimRelevantObjectCount / 375.0);
             aimRating *= Math.Cbrt(aimLengthBonus);
+            double aimNoSlidersLengthBonus = (aimNoSlidersRelevantObjectCount < 25 ? 0.8 + aimNoSlidersRelevantObjectCount / 150.0 : 0.9 + aimNoSlidersRelevantObjectCount / 375.0);
+            aimRatingNoSliders *= Math.Cbrt(aimNoSlidersLengthBonus);
 
             double speedLengthBonus = 0.9 + 0.5 * Math.Min(1.0, speedRelevantObjectCount / 500.0) +
                      (speedRelevantObjectCount > 500 ? Math.Log10(speedRelevantObjectCount / 500.0) * 0.3 : 0.0);
             speedRating *= Math.Cbrt(speedLengthBonus);
 
+            double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
 
             double baseAimPerformance = OsuStrainSkill.DifficultyToPerformance(aimRating);
             double baseSpeedPerformance = OsuStrainSkill.DifficultyToPerformance(speedRating);
