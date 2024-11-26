@@ -12,8 +12,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     public abstract class OsuStrainSkill : StrainSkill
     {
-        protected double Difficulty;
-
         protected OsuStrainSkill(Mod[] mods)
             : base(mods)
         {
@@ -38,7 +36,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 weight *= DecayWeight;
             }
 
-            return Difficulty;
+            return difficulty;
         }
 
         /// <summary>
@@ -46,10 +44,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         /// </summary>
         public double CountRelevantObjects()
         {
-            if (Difficulty == 0)
-                return 0.0;
-
-            double consistentTopStrain = Difficulty / 10; // What would the top strain be if all strain values were identical
+            double consistentTopStrain = DifficultyValue() / 10; // What would the top strain be if all strain values were identical
+			if (consistentTopStrain == 0)
+				return 0.0;
 
             //Being consistently difficult for 1000 notes should be worth more than being consistently difficult for 100.
             double totalStrains = ObjectStrains.Count;
