@@ -45,8 +45,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         public double CountRelevantObjects()
         {
             double consistentTopStrain = DifficultyValue() / 10; // What would the top strain be if all strain values were identical
-			if (consistentTopStrain == 0)
-				return 0.0;
+            if (consistentTopStrain == 0)
+                return 0.0;
 
             //Being consistently difficult for 1000 notes should be worth more than being consistently difficult for 100.
             double totalStrains = ObjectStrains.Count;
