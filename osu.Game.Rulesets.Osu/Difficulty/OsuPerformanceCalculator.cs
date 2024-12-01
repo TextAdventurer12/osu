@@ -265,9 +265,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // Considering to use derivation from perfect accuracy in a probabilistic manner - assume normal distribution.
             double accuracyValue = Math.Pow(1.52163, attributes.OverallDifficulty) * Math.Pow(betterAccuracyPercentage, 24) * 2.83;
 
-            // Bonus for many hitcircles - it's harder to keep good accuracy up for longer.
-            accuracyValue *= Math.Min(1.15, Math.Pow(amountHitObjectsWithAccuracy / 1000.0, 0.3));
-
+			// Bonus for more hitcircles - it's harder to luck out good accuracy on longer maps
+			const double k = 1.960; // constant mapping to the desired probability of achieving this accuracy, P(Z<k)=0.975, for Z~N(0, 1)
+			double n = amountHitObjectsWithAccuracy + 1;
+			double relOk = 1.5 * 0.02 * n + 1; // what would the 100 count for 98% accuracy on circles be. This is done to scale all accuracies the same way
+			double a = Math.Pow(n, 2) + n * Math.Pow(k, 2);
+			double b = -(2 * relOk * n + n * Math.Pow(k, 2));
+			double c = Math.Pow(relOk, 2);
+			double p100 = (-b + Math.Sqrt(Math.Pow(b, 2) - 4 * a * c)) / (2 * a);
+			accuracyValue *= 0.042 / p100; // constant to keep scaling similar to the previous bonus
+			
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
                 accuracyValue *= 1.14;
