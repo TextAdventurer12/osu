@@ -65,7 +65,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Cap distance at single_spacing_threshold
             distance = Math.Min(distance, single_spacing_threshold);
 
-            return Math.Pow(distance / single_spacing_threshold, 3.6);
+            return Math.Pow(distance / single_spacing_threshold, 3.7);
         }
     }
 }
