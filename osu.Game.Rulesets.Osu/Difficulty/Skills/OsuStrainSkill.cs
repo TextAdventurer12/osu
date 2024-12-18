@@ -22,6 +22,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         /// The baseline multiplier applied to the section with the biggest strain.
         /// </summary>
         protected virtual double ReducedStrainBaseline => 0.75;
+        protected override double DecayWeight => 0.93;
 
         protected OsuStrainSkill(Mod[] mods)
             : base(mods)
@@ -39,13 +40,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             List<double> strains = peaks.OrderDescending().ToList();
 
-            // We are reducing the highest strains first to account for extreme difficulty spikes
-            for (int i = 0; i < Math.Min(strains.Count, ReducedSectionCount); i++)
-            {
-                double scale = Math.Log10(Interpolation.Lerp(1, 10, Math.Clamp((float)i / ReducedSectionCount, 0, 1)));
-                strains[i] *= Interpolation.Lerp(ReducedStrainBaseline, 1.0, scale);
-            }
-
             // Difficulty is the weighted sum of the highest strains from every section.
             // We're sorting from highest to lowest strain.
             foreach (double strain in strains.OrderDescending())
@@ -54,7 +48,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 weight *= DecayWeight;
             }
 
-            return difficulty;
+            return difficulty * (1 - DecayWeight) / (1 - 0.90);
         }
 
         public static double DifficultyToPerformance(double difficulty) => Math.Pow(5.0 * Math.Max(1.0, difficulty / 0.0675) - 4.0, 3.0) / 100000.0;
