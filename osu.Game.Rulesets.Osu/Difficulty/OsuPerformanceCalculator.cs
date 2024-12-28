@@ -129,6 +129,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 Accuracy = accuracyValue,
                 Flashlight = flashlightValue,
                 EffectiveMissCount = effectiveMissCount,
+                AimSliderbreaks = Math.Min(countMeh + countOk, countMiss * osuAttributes.AimTopWeightedSliderFactor),
+                SpeedSliderbreaks = Math.Min(countMeh + countOk, countMiss * osuAttributes.SpeedTopWeightedSliderFactor),
                 Total = totalValue
             };
         }

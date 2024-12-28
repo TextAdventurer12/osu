@@ -23,6 +23,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         [JsonProperty("effective_miss_count")]
         public double EffectiveMissCount { get; set; }
+        [JsonProperty("aim_sliderbreaks")]
+        public double AimSliderbreaks { get; set; }
+        [JsonProperty("speed_sliderbreaks")]
+        public double SpeedSliderbreaks { get; set; }
 
         public override IEnumerable<PerformanceDisplayAttribute> GetAttributesForDisplay()
         {
