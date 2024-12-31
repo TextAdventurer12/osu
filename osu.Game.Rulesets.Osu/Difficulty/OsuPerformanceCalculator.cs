@@ -135,6 +135,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
+            if (score.Mods.Any(h => h is OsuModAutopilot))
+                return 0.0;
+
             double aimDifficulty = attributes.AimDifficulty;
 
             if (attributes.SliderCount > 0 && attributes.AimDifficultSliderCount > 0)
