@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         }
         protected double currentDifficulty;
         private double currentStrain;
-        protected double strainDecayBase;
+        protected virtual double strainDecayBase;
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
         protected double StrainValueAt(OsuDifficultyHitObject current)
         {
