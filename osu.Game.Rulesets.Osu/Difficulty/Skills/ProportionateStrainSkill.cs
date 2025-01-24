@@ -16,7 +16,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// </summary>
     public class ProportionateStrainSkill : OsuSkill
     {
-        public Aim(Mod[] mods)
+        public ProportionateStrainSkill(Mod[] mods)
             : base(mods)
         {
         }
