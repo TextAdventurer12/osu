@@ -72,7 +72,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             var osuCurrObj = (OsuDifficultyHitObject)current;
 
-            if (osuCurrObj.Index == 0 || !DifficultyCalculationUtils.SimilarRhythm(osuCurrObj, (OsuDifficultyHitObject)osuCurrObj.Previous(0)))
+            if (osuCurrObj.Index == 0 || !DifficultyCalculationUtils.SimilarRhythm(current, osuCurrObj.Previous(0)))
             {
                 islands[^1] = (islands[^1].objects, islands[^1].objects.Average(obj => obj.StrainTime));
                 islands.Add((new List<OsuDifficultyHitObject>(), 0));

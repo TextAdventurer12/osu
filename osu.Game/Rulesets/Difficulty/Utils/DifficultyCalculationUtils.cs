@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using osu.Game.Rulesets.Difficulty.Preprocessing;
 
 namespace osu.Game.Rulesets.Difficulty.Utils
 {
@@ -102,12 +103,13 @@ namespace osu.Game.Rulesets.Difficulty.Utils
         {
             return Math.Clamp((x - start) / (end - start), 0.0, 1.0);
         }
+
         /// <summary>
         /// Do the two given objects have similar strain times
         /// </summary>
-        public static bool SimilarRhythm(OsuDifficultyHitObject a, OsuDifficultyHitObject b)
+        public static bool SimilarRhythm(DifficultyHitObject a, DifficultyHitObject b)
         {
-            return Math.Max(a.StrainTime, b.StrainTime) < 1.25 * Math.Min(a.StrainTime, b.StrainTime)
+            return Math.Max(a.DeltaTime, b.DeltaTime) < 1.25 * Math.Min(a.DeltaTime, b.DeltaTime);
         }
     }
 }
