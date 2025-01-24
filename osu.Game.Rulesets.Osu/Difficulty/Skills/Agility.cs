@@ -1,15 +1,23 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using osu.Game.Rulesets.Difficulty.Skills;
+using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     public abstract class Agility : OsuStrainSkill
     {
-        protected override double k => 2;
-        protected override double multiplier => 1;
+        protected Agility(Mod[] mods)
+            : base(mods)
+        {
+        }
+
+        protected override double K => 2;
+        protected override double Multiplier => 1;
+
         /// <summary>
         /// TODO: remove all difficulties were it is easier to use flow aim
         /// </summary>
@@ -17,11 +25,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             return;
         }
-        protected override void Process(DifficultyHitObject current)
+
+        public override void Process(DifficultyHitObject current)
         {
             var osuCurrObj = (OsuDifficultyHitObject)current;
-            currentDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current);
-            difficulties.Add(StrainValueAt(current));
+            CurrentDifficulty = AgilityEvaluator.EvaluateDifficultyOf(osuCurrObj);
+            Difficulties.Add(StrainValueAt(osuCurrObj));
         }
     }
 }

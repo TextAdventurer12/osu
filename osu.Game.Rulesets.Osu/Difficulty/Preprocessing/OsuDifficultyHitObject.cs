@@ -85,6 +85,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         /// Retrieves the full hit window for a Great <see cref="HitResult"/>.
         /// </summary>
         public double HitWindowGreat { get; private set; }
+
         public Vector2 Travel { get; private set; }
 
         private readonly OsuHitObject? lastLastObject;
@@ -184,7 +185,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             Vector2 lastCursorPosition = getEndCursorPosition(lastObject);
 
             LazyJumpDistance = (BaseObject.StackedPosition * scalingFactor - lastCursorPosition * scalingFactor).Length;
-            this.Travel = (BaseObject.StackedPosition * scalingFactor - lastCursorPosition * scalingFactor);
+            Travel = BaseObject.StackedPosition * scalingFactor - lastCursorPosition * scalingFactor;
             MinimumJumpTime = StrainTime;
             MinimumJumpDistance = LazyJumpDistance;
 

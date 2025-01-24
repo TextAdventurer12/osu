@@ -15,7 +15,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 return 0;
 
             // raw aim difficulty is linear with difficulty
-            return current.Travel.Length / current.StrainTime * Math.Pow(Math.Sin(Math.Clamp(1.2 * current.Angle.Value - Math.PI / 4.0, 0, Math.PI / 2)), 2);;
+            return current.Travel.Length / current.StrainTime * Math.Pow(Math.Sin(Math.Clamp(1.2 * current.Angle!.Value - Math.PI / 4.0, 0, Math.PI / 2)), 2);
+            ;
         }
     }
 }

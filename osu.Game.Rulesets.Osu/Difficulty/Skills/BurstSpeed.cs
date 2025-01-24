@@ -1,24 +1,29 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using osu.Game.Rulesets.Difficulty.Skills;
-using osu.Game.Rulesets.Difficulty.Osu.Preprocessing;
-using osu.Game.Rulesets.Difficulty.Utils;
+using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     public abstract class BurstSpeed : OsuStrainSkill
     {
-        protected override double k => 2;
-        protected override double multiplier => 1;
-        protected override double strainDecaybase => 0.15;
-        protected override void CalculateDifficulties() => void;
-        protected override void Process(DifficultyHitObject current)
+        protected BurstSpeed(Mod[] mods)
+            : base(mods)
+        {
+        }
+
+        protected override double K => 2;
+        protected override double Multiplier => 1;
+        protected override double StrainDecayBase => 0.15;
+
+        public override void Process(DifficultyHitObject current)
         {
             var osuCurrObj = (OsuDifficultyHitObject)current;
-            currentDifficulty = SpeedEvaluator.EvaluateDifficultyOf(current);
-            difficulties.Add(StrainValueAt(current));
+            CurrentDifficulty = SpeedEvaluator.EvaluateDifficultyOf(osuCurrObj);
+            Difficulties.Add(StrainValueAt(osuCurrObj));
         }
     }
 }

@@ -8,7 +8,7 @@ using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
-    public static class RhythmEvaluator
+    public static class FastRhythmEvaluator
     {
         private const int history_time_max = 5000; // 5 seconds of calculatingRhythmBonus max.
         private const double rhythm_multiplier = 0.5;
@@ -76,7 +76,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                         rhythmComplexitySum += Math.Sqrt(effectiveRatio * startRatio) * currHistoricalDecay;
 
-                        startRatio = applyPenalties(effectiveRatio, current.Previous(i), current.Previous(i - 1), islandSize, previousIslandSize);;
+                        startRatio = applyPenalties(effectiveRatio, current.Previous(i), current.Previous(i - 1), islandSize, previousIslandSize);
+                        ;
 
                         previousIslandSize = islandSize; // log the last island size.
 
@@ -94,7 +95,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     islandSize = 1;
                 }
             }
-            
+
             return Math.Sqrt(4 + rhythmComplexitySum * rhythm_multiplier) / 2; //produces multiplier that can be applied to strain. range [1, infinity) (not really though)
         }
 

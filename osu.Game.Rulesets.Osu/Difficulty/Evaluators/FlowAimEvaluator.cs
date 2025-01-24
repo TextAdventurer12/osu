@@ -15,7 +15,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 return 0;
 
             // flow = velocity * angle boner hardness.
-            return current.Travel.Length / current.StrainTime * Math.Cos((current.Angle?? Math.PI) / 2);
+            return current.Travel.Length / current.StrainTime * Math.Cos((current.Angle ?? Math.PI) / 2);
         }
     }
 }

@@ -3,20 +3,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
-using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     /// <summary>
     /// A skill which keeps track of strain difficulty while also not dividing difficulty by time
     /// </summary>
-    public class ProportionateStrainSkill : OsuSkill
+    public abstract class ProportionateStrainSkill : OsuSkill
     {
-        public ProportionateStrainSkill(Mod[] mods)
+        protected ProportionateStrainSkill(Mod[] mods)
             : base(mods)
         {
         }
@@ -24,21 +21,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private readonly List<(double difficulty, double deltaTime)> previousStrains = new List<(double, double)>();
 
         private double currentStrain;
-        protected double currentDifficulty;
+        protected double CurrentDifficulty;
 
         private double strainDecayBase => 0.15;
         private double strainIncreaseRate => 10;
         private double strainDecreaseRate => 3;
-        private double strainInfluence => 3 / 1;
+        private double strainInfluence => 3;
 
         protected double StrainValueAt(OsuDifficultyHitObject current)
         {
             double priorDifficulty = highestPreviousStrain(current.DeltaTime);
 
-            currentStrain = getStrainValueOf(currentDifficulty, priorDifficulty);
+            currentStrain = getStrainValueOf(CurrentDifficulty, priorDifficulty);
             previousStrains.Add((currentStrain, current.DeltaTime));
 
-            return currentDifficulty + currentStrain * strainInfluence;
+            return CurrentDifficulty + currentStrain * strainInfluence;
         }
 
         private double getStrainValueOf(double currentDifficulty, double priorDifficulty) => currentDifficulty > priorDifficulty
