@@ -102,5 +102,12 @@ namespace osu.Game.Rulesets.Difficulty.Utils
         {
             return Math.Clamp((x - start) / (end - start), 0.0, 1.0);
         }
+        /// <summary>
+        /// Do the two given objects have similar strain times
+        /// </summary>
+        public static bool SimilarRhythm(OsuDifficultyHitObject a, OsuDifficultyHitObject b)
+        {
+            return Math.Max(a.StrainTime, b.StrainTime) < 1.25 * Math.Min(a.StrainTime, b.StrainTime)
+        }
     }
 }

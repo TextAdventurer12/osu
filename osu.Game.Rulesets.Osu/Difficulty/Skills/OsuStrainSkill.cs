@@ -10,7 +10,7 @@ using osu.Framework.Utils;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
-    public abstract class OsuStrainSkill : StrainSkill
+    public abstract class OsuStrainSkill : OsuSkill
     {
         protected OsuStrainSkill(Mod[] mods)
             : base(mods)
