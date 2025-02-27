@@ -4,18 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using osu.Game.Rulesets.Difficulty.Utils;
 
-namespace osu.Game.Rulesets.Osu.Difficulty.Utils
+namespace osu.Game.Rulesets.Difficulty.Utils
 {
     /// <summary>
-    /// Represents a polynomial fitted to the logarithm of a given set of points.
-    /// The resulting polynomial is exponentiated, ensuring low residuals for
-    /// small inputs while handling exponentially increasing trends in the data.
-    /// This approach is useful for modelling the results of decreasing skill with few coefficients,
-    /// as linear decreases in skill correspond with exponential increases in miss counts.
+    /// Represents a polynomial fitted to a given set of points.
     /// </summary>
-    public struct ExpPolynomial
+    public struct Polynomial
     {
         private double[]? coefficients;
 
@@ -33,9 +28,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Utils
         /// <param name="missCounts">A list of miss counts, with X values [1, 0.95, 0.9, 0.8, 0.6, 0.3, 0] corresponding to their skill levels.</param>
         public void Fit(double[] missCounts)
         {
-            List<double> logMissCounts = missCounts.Select(x => Math.Log(x + 1)).ToList();
-
-            double endPoint = logMissCounts.Max();
+            double endPoint = missCounts.Max();
 
             double[] penalties = { 1, 0.95, 0.9, 0.8, 0.6, 0.3, 0 };
 
@@ -48,25 +41,20 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Utils
             {
                 for (int column = 0; column < matrix[row].Length; column++)
                 {
-                    coefficients[row] += matrix[row][column] * (logMissCounts[column] - endPoint * (1 - penalties[column]));
+                    coefficients[row] += matrix[row][column] * (missCounts[column] - endPoint * (1 - penalties[column]));
                 }
 
                 coefficients[3] -= coefficients[row];
             }
-
-            coefficients = coefficients;
         }
 
-        /// <summary>
-        /// Solve for the miss penalty at a specified miss count.
-        /// </summary>
         public double GetPenaltyAt(double missCount)
         {
             if (coefficients is null)
                 return 1;
 
             List<double> listCoefficients = coefficients.ToList();
-            listCoefficients.Add(-Math.Log(missCount + 1));
+            listCoefficients.Add(-missCount);
 
             List<double?> xVals = DifficultyCalculationUtils.SolvePolynomialRoots(listCoefficients);
 

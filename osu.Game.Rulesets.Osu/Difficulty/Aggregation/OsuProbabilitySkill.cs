@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Skills;
+using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Utils;
 
@@ -102,12 +103,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
         /// <returns>
         /// A polynomial fitted to the miss counts at each skill level.
         /// </returns>
-        public ExpPolynomial GetMissPenaltyCurve()
+        public Polynomial GetMissPenaltyCurve()
         {
             double[] missCounts = new double[7];
             double[] penalties = { 1, 0.95, 0.9, 0.8, 0.6, 0.3, 0 };
 
-            ExpPolynomial missPenaltyCurve = new ExpPolynomial();
+            Polynomial missPenaltyCurve = new Polynomial();
 
             // If there are no notes, we just return the curve with all coefficients set to zero.
             if (difficulties.Count == 0 || difficulties.Max() == 0)
@@ -127,7 +128,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
 
                 double penalizedSkill = fcSkill * penalties[i];
 
-                missCounts[i] = getMissCountAtSkill(penalizedSkill, bins);
+                // We want to take the log of misscount + 1, to make it easier for the polynomial to fit to them.
+                missCounts[i] = Math.Log(getMissCountAtSkill(penalizedSkill, bins) + 1);
             }
 
             missPenaltyCurve.Fit(missCounts);
