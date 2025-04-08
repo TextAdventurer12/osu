@@ -102,5 +102,15 @@ namespace osu.Game.Rulesets.Difficulty.Utils
         {
             return Math.Clamp((x - start) / (end - start), 0.0, 1.0);
         }
+
+        /// <summary>
+        /// Are the two given times close enough to be considered the same rhythm
+        /// </summary>
+        /// <param name="t1">time</param>
+        /// <param name="t2">time to compare with</param>
+        public static bool SimilarRhythms(double t1, double t2)
+        {
+            return Math.Max(t1, t2) > 1.25 * Math.Min(t1, t2);
+        }
     }
 }
