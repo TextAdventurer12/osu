@@ -153,5 +153,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
 
             return Math.Max(0, RootFinding.FindRootExpand(x => poiBin.CDF(x) - fc_probability, -50, 1000, accuracy: 1e-4));
         }
+
+        public double CountTopWeightedStrains() => OsuStrainUtils.CountTopWeightedSliders(difficulties, DifficultyValue());
     }
 }

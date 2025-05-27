@@ -39,7 +39,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (difficulty <= 0) return 1;
             if (skill <= 0) return 0;
 
-            return DifficultyCalculationUtils.Erf(skill / (Math.Sqrt(2) * difficulty));
+            // occasionally, a player will misaim by some amount at some frequency.
+            // model this with a contaminated normal
+            const double outlier_rate = 1 / 150.0;
+            const double outlier_deviation_multiplier = 2.5;
+
+            return DifficultyCalculationUtils.Erf(skill / (Math.Sqrt(2) * difficulty)) * (1 - outlier_rate)
+                   + DifficultyCalculationUtils.Erf(skill / (Math.Sqrt(2) * difficulty * outlier_deviation_multiplier)) * outlier_rate;
         }
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
