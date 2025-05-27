@@ -2,12 +2,15 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Osu.Objects;
 using System.Linq;
 using osu.Game.Rulesets.Osu.Difficulty.Aggregation;
+using osu.Game.Rulesets.Osu.Difficulty.Utils;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
@@ -21,6 +24,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
         private double currentRhythm;
+
+        private readonly List<double> sliderStrains = new List<double>();
 
         protected override int ReducedSectionCount => 5;
 
@@ -42,6 +47,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double totalStrain = currentStrain * currentRhythm;
 
+            if (current.BaseObject is Slider)
+                sliderStrains.Add(totalStrain);
+
             return totalStrain;
         }
 
@@ -56,5 +64,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             return ObjectStrains.Sum(strain => 1.0 / (1.0 + Math.Exp(-(strain / maxStrain * 12.0 - 6.0))));
         }
+
+        public double CountTopWeightedSliders() => OsuStrainUtils.CountTopWeightedSliders(sliderStrains, DifficultyValue());
     }
 }

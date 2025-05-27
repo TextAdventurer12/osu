@@ -8,6 +8,7 @@ using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Aggregation;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using osu.Game.Rulesets.Osu.Difficulty.Utils;
 using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Objects;
 
@@ -18,13 +19,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// </summary>
     public class Aim : OsuProbabilitySkill
     {
-        public Aim(Mod[] mods, bool withSliders)
+        public readonly bool IncludeSliders;
+
+        public Aim(Mod[] mods, bool includeSliders)
             : base(mods)
         {
-            this.withSliders = withSliders;
+            IncludeSliders = includeSliders;
         }
-
-        private readonly bool withSliders;
 
         private double currentStrain;
 
@@ -46,12 +47,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(current.DeltaTime);
-            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders) * skillMultiplier;
+            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
 
             if (current.BaseObject is Slider)
-            {
                 sliderStrains.Add(currentStrain);
-            }
 
             return currentStrain;
         }
@@ -61,13 +60,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (sliderStrains.Count == 0)
                 return 0;
 
-            double[] sortedStrains = sliderStrains.OrderDescending().ToArray();
+            double maxSliderStrain = sliderStrains.Max();
 
-            double maxSliderStrain = sortedStrains.Max();
             if (maxSliderStrain == 0)
                 return 0;
 
-            return sortedStrains.Sum(strain => 1.0 / (1.0 + Math.Exp(-(strain / maxSliderStrain * 12.0 - 6.0))));
+            return sliderStrains.Sum(strain => 1.0 / (1.0 + Math.Exp(-(strain / maxSliderStrain * 12.0 - 6.0))));
         }
+
+        public double CountTopWeightedSliders() => OsuStrainUtils.CountTopWeightedSliders(sliderStrains, DifficultyValue());
     }
 }
