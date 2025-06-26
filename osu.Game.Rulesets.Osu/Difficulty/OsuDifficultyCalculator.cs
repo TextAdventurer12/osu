@@ -52,6 +52,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             var speed = skills.OfType<Speed>().Single();
             var flashlight = skills.OfType<Flashlight>().SingleOrDefault();
             var reading = skills.OfType<Reading>().Single();
+            var highARReading = skills.OfType<HighARReading>().Single();
 
             double speedNotes = speed.RelevantNoteCount();
 
@@ -87,7 +88,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double aimRating = computeAimRating(aim.DifficultyValue(), mods, overallDifficulty);
             double aimRatingNoSliders = computeAimRating(aimWithoutSliders.DifficultyValue(), mods, overallDifficulty);
             double speedRating = computeSpeedRating(speed.DifficultyValue(), mods, overallDifficulty);
-            double readingRating = computeReadingRating(reading.DifficultyValue(), mods, overallDifficulty);
+            double readingRating = computeReadingRating(reading.DifficultyValue() + highARReading.DifficultyValue(), mods, overallDifficulty);
 
             double flashlightRating = 0.0;
 
@@ -288,7 +289,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 new Aim(mods, true),
                 new Aim(mods, false),
                 new Speed(mods),
-                new Reading(beatmap, mods, clockRate)
+                new Reading(beatmap, mods, clockRate),
+                new HighARReading(mods, beatmap, clockRate)
             };
 
             if (mods.Any(h => h is OsuModFlashlight))
