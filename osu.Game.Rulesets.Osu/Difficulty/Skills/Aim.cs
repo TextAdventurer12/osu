@@ -51,6 +51,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double strain = getCurrentStrainValue(offset, previousStrains);
 
             currentAgilityStrain *= strainDecay(offset - current.Previous(0).StartTime);
+            currentflowStrain *= strainDecay(offset - current.Previous(0).StartTime);
 
 
             return strain;
@@ -58,7 +59,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-
+            //we decay both supplimental strain values irrespective of whether a given note is snapped or flowed
             currentflowStrain *= strainDecay(current.DeltaTime);
             currentAgilityStrain *= strainDecay(current.DeltaTime);
 
@@ -74,6 +75,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             bool isFlow = (flowDifficulty + currentflowStrain + flowStrainDifficulty) < (snapDifficulty + currentAgilityStrain + agilityDifficulty);
 
             if (isFlow)
+
+                //for flow aim, we want the strain contribution to be solely from the FlowStrainEvaluator, and we only want to update the value of
+                // currentFlowStrain when the current note is flow-aimed
             {
                 currentDifficulty = flowDifficulty * skillMultiplier;
                 currentflowStrain += flowStrainDifficulty;
@@ -81,6 +85,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 currentStrainDifficulty = 0;
 
             }
+                //for snap aim, the notes difficulty itself contributes to strain and we update the value of agilityStrain only when the note is snapped
             else
             {
                 currentDifficulty = snapDifficulty * skillMultiplier;
@@ -96,8 +101,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             {
                 sliderStrains.Add(currentStrain);
             }
-
-            Console.WriteLine($"agilitStrain: {currentAgilityStrain}");
 
             return currentStrain + currentDifficulty + auxiliaryStrainValue;
         }
