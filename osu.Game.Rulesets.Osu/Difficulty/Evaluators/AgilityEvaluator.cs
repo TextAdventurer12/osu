@@ -38,9 +38,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double baseBpm = 240.0 / (1 + 0.25 * Smootherstep(currentAngle, 0, 120) * currDistanceMultiplier * prevDistanceMultiplier);
 
             // Agility bonus of 1 at base BPM.
-            double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / baseBpm, 4) - 1);
+            double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / baseBpm, 2) - 1);
 
-            return agilityBonus * 13;
+            return agilityBonus * 34.61;
         }
     }
 }

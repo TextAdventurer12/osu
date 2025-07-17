@@ -79,8 +79,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 //for flow aim, we want the strain contribution to be solely from the FlowStrainEvaluator, and we only want to update the value of
                 // currentFlowStrain when the current note is flow-aimed
             {
-                currentDifficulty = flowDifficulty * skillMultiplier;
-                currentflowStrain += flowStrainDifficulty;
+                currentDifficulty = flowDifficulty * 62;
+                currentflowStrain += flowStrainDifficulty * 4.8;
                 auxiliaryStrainValue = currentflowStrain;
                 currentStrainDifficulty = 0;
 
