@@ -21,7 +21,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double difficulty = EvaluateDistanceBonus(current, withSliderTravelDistance) * 1;
             double sliderBonus = 0;
             //difficulty += EvaluateAgilityBonus(current) * 65;
-            difficulty += EvaluateAngleBonus(current) * 474530;
+            difficulty += EvaluateAngleBonus(current) * 1;
             difficulty += EvaluateVelocityChangeBonus(current) * 1;
 
             var osuPrevObj = (OsuDifficultyHitObject)current;
@@ -81,8 +81,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             prevDistanceMultiplier *= Math.Pow((currVelocity > 0 ? Math.Min(1, prevVelocity * 1.4 / currVelocity) : 1), 1);
 
             double angleBonus = Smootherstep(currAngle, 0, 180) * currVelocity * prevDistanceMultiplier; // Gengaozo pattern
-
-            angleBonus /= Math.Pow(osuCurrObj.StrainTime, 2.6);
 
             return angleBonus;
         }
