@@ -65,6 +65,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             var osuCurrent = (OsuDifficultyHitObject)current;
             double currentDifficulty = 0;
             double auxiliaryStrainValue = 0;
+            double currentStrainDifficulty = 0;
             double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
             double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
             double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current);
@@ -77,6 +78,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 currentDifficulty = flowDifficulty * skillMultiplier;
                 currentflowStrain += flowStrainDifficulty;
                 auxiliaryStrainValue = currentflowStrain;
+                currentStrainDifficulty = 0;
 
             }
             else
@@ -84,15 +86,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 currentDifficulty = snapDifficulty * skillMultiplier;
                 currentAgilityStrain += agilityDifficulty;
                 auxiliaryStrainValue = currentAgilityStrain;
+                currentStrainDifficulty = currentDifficulty;
             }
 
             currentStrain = getCurrentStrainValue(osuCurrent.StartTime, previousStrains) * 5.25;
-            previousStrains.Add((osuCurrent.StartTime, currentDifficulty));
+            previousStrains.Add((osuCurrent.StartTime, currentStrainDifficulty));
 
             if (current.BaseObject is Slider)
             {
                 sliderStrains.Add(currentStrain);
             }
+
+            Console.WriteLine($"agilitStrain: {currentAgilityStrain}");
 
             return currentStrain + currentDifficulty + auxiliaryStrainValue;
         }
