@@ -19,9 +19,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
 
-            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
-
-            double angularVelocityExponent = 1.0;
+            double angularVelocityMult = 1.0;
 
             if (osuCurrObj.Angle.HasValue &&
                 osuPrevObj?.Angle != null &&
@@ -31,17 +29,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double angleDifferenceAdjusted = Math.Sin(angleDifference / 2) * 180.0;
                 double angularVelocity = angleDifferenceAdjusted / (0.1 * osuCurrObj.StrainTime);
                 double angularVelocityBonus = Math.Max(0.0, Math.Pow(angularVelocity, 0.5) - 1.0);
-                //nerf cheesable distances where the angle isn't indicative of the path the cursor takes between notes
-                angularVelocityBonus *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.LazyJumpDistance, radius * 1, radius * 3);
-                angularVelocityExponent = 1 + angularVelocityBonus * 0.045;
+
+                angularVelocityMult = 1 + angularVelocityBonus * 0.5;
             }
 
-            double simulateDistance = AdjustFlowDistance(osuCurrObj);
+            double simulatedDistance = adjustFlowDistance(osuCurrObj);
 
             // Base snap difficulty is velocity.
-            double difficulty = Math.Pow(simulateDistance, angularVelocityExponent) / osuCurrObj.StrainTime;
+            double difficulty = simulatedDistance / osuCurrObj.StrainTime;
 
-            return difficulty * 1.85 * osuCurrObj.SmallCircleBonus;
+            return difficulty * osuCurrObj.SmallCircleBonus;
         }
 
         /// <summary>
@@ -49,7 +46,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        public static double AdjustFlowDistance(DifficultyHitObject current)
+        private static double adjustFlowDistance(DifficultyHitObject current)
         {
             var osuCurr = (OsuDifficultyHitObject)current;
             var osuPrev = (OsuDifficultyHitObject)current.Previous(0);
@@ -70,6 +67,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             //extra distance is a function of previous velocity, your arc will be less tight if you're coming in hot
             double previousVelocity = osuPrev.LazyJumpDistance / osuPrev.StrainTime;
+            var osuLastLastObj = (OsuDifficultyHitObject)osuPrev.Previous(0);
+
+            if (osuPrev.Previous(0).BaseObject is Slider)
+            {
+                double travelVelocity = osuLastLastObj.TravelDistance / osuLastLastObj.TravelTime;
+                double movementVelocity = osuPrev.MinimumJumpDistance / osuPrev.MinimumJumpTime;
+
+                previousVelocity = Math.Max(previousVelocity, movementVelocity + travelVelocity);
+            }
 
             //the sharper the angle, the more inefficient the real path will be
             double angleScale = 1.0 - DifficultyCalculationUtils.Smootherstep(angle, 0, maxBonusAngle);

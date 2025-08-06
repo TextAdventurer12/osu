@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Difficulty.Utils;
@@ -29,9 +30,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private double currentAgilityStrain;
         private bool? previousStrainAimType;
 
-        private double snapMultiplier => 26;
-        private double flowMultiplier => 1;
-        private double agilityMultiplier => 1;
+        private double snapMultiplier => 27.5;
+        private double flowMultiplier => 35;
+        private double agilityMultiplier => 0.45;
         private double strainDecayBase => 0.15;
         private double agilityStrainDecayBase => 0.15;
 
@@ -52,20 +53,26 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double snapDifficulty = baseSnapDifficulty + agilityDifficulty + currentAgilityStrain;
             double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current) * flowMultiplier;
 
-            bool currentStrainAimType = snapDifficulty < flowDifficulty;
-
             double transitionBonus = 1.0;
+
+            bool currentStrainAimType = flowDifficulty < snapDifficulty;
 
             if (previousStrainAimType is not null && currentStrainAimType != previousStrainAimType)
             {
-                transitionBonus = 1.0;
+                transitionBonus = 0.25 * DifficultyCalculationUtils.Smootherstep(Math.Abs(snapDifficulty - flowDifficulty), 0.3, 10);
+
+                // Going from flow to snap is harder than going from snap to flow
+                transitionBonus = currentStrainAimType ? 1 + transitionBonus : 1 + 2 * transitionBonus;
             }
+
+            snapDifficulty *= currentStrainAimType ? 1 : transitionBonus;
+            flowDifficulty *= currentStrainAimType ? transitionBonus : 1;
+
+            currentStrainAimType = flowDifficulty < snapDifficulty;
 
             previousStrainAimType = currentStrainAimType;
 
-            double currentDifficulty = currentStrainAimType ? snapDifficulty : flowDifficulty;
-
-            currentDifficulty *= transitionBonus;
+            double currentDifficulty = currentStrainAimType ? flowDifficulty : snapDifficulty;
 
             currentStrain += currentDifficulty;
 

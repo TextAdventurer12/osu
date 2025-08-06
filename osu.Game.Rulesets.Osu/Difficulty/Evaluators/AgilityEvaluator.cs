@@ -29,7 +29,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double currTime = osuCurrObj.StrainTime + osuPrevObj.StrainTime * (1 - prevDistanceMultiplier);
             double prevTime = osuPrevObj.StrainTime;
 
-            double currentAngle = osuCurrObj.Angle!.Value * 180 / Math.PI;
+            double currentAngle = 1;
+
+            if (osuCurrObj.Angle != null)
+            {
+                currentAngle = osuCurrObj.Angle!.Value * 180 / Math.PI;
+            }
 
             // We reward high bpm more for wider angles, but only when both current and previous distance are over 0.5 radii.
             double baseBpm = 240.0 / (1 + 0.35 * Smootherstep(currentAngle, 0, 120) * currDistanceMultiplier * prevDistanceMultiplier);
