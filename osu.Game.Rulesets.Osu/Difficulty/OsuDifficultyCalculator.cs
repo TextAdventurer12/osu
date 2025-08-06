@@ -197,7 +197,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             {
                 new Aim(mods, true),
                 new Aim(mods, false),
-                new Speed(mods)
+                new Speed(mods),
+                new Aim.flow(mods)
             };
 
             if (mods.Any(h => h is OsuModFlashlight))
