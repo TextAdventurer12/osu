@@ -26,20 +26,48 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         }
 
         private double currentStrain;
+        private double currentAgilityStrain;
+        private bool? previousStrainAimType;
 
-        private double skillMultiplier => 26;
+        private double snapMultiplier => 26;
+        private double flowMultiplier => 1;
+        private double agilityMultiplier => 1;
         private double strainDecayBase => 0.15;
+        private double agilityStrainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
+        private double agilityStrainDecay(double ms) => Math.Pow(agilityStrainDecayBase, ms / 1000);
 
         protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => currentStrain * strainDecay(time - current.Previous(0).StartTime);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(current.DeltaTime);
-            currentStrain += AimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
+            currentAgilityStrain *= agilityStrainDecay(current.DeltaTime);
+
+            double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current) * agilityMultiplier;
+            double baseSnapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * snapMultiplier;
+            double snapDifficulty = baseSnapDifficulty + agilityDifficulty + currentAgilityStrain;
+            double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current) * flowMultiplier;
+
+            bool currentStrainAimType = snapDifficulty < flowDifficulty;
+
+            double transitionBonus = 1.0;
+
+            if (previousStrainAimType is not null && currentStrainAimType != previousStrainAimType)
+            {
+                transitionBonus = 1.0;
+            }
+
+            previousStrainAimType = currentStrainAimType;
+
+            double currentDifficulty = currentStrainAimType ? snapDifficulty : flowDifficulty;
+
+            currentDifficulty *= transitionBonus;
+
+            currentStrain += currentDifficulty;
 
             if (current.BaseObject is Slider)
                 sliderStrains.Add(currentStrain);
