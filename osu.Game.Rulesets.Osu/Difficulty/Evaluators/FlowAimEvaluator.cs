@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
-using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Osu.Objects;
 
@@ -51,59 +50,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 adjustedDistanceScale = Math.Min(1.0, 0.6 + averageDistanceDifference / 30.0) + angularVelocityBonus * distanceDifferenceScaling;
             }
 
-            double simulatedDistance = adjustFlowDistance(osuCurrObj);
-
             // Base snap difficulty is velocity.
             double difficulty = Math.Pow(osuCurrObj.LazyJumpDistance, 2) * 0.01 * adjustedDistanceScale / osuCurrObj.StrainTime;
 
             return difficulty * osuCurrObj.SmallCircleBonus;
-        }
-
-        /// <summary>
-        /// Approximate the amount of unnecessary distance the cursor will travel in an arc attempting to flow between notes
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        private static double adjustFlowDistance(DifficultyHitObject current)
-        {
-            var osuCurr = (OsuDifficultyHitObject)current;
-            var osuPrev = (OsuDifficultyHitObject)current.Previous(0);
-
-            // If angle is missing, it's just distance
-            if (!osuCurr.Angle.HasValue)
-                return osuCurr.LazyJumpDistance;
-
-            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
-
-            double angle = osuCurr.Angle.Value;
-            double distanceTravelled = osuCurr.LazyJumpDistance;
-
-            double maxBonusAngle = double.DegreesToRadians(140);
-
-            if (angle >= maxBonusAngle)
-                return distanceTravelled;
-
-            //extra distance is a function of previous velocity, your arc will be less tight if you're coming in hot
-            double previousVelocity = osuPrev.LazyJumpDistance / osuPrev.StrainTime;
-            var osuLastLastObj = (OsuDifficultyHitObject)osuPrev.Previous(0);
-
-            if (osuPrev.Previous(0).BaseObject is Slider)
-            {
-                double travelVelocity = osuLastLastObj.TravelDistance / osuLastLastObj.TravelTime;
-                double movementVelocity = osuPrev.MinimumJumpDistance / osuPrev.MinimumJumpTime;
-
-                previousVelocity = Math.Max(previousVelocity, movementVelocity + travelVelocity);
-            }
-
-            //the sharper the angle, the more inefficient the real path will be
-            double angleScale = 1.0 - DifficultyCalculationUtils.Smootherstep(angle, 0, maxBonusAngle);
-
-            //nerf cheesable distances where the angle isn't indicative of the path the cursor takes between notes
-            angleScale *= DifficultyCalculationUtils.Smootherstep(osuCurr.LazyJumpDistance, radius * 2, radius * 2.5);
-
-            double velocityBonus = 1 + previousVelocity * angleScale * 0.75;
-
-            return Math.Pow(distanceTravelled, velocityBonus);
         }
     }
 }
