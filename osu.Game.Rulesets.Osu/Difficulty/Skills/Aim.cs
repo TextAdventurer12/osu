@@ -41,17 +41,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             protected override double StrainValueAt(DifficultyHitObject current)
             {
-                return currentStrainAimType ? flowDifficulty : 0;
+                return currentStrainAimType ? flowDifficulty * flowMultiplier : 0;
             }
 
             protected override double CalculateInitialStrain(double time, DifficultyHitObject current)
             {
-                return currentStrainAimType ? flowDifficulty : 0;
+                return currentStrainAimType ? flowDifficulty * flowMultiplier : 0;
             }
         }
 
         private double snapMultiplier => 27.5;
-        private double flowMultiplier => 25;
+        private static double flowMultiplier => 35;
         private double strainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
@@ -64,8 +64,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             currentStrain *= strainDecay(current.DeltaTime);
 
-            double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * snapMultiplier;
-            flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current) * flowMultiplier;
+            double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
+            flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current);
 
             double transitionBonus = 1.0;
 
@@ -86,7 +86,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             previousStrainAimType = currentStrainAimType;
 
-            double currentDifficulty = currentStrainAimType ? flowDifficulty : snapDifficulty;
+            double currentDifficulty = currentStrainAimType ? flowDifficulty * flowMultiplier : snapDifficulty * snapMultiplier;
 
             currentStrain += currentDifficulty;
 
