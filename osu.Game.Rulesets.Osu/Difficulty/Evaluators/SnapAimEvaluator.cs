@@ -168,7 +168,25 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         // Adjusting minimal distance of snap evaluator to account for fact that the snapping difficulty itself have it's own difficulty
         private static double adjustSnapDistance(double currDistance, OsuDifficultyHitObject osuCurrObj)
         {
+            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
             const int diameter = OsuDifficultyHitObject.NORMALISED_DIAMETER;
+
+            // Additional reward for wide angles being hard to snap on high BPM
+            double angleSnapDifficultyBonus = 0;
+            double strainTimeThreshold = DifficultyCalculationUtils.BPMToMilliseconds(180, 2);
+
+            if (osuCurrObj.StrainTime < strainTimeThreshold)
+            {
+                double bpmFactor = Math.Pow((strainTimeThreshold - osuCurrObj.StrainTime) * 0.015, 2.5);
+
+                angleSnapDifficultyBonus = OsuDifficultyHitObject.NORMALISED_DIAMETER * bpmFactor;
+
+                // Shift starting point of "uncomfy" from square to wide-angle patterns if spacing is too big, becvause big spacing is already buffed enough by wide angle bonus
+                double highSpacingAdjust = Math.PI / 6;
+                highSpacingAdjust *= DifficultyCalculationUtils.ReverseLerp(currDistance, diameter * 2, diameter * 4);
+
+                angleSnapDifficultyBonus *= DifficultyCalculationUtils.Smoothstep(osuCurrObj.Angle ?? 0, Math.PI / 3 + highSpacingAdjust, Math.PI / 2 + highSpacingAdjust);
+            }
 
             double bpm = DifficultyCalculationUtils.BPMToMilliseconds(osuCurrObj.StrainTime, 2);
             double snapThreshold = diameter * (1 + 1.3 * DifficultyCalculationUtils.ReverseLerp(bpm, 200, 250));
@@ -176,7 +194,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Jumps need to have some spacing to be snapped
             double result = currDistance < snapThreshold ? snapThreshold * 0.65 + currDistance * 0.35 : currDistance;
 
-            double totalBonus = result - currDistance;
+            double totalBonus = result + angleSnapDifficultyBonus - currDistance;
             return currDistance + totalBonus;
         }
 

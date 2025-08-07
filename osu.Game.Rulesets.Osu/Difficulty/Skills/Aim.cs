@@ -50,8 +50,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             }
         }
 
-        private double snapMultiplier => 27.5;
-        private static double flowMultiplier => 35;
+        private double snapMultiplier => 28.0;
+        private static double flowMultiplier => 40;
         private double strainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
@@ -73,10 +73,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             if (previousStrainAimType is not null && currentStrainAimType != previousStrainAimType)
             {
-                transitionBonus = 0.25 * DifficultyCalculationUtils.Smootherstep(Math.Abs(snapDifficulty - flowDifficulty), 0.3, 10);
+                transitionBonus = 0.15 * DifficultyCalculationUtils.Smootherstep(Math.Abs(snapDifficulty - flowDifficulty), 0.3, 10);
 
                 // Going from flow to snap is harder than going from snap to flow
-                transitionBonus = currentStrainAimType ? 1 + transitionBonus : 1 + 2 * transitionBonus;
+                transitionBonus = currentStrainAimType ? 1 + transitionBonus : 1 + 1.5 * transitionBonus;
             }
 
             snapDifficulty *= currentStrainAimType ? 1 : transitionBonus;
