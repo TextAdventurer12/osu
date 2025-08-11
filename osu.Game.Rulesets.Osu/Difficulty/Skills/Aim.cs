@@ -33,7 +33,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentflowStrain;
 
-        private double skillMultiplier => 20.5;
+        private double skillMultiplier => 26;
         private double strainDecayBase => 0.15;
 
         private const double backwards_strain_influence = 1000;
@@ -67,10 +67,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double currentDifficulty = 0;
             double auxiliaryStrainValue = 0;
             double currentStrainDifficulty = 0;
-            double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
-            double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
+            double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
+            double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
             double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current);
-            double flowStrainDifficulty = FlowStrainEvaluator.EvaluateDifficultyOf(current);
+            double flowStrainDifficulty = FlowStrainEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
 
             bool isFlow = (flowDifficulty + currentflowStrain + flowStrainDifficulty) < (snapDifficulty + currentAgilityStrain + agilityDifficulty);
 
@@ -79,22 +79,20 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 //for flow aim, we want the strain contribution to be solely from the FlowStrainEvaluator, and we only want to update the value of
                 // currentFlowStrain when the current note is flow-aimed
             {
-                currentDifficulty = flowDifficulty * 62;
-                currentflowStrain += flowStrainDifficulty * 4.8;
+                currentDifficulty = flowDifficulty;
+                currentStrainDifficulty = flowStrainDifficulty;
                 auxiliaryStrainValue = currentflowStrain;
-                currentStrainDifficulty = 0;
-
             }
                 //for snap aim, the notes difficulty itself contributes to strain and we update the value of agilityStrain only when the note is snapped
             else
             {
-                currentDifficulty = snapDifficulty * skillMultiplier;
+                currentDifficulty = snapDifficulty;
                 currentAgilityStrain += agilityDifficulty;
                 auxiliaryStrainValue = currentAgilityStrain;
-                currentStrainDifficulty = currentDifficulty;
+                currentStrainDifficulty = snapDifficulty;
             }
 
-            currentStrain = getCurrentStrainValue(osuCurrent.StartTime, previousStrains) * 5.25;
+            currentStrain = getCurrentStrainValue(osuCurrent.StartTime, previousStrains) * 4.65;
             previousStrains.Add((osuCurrent.StartTime, currentStrainDifficulty));
 
             if (current.BaseObject is Slider)
@@ -102,7 +100,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 sliderStrains.Add(currentStrain);
             }
 
-            return currentStrain + currentDifficulty + auxiliaryStrainValue;
+            return currentDifficulty + currentStrain + auxiliaryStrainValue;
         }
 
         private double getCurrentStrainValue(double endTime, List<(double Time, double Diff)> previousDifficulties)
