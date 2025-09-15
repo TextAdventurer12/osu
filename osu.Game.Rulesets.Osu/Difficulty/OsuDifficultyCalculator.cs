@@ -25,6 +25,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         public override int Version => 20250306;
 
+        private const int ReducedSectionCount = 15;
+
         public OsuDifficultyCalculator(IRulesetInfo ruleset, IWorkingBeatmap beatmap)
             : base(ruleset, beatmap)
         {
@@ -57,6 +59,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             var flashlight = skills.OfType<Flashlight>().SingleOrDefault();
 
             double speedNotes = speed.RelevantNoteCount();
+
+            var ReducedSections = reducedStrainCount((StrainSkill)skills[0], (StrainSkill)skills[2]);
+            aim.ReducedSectionCount = ReducedSections.aimReduced;
+            aimWithoutSliders.ReducedSectionCount = ReducedSections.aimReduced;
+            speed.ReducedSectionCount = ReducedSections.speedReduced;
 
             double aimDifficultStrainCount = aim.CountTopWeightedStrains();
             double speedDifficultStrainCount = speed.CountTopWeightedStrains();
@@ -175,6 +182,19 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
             return objects;
+        }
+        private (int aimReduced, int speedReduced) reducedStrainCount(StrainSkill aim, StrainSkill speed)
+        {
+            List<double> combinedSections = new List<double>();
+            combinedSections.AddRange(aim.GetCurrentStrainPeaks());
+            combinedSections.AddRange(speed.GetCurrentStrainPeaks());
+            combinedSections = combinedSections.OrderDescending().ToList();
+            if (ReducedSectionCount > combinedSections.Count())
+            {
+                return (aim.GetCurrentStrainPeaks().Count(), speed.GetCurrentStrainPeaks().Count());
+            }
+            return (aim.GetCurrentStrainPeaks().Count(peak => peak >= combinedSections[ReducedSectionCount - 1]), 
+                    speed.GetCurrentStrainPeaks().Count(peak => peak >= combinedSections[ReducedSectionCount - 1]));
         }
 
         protected override Skill[] CreateSkills(IBeatmap beatmap, Mod[] mods, double clockRate)
