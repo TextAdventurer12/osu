@@ -47,7 +47,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double angleRepetitionNerf = Math.Pow(baseFactor + (1 - baseFactor) * 0.95 * angleVectorRepetition(osuCurrObj), 2);
 
             // We reward high bpm more for wider angles, but only when both current and previous distance are over 0.5 radii.
-            double baseBpm = 320.0 / (1 + angleBonus * currDistanceMultiplier * prevDistanceMultiplier);
+            double baseBpm = 300.0 / (1 + angleBonus * currDistanceMultiplier * prevDistanceMultiplier);
 
             // Agility bonus of 1 at base BPM.
             double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / baseBpm, 4.5) - 1);

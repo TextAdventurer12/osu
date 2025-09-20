@@ -34,7 +34,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private double aimMultiplier => 1;
         private double snapMultiplier => 32.0;
         private double flowMultiplier => 10;
-        private double agilityMultiplier => 0.7;
+        private double agilityMultiplier => 0.4;
         private double strainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
