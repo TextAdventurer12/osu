@@ -88,7 +88,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double wideBaseFactor = 1 - 0.3 * DifficultyCalculationUtils.Smoothstep(lastAngle, double.DegreesToRadians(140), double.DegreesToRadians(90)) * angleDifference(currAngle, lastAngle);
 
                 // Penalize angle repetition.
-                wideAngleBonus *= Math.Pow(wideBaseFactor + (1 - wideBaseFactor) * angleVectorRepetition(osuCurrObj), 2);
+                wideAngleBonus *= angleBonus * Math.Pow(wideBaseFactor + (1 - wideBaseFactor) * angleVectorRepetition(osuCurrObj), 2);
 
                 // Apply wiggle bonus for jumps that are [radius, 3*diameter] in distance, with < 110 angle
                 // https://www.desmos.com/calculator/dp0v0nvowc
