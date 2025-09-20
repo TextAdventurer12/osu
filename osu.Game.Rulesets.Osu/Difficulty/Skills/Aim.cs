@@ -31,10 +31,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private bool? previousWasFlow;
 
-        private double aimMultiplier => 1;
+        private double aimMultiplier => 0.98;
         private double snapMultiplier => 32.0;
         private double flowMultiplier => 10;
-        private double agilityMultiplier => 0.4;
+        private double agilityMultiplier => 0.27;
         private double strainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
