@@ -23,10 +23,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double prevVelocity = osuPrevObj.LazyJumpDistance / osuPrevObj.AdjustedDeltaTime;
 
             const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
-            const int diameter = OsuDifficultyHitObject.NORMALISED_DIAMETER;
 
             double adjustedDistanceScale = 1.0;
-            double wiggleBonus = 0;
 
             if (osuCurrObj.Angle.HasValue &&
                 osuPrevObj?.Angle != null &&
