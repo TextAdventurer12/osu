@@ -4,9 +4,9 @@
 using System;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
-using static osu.Game.Rulesets.Difficulty.Utils.DifficultyCalculationUtils;
-using static osu.Game.Rulesets.Osu.Difficulty.Preprocessing.OsuDifficultyHitObject;
+using osu.Game.Rulesets.Osu.Objects;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
@@ -14,15 +14,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
     {
         public static double EvaluateDifficultyOf(DifficultyHitObject current)
         {
-            if (!IsValid(current, 2))
+            if (current.BaseObject is Spinner || current.Index <= 1 || current.Previous(0).BaseObject is Spinner)
                 return 0;
 
-            const int radius = NORMALISED_RADIUS;
+            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
 
-            double prevDistanceMultiplier = Smootherstep(osuPrevObj.LazyJumpDistance / radius, 0.5, 1);
+            double prevDistanceMultiplier = DifficultyCalculationUtils.Smootherstep(osuPrevObj.LazyJumpDistance / radius, 0.5, 1);
 
             // If the previous notes are stacked, we add the previous note's strainTime since there was no movement since at least 2 notes earlier.
             // https://youtu.be/-yJPIk-YSLI?t=186
@@ -36,14 +36,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 double currAngle = osuCurrObj.Angle.Value;
                 double lastAngle = osuPrevObj.Angle.Value;
 
-                baseFactor = 1 - 0.4 * Smoothstep(lastAngle, double.DegreesToRadians(90), double.DegreesToRadians(40)) * angleDifference(currAngle, lastAngle);
+                baseFactor = 1 - 0.4 * DifficultyCalculationUtils.Smoothstep(lastAngle, double.DegreesToRadians(90), double.DegreesToRadians(40)) * angleDifference(currAngle, lastAngle);
             }
 
             // Penalize angle repetition.
-            double angleRepetitionNerf = Math.Pow(baseFactor + (1 - baseFactor) * 0.95 * angleVectorRepetition(osuCurrObj), 2);
+            double angleRepetitionNerf = Math.Pow(baseFactor + (1 - baseFactor) * angleVectorRepetition(osuCurrObj), 2);
 
             // Agility bonus of 1 at base BPM.
-            double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / 270.0, 4.0) - 1);
+            double agilityBonus = Math.Max(0, Math.Pow(DifficultyCalculationUtils.MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / 270.0, 4.0) - 1);
 
             return agilityBonus * angleRepetitionNerf * 10;
         }
