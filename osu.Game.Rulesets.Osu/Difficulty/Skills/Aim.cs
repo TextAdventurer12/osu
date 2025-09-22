@@ -28,54 +28,44 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private double currentStrain;
 
         private double currentAgilityStrain;
-
-        private bool? previousWasFlow;
-
         private double aimMultiplier => 0.98;
         private double snapMultiplier => 32.0;
         private double flowMultiplier => 10;
-        private double agilityMultiplier => 0.27;
+        private double agilityMultiplier => 0.32;
         private double strainDecayBase => 0.15;
+        private double agilityStrainDecayBase => 0.1;
 
         private readonly List<double> sliderStrains = new List<double>();
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
 
+        private double agilityStrainDecay(double ms) => Math.Pow(agilityStrainDecayBase, ms / 1000);
+
         protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => currentStrain * strainDecay(time - current.Previous(0).StartTime);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-            //we decay both supplimental strain values irrespective of whether a given note is snapped or flowed
             currentStrain *= strainDecay(current.DeltaTime);
-            currentAgilityStrain *= strainDecay(current.DeltaTime);
+            currentAgilityStrain *= agilityStrainDecay(current.DeltaTime);
 
             double currentDifficulty;
             double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
             double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current);
             double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current);
 
-            double snapTransitionBonus = previousWasFlow.HasValue && previousWasFlow.Value ? 1.25 : 1.0;
-            double flowTransitionBonus = previousWasFlow.HasValue && !previousWasFlow.Value ? 1.25 : 1.0;
-
-            bool isFlow = (flowDifficulty) * flowTransitionBonus < (snapDifficulty + agilityDifficulty) * snapTransitionBonus;
+            bool isFlow = (flowDifficulty) < (snapDifficulty + agilityDifficulty);
 
             if (isFlow)
-
-                //for flow aim, we want the strain contribution to be solely from the FlowStrainEvaluator, and we only want to update the value of
-                // currentFlowStrain when the current note is flow-aimed
             {
                 currentDifficulty = flowDifficulty * flowMultiplier;
-                currentStrain += currentDifficulty * flowTransitionBonus;
+                currentStrain += currentDifficulty;
             }
-            //for snap aim, the notes difficulty itself contributes to strain and we update the value of agilityStrain only when the note is snapped
             else
             {
                 currentDifficulty = snapDifficulty * snapMultiplier;
                 currentAgilityStrain += agilityDifficulty * agilityMultiplier;
-                currentStrain += currentDifficulty + currentAgilityStrain * snapTransitionBonus;
+                currentStrain += currentDifficulty + currentAgilityStrain;
             }
-
-            previousWasFlow = isFlow;
 
             if (current.BaseObject is Slider)
             {

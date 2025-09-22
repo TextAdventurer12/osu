@@ -22,7 +22,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
 
-            double currDistanceMultiplier = Smootherstep(osuCurrObj.LazyJumpDistance / radius, 0.5, 1);
             double prevDistanceMultiplier = Smootherstep(osuPrevObj.LazyJumpDistance / radius, 0.5, 1);
 
             // If the previous notes are stacked, we add the previous note's strainTime since there was no movement since at least 2 notes earlier.
@@ -31,26 +30,20 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double prevTime = osuPrevObj.AdjustedDeltaTime;
 
             double baseFactor = 1;
-            double angleBonus = 0;
 
             if (osuCurrObj.Angle != null && osuPrevObj.Angle != null)
             {
                 double currAngle = osuCurrObj.Angle.Value;
                 double lastAngle = osuPrevObj.Angle.Value;
 
-                baseFactor = 1 - 0.3 * Smoothstep(lastAngle, double.DegreesToRadians(90), double.DegreesToRadians(40)) * angleDifference(currAngle, lastAngle);
-
-                angleBonus = Smootherstep(currAngle, 0, 120) * 0.2;
+                baseFactor = 1 - 0.4 * Smoothstep(lastAngle, double.DegreesToRadians(90), double.DegreesToRadians(40)) * angleDifference(currAngle, lastAngle);
             }
 
             // Penalize angle repetition.
             double angleRepetitionNerf = Math.Pow(baseFactor + (1 - baseFactor) * 0.95 * angleVectorRepetition(osuCurrObj), 2);
 
-            // We reward high bpm more for wider angles, but only when both current and previous distance are over 0.5 radii.
-            double baseBpm = 270.0 / (1 + angleBonus * currDistanceMultiplier * prevDistanceMultiplier);
-
             // Agility bonus of 1 at base BPM.
-            double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / baseBpm, 4.0) - 1);
+            double agilityBonus = Math.Max(0, Math.Pow(MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / 270.0, 4.0) - 1);
 
             return agilityBonus * angleRepetitionNerf * 10;
         }
