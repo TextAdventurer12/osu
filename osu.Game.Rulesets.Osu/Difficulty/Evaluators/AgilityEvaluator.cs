@@ -68,9 +68,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 if (loopObj.IsNull())
                     break;
 
-                if (loopObj.VectorAngle.IsNotNull() && current.VectorAngle.IsNotNull())
+                if (loopObj.NormalisedVectorAngle.IsNotNull() && current.NormalisedVectorAngle.IsNotNull())
                 {
-                    double angleDifference = Math.Abs(current.VectorAngle.Value - loopObj.VectorAngle.Value);
+                    double angleDifference = Math.Abs(current.NormalisedVectorAngle.Value - loopObj.NormalisedVectorAngle.Value);
                     constantAngleCount += Math.Cos(8 * Math.Min(Math.PI / 16, angleDifference));
                 }
 

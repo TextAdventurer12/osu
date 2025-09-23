@@ -110,6 +110,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
         /// </summary>
         public double SmallCircleBonus { get; private set; }
 
+        public double? NormalisedVectorAngle { get; private set; }
+
         public double? VectorAngle { get; private set; }
 
         private readonly OsuDifficultyHitObject? lastLastDifficultyObject;
@@ -240,7 +242,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
             }
 
             Vector2 v2 = BaseObject.StackedPosition - lastCursorPosition;
-            VectorAngle = Math.Atan2(Math.Abs(v2.Y), Math.Abs(v2.X));
+            NormalisedVectorAngle = Math.Atan2(Math.Abs(v2.Y), Math.Abs(v2.X));
+            VectorAngle = Math.Atan2(v2.Y, v2.X);
 
             if (lastLastDifficultyObject != null && lastLastDifficultyObject.BaseObject is not Spinner)
             {

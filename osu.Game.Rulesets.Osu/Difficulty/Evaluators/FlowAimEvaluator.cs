@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
@@ -19,74 +20,40 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
 
-            double currVelocity = osuCurrObj.LazyJumpDistance / osuCurrObj.AdjustedDeltaTime;
-            double prevVelocity = osuPrevObj.LazyJumpDistance / osuPrevObj.AdjustedDeltaTime;
 
-            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
-
-            double adjustedDistanceScale = 1.0;
-
-            if (osuCurrObj.Angle.HasValue &&
-                osuPrevObj?.Angle != null &&
-                Math.Abs(osuCurrObj.DeltaTime - osuPrevObj.DeltaTime) < 25)
-            {
-                double angleDifference = Math.Abs(osuCurrObj.Angle.Value - osuPrevObj.Angle.Value);
-                double angleDifferenceAdjusted = Math.Sin(angleDifference / 2) * 180.0;
-                double angularVelocity = angleDifferenceAdjusted / (0.1 * osuCurrObj.AdjustedDeltaTime);
-                double angularVelocityBonus = Math.Max(0.0, Math.Pow(angularVelocity, 0.5) - 1.0);
-                //nerf cheesable distances where the angle isn't indicative of the path the cursor takes between notes
-                angularVelocityBonus *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.LazyJumpDistance, radius * 0.5, radius * 2);
-                adjustedDistanceScale = 1 + angularVelocityBonus * 0.03;
-            }
-
-            double currLazyJumpDistance = AdjustFlowDistance(osuCurrObj);
-
-            // Base snap difficulty is velocity.
-            double difficulty = Math.Pow(currLazyJumpDistance, adjustedDistanceScale) / osuCurrObj.AdjustedDeltaTime;
-
-            double flowVelChange = Math.Abs(prevVelocity - currVelocity);
-
-            difficulty += flowVelChange * 4;
-
-            return difficulty * 0.1 * osuCurrObj.SmallCircleBonus;
         }
 
-        /// <summary>
-        /// Approximate the amount of unnecessary distance the cursor will travel in an arc attempting to flow between notes
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        public static double AdjustFlowDistance(DifficultyHitObject current)
+        private static double angleDifference(double curAngle, double lastAngle)
         {
-            var osuCurr = (OsuDifficultyHitObject)current;
-            var osuPrev = (OsuDifficultyHitObject)current.Previous(0);
+            return Math.Cos(2 * Math.Min(Math.PI / 4, Math.Abs(curAngle - lastAngle)));
+        }
 
-            // If angle is missing, it's just distance
-            if (!osuCurr.Angle.HasValue)
-                return osuCurr.LazyJumpDistance;
+        private static double angleVectorRepetition(OsuDifficultyHitObject current)
+        {
+            const double note_limit = 6;
 
-            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
+            double constantAngleCount = 0;
+            int index = 0;
+            double notesProcessed = 0;
 
-            double angle = osuCurr.Angle.Value;
-            double distanceTravelled = osuCurr.LazyJumpDistance;
+            while (notesProcessed < note_limit)
+            {
+                var loopObj = (OsuDifficultyHitObject)current.Previous(index);
 
-            double maxBonusAngle = double.DegreesToRadians(170);
+                if (loopObj.IsNull())
+                    break;
 
-            if (angle >= maxBonusAngle)
-                return distanceTravelled;
+                if (loopObj.NormalisedVectorAngle.IsNotNull() && current.NormalisedVectorAngle.IsNotNull())
+                {
+                    double angleDifference = Math.Abs(current.NormalisedVectorAngle.Value - loopObj.NormalisedVectorAngle.Value);
+                    constantAngleCount += Math.Cos(8 * Math.Min(Math.PI / 16, angleDifference));
+                }
 
-            //extra distance is a function of previous velocity, your arc will be less tight if you're coming in hot
-            double previousVelocity = osuPrev.LazyJumpDistance / osuPrev.AdjustedDeltaTime;
+                notesProcessed++;
+                index++;
+            }
 
-            //the sharper the angle, the more inefficient the real path will be
-            double angleScale = 1.0 - DifficultyCalculationUtils.Smootherstep(angle, 0, maxBonusAngle);
-
-            //nerf cheesable distances where the angle isn't indicative of the path the cursor takes between notes
-            angleScale *= DifficultyCalculationUtils.Smootherstep(osuCurr.LazyJumpDistance, radius, radius * 2);
-
-            double velocityBonus = 1.72 + Math.Pow(previousVelocity, 1) * angleScale * 0.1;
-
-            return Math.Pow(distanceTravelled, velocityBonus);
+            return Math.Pow(Math.Min(0.5 / constantAngleCount, 1), 2);
         }
     }
 }
