@@ -112,7 +112,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 
         public double? NormalisedVectorAngle { get; private set; }
 
-        public double? VectorAngle { get; private set; }
+        public double? AngleSigned { get; private set; }
 
         private readonly OsuDifficultyHitObject? lastLastDifficultyObject;
         private readonly OsuDifficultyHitObject? lastDifficultyObject;
@@ -243,7 +243,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
 
             Vector2 v2 = BaseObject.StackedPosition - lastCursorPosition;
             NormalisedVectorAngle = Math.Atan2(Math.Abs(v2.Y), Math.Abs(v2.X));
-            VectorAngle = Math.Atan2(v2.Y, v2.X);
 
             if (lastLastDifficultyObject != null && lastLastDifficultyObject.BaseObject is not Spinner)
             {
@@ -254,7 +253,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Preprocessing
                 float dot = Vector2.Dot(v1, v2);
                 float det = v1.X * v2.Y - v1.Y * v2.X;
 
-                Angle = Math.Abs(Math.Atan2(det, dot));
+                AngleSigned = Math.Atan2(det, dot);
+                Angle = Math.Abs((double)AngleSigned);
             }
         }
 
