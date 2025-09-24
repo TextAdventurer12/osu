@@ -179,12 +179,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     break;
 
                 if (Math.Abs(current.DeltaTime - loopObj.DeltaTime) > 25)
+                    break;
 
-                    if (loopObj.NormalisedVectorAngle.IsNotNull() && current.NormalisedVectorAngle.IsNotNull())
-                    {
-                        double angleDifference = Math.Abs(current.NormalisedVectorAngle.Value - loopObj.NormalisedVectorAngle.Value);
-                        constantAngleCount += Math.Cos(8 * Math.Min(Math.PI / 16, angleDifference));
-                    }
+                if (loopObj.NormalisedVectorAngle.IsNotNull() && current.NormalisedVectorAngle.IsNotNull())
+                {
+                    double angleDifference = Math.Abs(current.NormalisedVectorAngle.Value - loopObj.NormalisedVectorAngle.Value);
+                    constantAngleCount += Math.Cos(8 * Math.Min(Math.PI / 16, angleDifference));
+                }
 
                 notesProcessed++;
                 index++;
