@@ -19,41 +19,38 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
+            var osuPrevPrevObj = (OsuDifficultyHitObject)current.Previous(1);
 
+            double currVelocity = osuCurrObj.LazyJumpDistance / osuCurrObj.AdjustedDeltaTime;
 
+            double difficulty = Math.Pow(osuCurrObj.LazyJumpDistance, 1.8) * 0.1;
+
+            // Nerf isolated direction changes
+            double directionChangeFactor = Math.Max(0,
+                angleChangeCount(osuCurrObj, osuPrevObj) - 0.7 * Math.Abs(angleChangeCount(osuCurrObj, osuPrevObj) - angleChangeCount(osuPrevObj, osuPrevPrevObj)));
+
+            directionChangeFactor = Math.Pow(directionChangeFactor, currVelocity) * 100;
+
+            difficulty += directionChangeFactor;
+
+            return difficulty / osuCurrObj.AdjustedDeltaTime * 1.2;
         }
 
-        private static double angleDifference(double curAngle, double lastAngle)
+        private static double angleChangeCount(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj)
         {
-            return Math.Cos(2 * Math.Min(Math.PI / 4, Math.Abs(curAngle - lastAngle)));
-        }
+            double directionChangeFactor = 0;
 
-        private static double angleVectorRepetition(OsuDifficultyHitObject current)
-        {
-            const double note_limit = 6;
-
-            double constantAngleCount = 0;
-            int index = 0;
-            double notesProcessed = 0;
-
-            while (notesProcessed < note_limit)
+            if (osuCurrObj.AngleSigned.IsNotNull() && osuPrevObj.AngleSigned.IsNotNull() && osuCurrObj.Angle.IsNotNull())
             {
-                var loopObj = (OsuDifficultyHitObject)current.Previous(index);
+                double anglDifference = Math.Abs(osuCurrObj.AngleSigned.Value - osuPrevObj.AngleSigned.Value);
 
-                if (loopObj.IsNull())
-                    break;
+                // Account for the fact that you can aim patterns in a straight line
+                anglDifference *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.Angle.Value, double.DegreesToRadians(180), double.DegreesToRadians(90));
 
-                if (loopObj.NormalisedVectorAngle.IsNotNull() && current.NormalisedVectorAngle.IsNotNull())
-                {
-                    double angleDifference = Math.Abs(current.NormalisedVectorAngle.Value - loopObj.NormalisedVectorAngle.Value);
-                    constantAngleCount += Math.Cos(8 * Math.Min(Math.PI / 16, angleDifference));
-                }
-
-                notesProcessed++;
-                index++;
+                directionChangeFactor += anglDifference;
             }
 
-            return Math.Pow(Math.Min(0.5 / constantAngleCount, 1), 2);
+            return directionChangeFactor;
         }
     }
 }
