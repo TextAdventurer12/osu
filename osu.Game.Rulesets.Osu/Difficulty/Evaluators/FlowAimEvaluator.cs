@@ -64,6 +64,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             difficulty *= adjustedDistanceScale;
 
+            difficulty *= osuCurrObj.SmallCircleBonus;
+
             return difficulty / osuCurrObj.AdjustedDeltaTime * 1.2;
         }
 
