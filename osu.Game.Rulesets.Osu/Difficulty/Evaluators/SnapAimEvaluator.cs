@@ -140,10 +140,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 sliderBonus = osuLastObj.TravelDistance / osuLastObj.TravelTime;
             }
 
-            // Add in acute angle bonus or wide angle bonus, whichever is larger.
-            aimStrain += wideAngleBonus * 1.2;
-
             aimStrain *= angleRepetitionNerf;
+
+            // Add in acute angle bonus or wide angle bonus, whichever is larger.
+            aimStrain += wideAngleBonus * 1.1;
 
             aimStrain += wiggleBonus * 2;
             aimStrain += velocityChangeBonus * velocity_change_multiplier;
