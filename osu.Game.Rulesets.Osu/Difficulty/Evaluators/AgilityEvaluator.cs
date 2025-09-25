@@ -45,7 +45,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Agility bonus of 1 at base BPM.
             double agilityBonus = Math.Max(0, Math.Pow(DifficultyCalculationUtils.MillisecondsToBPM(Math.Max(currTime, prevTime), 2) / 270.0, 4.0) - 1);
 
-            return agilityBonus * angleRepetitionNerf * 10;
+            return agilityBonus * angleRepetitionNerf * 10 * osuCurrObj.SmallCircleBonus;
         }
 
         private static double angleDifference(double curAngle, double lastAngle)

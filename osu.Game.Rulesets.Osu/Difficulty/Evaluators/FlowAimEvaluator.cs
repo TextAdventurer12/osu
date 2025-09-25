@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Utils;
@@ -19,24 +21,53 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
-            var osuPrevPrevObj = (OsuDifficultyHitObject)current.Previous(1);
+            var osuNextObj = (OsuDifficultyHitObject)current.Next(0);
 
-            double currVelocity = osuCurrObj.LazyJumpDistance / osuCurrObj.AdjustedDeltaTime;
+            if (osuPrevObj.IsNull() || osuNextObj.IsNull())
+            {
+                return Math.Pow(osuCurrObj.LazyJumpDistance, 1.8) / osuCurrObj.AdjustedDeltaTime * 0.12;
+            }
 
-            double difficulty = Math.Pow(osuCurrObj.LazyJumpDistance, 1.8) * 0.1;
+            double difficulty = Math.Pow(osuCurrObj.LazyJumpDistance, 1.7) * 0.15;
 
-            // Nerf isolated direction changes
-            double directionChangeFactor = Math.Max(0,
-                angleChangeCount(osuCurrObj, osuPrevObj) - 0.7 * Math.Abs(angleChangeCount(osuCurrObj, osuPrevObj) - angleChangeCount(osuPrevObj, osuPrevPrevObj)));
+            double adjustedDistanceScale = 1.0;
 
-            directionChangeFactor = Math.Pow(directionChangeFactor, currVelocity) * 100;
+            if (osuCurrObj.Angle != null && osuPrevObj?.Angle != null &&
+                Math.Abs(osuCurrObj.DeltaTime - osuPrevObj.DeltaTime) < 25 &&
+                Math.Abs(osuNextObj.DeltaTime - osuCurrObj.DeltaTime) < 25)
+            {
+                double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj) / 2) * 180.0;
+                double angularVelocity = angleDifferenceAdjusted / (0.1 * osuCurrObj.AdjustedDeltaTime);
+                double angularVelocityBonus = Math.Max(0.0, 1.5 * Math.Log10(angularVelocity));
 
-            difficulty += directionChangeFactor;
+                // ensure that distance is consistent
+                var distances = new List<double>();
+
+                for (int i = 0; i < 16; i++)
+                {
+                    var obj = current.Index > i ? (OsuDifficultyHitObject)current.Previous(i) : null;
+                    var objPrev = current.Index > i + 1 ? (OsuDifficultyHitObject)current.Previous(i + 1) : null;
+
+                    if (obj != null && objPrev != null)
+                    {
+                        if (Math.Abs(obj.DeltaTime - objPrev.DeltaTime) > 25)
+                            break;
+
+                        distances.Add(Math.Abs(obj.MinimumJumpDistance - objPrev.MinimumJumpDistance));
+                    }
+                }
+
+                double averageDistanceDifference = distances.Count > 0 ? distances.Average() : 0;
+                double distanceDifferenceScaling = Math.Max(0, 1.0 - averageDistanceDifference / 30.0);
+                adjustedDistanceScale = Math.Min(1.0, 0.6 + averageDistanceDifference / 30.0) + angularVelocityBonus * distanceDifferenceScaling;
+            }
+
+            difficulty *= adjustedDistanceScale;
 
             return difficulty / osuCurrObj.AdjustedDeltaTime * 1.2;
         }
 
-        private static double angleChangeCount(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj)
+        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj)
         {
             double directionChangeFactor = 0;
 
