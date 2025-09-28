@@ -41,7 +41,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double angularChangeBonus = Math.Max(0.0, 0.6 * Math.Log10(angleDifferenceAdjusted));
 
-            double adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Min(1, jerk / 15);
+            double adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Clamp(jerk / 15, 0.5, 1);
 
             double distanceFactor = Math.Pow(osuCurrObj.LazyJumpDistance, 2) * adjustedDistanceScale;
 
