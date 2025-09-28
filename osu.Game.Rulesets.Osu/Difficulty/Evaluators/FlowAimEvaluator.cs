@@ -20,12 +20,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
             var osuPrev2Obj = (OsuDifficultyHitObject)current.Previous(1);
-            var osuNextObj = (OsuDifficultyHitObject)current.Next(0);
-
-            if (osuPrevObj.IsNull() || osuNextObj.IsNull())
-            {
-                return Math.Pow(osuCurrObj.LazyJumpDistance, 2) / osuCurrObj.AdjustedDeltaTime * 0.1;
-            }
 
             double currDistanceDifference = Math.Abs(osuCurrObj.MinimumJumpDistance - osuPrevObj.MinimumJumpDistance);
             double prevDistanceDifference = Math.Abs(osuPrevObj.MinimumJumpDistance - osuPrev2Obj.MinimumJumpDistance);
