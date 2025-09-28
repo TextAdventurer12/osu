@@ -32,17 +32,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double jerk = Math.Abs(currDistanceDifference - prevDistanceDifference);
 
-            double adjustedDistanceScale = 1.0;
+            double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj) / 2) * 180;
+            double angularChangeBonus = Math.Max(0.0, 0.6 * Math.Log10(angleDifferenceAdjusted));
 
-            if (osuCurrObj.Angle != null && osuPrevObj.Angle != null &&
-                Math.Abs(osuNextObj.DeltaTime - osuCurrObj.DeltaTime) < 25) // Apply bonus only if the pattern continues
-            {
-                double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj) / 2) * 180;
-                double angularChangeBonus = Math.Max(0.0, 0.6 * Math.Log10(angleDifferenceAdjusted));
-
-                adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Min(1, jerk / 15);
-                // Console.Out.WriteLine(Math.Min(1, jerk / 15) + ", " + angularChangeBonus + ", " + adjustedDistanceScale);
-            }
+            double adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Min(1, jerk / 15);
 
             double distanceFactor = Math.Pow(osuCurrObj.LazyJumpDistance, 2) * adjustedDistanceScale;
 
