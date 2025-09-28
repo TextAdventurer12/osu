@@ -27,6 +27,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double jerk = Math.Abs(currDistanceDifference - prevDistanceDifference);
 
             double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj) / 2) * 180;
+
+            var osuNextObj = (OsuDifficultyHitObject)current.Next(0);
+            var osuPrev3Obj = (OsuDifficultyHitObject)current.Previous(2);
+
+            // Nerf the last note of spaced triples as its angle is not representative of its flow difficulty
+            if (osuPrev3Obj.IsNotNull() && Math.Abs(osuPrev2Obj.AdjustedDeltaTime - osuPrev3Obj.AdjustedDeltaTime) > 25 &&
+                osuNextObj.IsNotNull() && Math.Abs(osuCurrObj.AdjustedDeltaTime - osuNextObj.AdjustedDeltaTime) > 25 && osuCurrObj.Angle.IsNotNull())
+            {
+                angleDifferenceAdjusted *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.Angle.Value, double.DegreesToRadians(180), double.DegreesToRadians(90));
+                jerk *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.Angle.Value, double.DegreesToRadians(180), double.DegreesToRadians(90));
+            }
+
             double angularChangeBonus = Math.Max(0.0, 0.6 * Math.Log10(angleDifferenceAdjusted));
 
             double adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Min(1, jerk / 15);
