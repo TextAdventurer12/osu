@@ -43,6 +43,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double adjustedDistanceScale = 0.85 + Math.Min(1, jerk / 15) + angularChangeBonus * Math.Clamp(jerk / 15, 0.5, 1);
 
+            // Value distance exponentially, and scale with direction and distance changes
             double distanceFactor = Math.Pow(osuCurrObj.LazyJumpDistance, 2) * adjustedDistanceScale;
 
             double difficulty = distanceFactor / osuCurrObj.AdjustedDeltaTime;
