@@ -54,7 +54,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             return difficulty * 0.03;
         }
 
-        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj, OsuDifficultyHitObject osuPre2vObj)
+        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj, OsuDifficultyHitObject osuPrev2Obj)
         {
             double directionChangeFactor = 0;
 
@@ -65,7 +65,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 var curBaseObj = (OsuHitObject)osuCurrObj.BaseObject;
                 var prevBaseObj = (OsuHitObject)osuPrevObj.BaseObject;
-                var prev2BaseObj = (OsuHitObject)osuPre2vObj.BaseObject;
+                var prev2BaseObj = (OsuHitObject)osuPrev2Obj.BaseObject;
 
                 Vector2 lineVector = prev2BaseObj.StackedEndPosition - curBaseObj.StackedEndPosition;
                 Vector2 toMiddle = prevBaseObj.StackedEndPosition - curBaseObj.StackedEndPosition;
