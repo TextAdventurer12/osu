@@ -27,7 +27,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double jerk = Math.Abs(currDistanceDifference - prevDistanceDifference);
 
-            double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj, osuPrev2Obj) / 2) * 180;
+            double angleDifferenceAdjusted = Math.Sin(directionChange(current) / 2) * 180;
 
             var osuNextObj = (OsuDifficultyHitObject)current.Next(0);
             var osuPrev3Obj = (OsuDifficultyHitObject)current.Previous(2);
@@ -54,9 +54,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             return difficulty * 0.03;
         }
 
-        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj, OsuDifficultyHitObject osuPrev2Obj)
+        private static double directionChange(DifficultyHitObject current)
         {
             double directionChangeFactor = 0;
+
+            var osuCurrObj = (OsuDifficultyHitObject)current;
+            var osuPrevObj = (OsuDifficultyHitObject)current.Previous(0);
+            var osuPrev2Obj = (OsuDifficultyHitObject)current.Previous(1);
 
             if (osuCurrObj.AngleSigned.IsNotNull() && osuPrevObj.AngleSigned.IsNotNull() &&
                 osuCurrObj.Angle.IsNotNull() && osuPrevObj.Angle.IsNotNull())
@@ -79,7 +83,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 float scalingFactor = OsuDifficultyHitObject.NORMALISED_RADIUS / (float)curBaseObj.Radius;
 
-                double perpendicularDistance = (toMiddle * scalingFactor - projection * scalingFactor).Length;
+                double perpendicularDistance = curBaseObj.StackedPosition.Equals(prev2BaseObj.StackedPosition) ? osuCurrObj.LazyJumpDistance : (toMiddle * scalingFactor - projection * scalingFactor).Length;
 
                 // Account for the fact that you can aim patterns in a straight line
                 signedAngleDifference *= DifficultyCalculationUtils.Smootherstep(perpendicularDistance, OsuDifficultyHitObject.NORMALISED_RADIUS * 0.5, OsuDifficultyHitObject.NORMALISED_RADIUS * 1.5);
