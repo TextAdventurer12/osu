@@ -7,6 +7,7 @@ using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Osu.Objects;
+using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
@@ -26,7 +27,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double jerk = Math.Abs(currDistanceDifference - prevDistanceDifference);
 
-            double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj) / 2) * 180;
+            double angleDifferenceAdjusted = Math.Sin(directionChange(osuCurrObj, osuPrevObj, osuPrev2Obj) / 2) * 180;
 
             var osuNextObj = (OsuDifficultyHitObject)current.Next(0);
             var osuPrev3Obj = (OsuDifficultyHitObject)current.Previous(2);
@@ -53,7 +54,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             return difficulty * 0.03;
         }
 
-        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj)
+        private static double directionChange(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuPrevObj, OsuDifficultyHitObject osuPre2vObj)
         {
             double directionChangeFactor = 0;
 
@@ -62,8 +63,26 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             {
                 double signedAngleDifference = Math.Abs(osuCurrObj.AngleSigned.Value - osuPrevObj.AngleSigned.Value);
 
+                var curBaseObj = (OsuHitObject)osuCurrObj.BaseObject;
+                var prevBaseObj = (OsuHitObject)osuPrevObj.BaseObject;
+                var prev2BaseObj = (OsuHitObject)osuPre2vObj.BaseObject;
+
+                Vector2 lineVector = prev2BaseObj.StackedEndPosition - curBaseObj.StackedEndPosition;
+                Vector2 toMiddle = prevBaseObj.StackedEndPosition - curBaseObj.StackedEndPosition;
+
+                float dotToMiddleLine = Vector2.Dot(toMiddle, lineVector);
+                float dotLineLine = Vector2.Dot(lineVector, lineVector);
+
+                float projectionScalar = dotToMiddleLine / dotLineLine;
+
+                Vector2 projection = lineVector * projectionScalar;
+
+                float scalingFactor = OsuDifficultyHitObject.NORMALISED_RADIUS / (float)curBaseObj.Radius;
+
+                double perpendicularDistance = (toMiddle * scalingFactor - projection * scalingFactor).Length;
+
                 // Account for the fact that you can aim patterns in a straight line
-                signedAngleDifference *= DifficultyCalculationUtils.Smootherstep(osuCurrObj.Angle.Value, double.DegreesToRadians(180), double.DegreesToRadians(90));
+                signedAngleDifference *= DifficultyCalculationUtils.Smootherstep(perpendicularDistance, OsuDifficultyHitObject.NORMALISED_RADIUS * 0.5, OsuDifficultyHitObject.NORMALISED_RADIUS * 1.5);
 
                 double angleDifference = Math.Abs(osuCurrObj.Angle.Value - osuPrevObj.Angle.Value);
 
