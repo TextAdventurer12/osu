@@ -142,7 +142,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             aimStrain *= angleRepetitionNerf;
 
-            // Add in acute angle bonus or wide angle bonus, whichever is larger.
             aimStrain += wideAngleBonus * 1.25;
 
             aimStrain += wiggleBonus * 2;
