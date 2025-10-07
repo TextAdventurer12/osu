@@ -53,7 +53,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current);
             double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current);
 
-            bool isFlow = (flowDifficulty) < (snapDifficulty + agilityDifficulty);
+            bool isFlow = (flowDifficulty * flowMultiplier) < (snapDifficulty * snapMultiplier + agilityDifficulty * agilityMultiplier);
 
             if (isFlow)
             {
