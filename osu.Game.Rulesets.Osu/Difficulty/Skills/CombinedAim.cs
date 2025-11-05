@@ -23,8 +23,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double p_snap = ProbabilityOf(flow / snap);
             double p_flow = 1 - p_snap; // same as ProbabilityOf(snap / flow)
-
-            Console.WriteLine($"{snap}, {p_snap}, {flow}, {p_flow}, {snap * p_snap + flow * p_flow}");
+            
             return snap * p_snap + flow * p_flow;
         }
     }

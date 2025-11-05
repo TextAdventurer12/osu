@@ -20,10 +20,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double snap = AimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
             double flow = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
 
-            if (flow < snap)
-                return snap * ProbabilityOf(flow / snap);
-
-            return snap;
+            return snap * ProbabilityOf(flow / snap);
         }
     }
 }
