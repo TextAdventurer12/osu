@@ -21,7 +21,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double flow = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders);
 
             if (flow < snap)
-                return flow * Math.Pow(flow / snap, 2.5);
+                return snap * ProbabilityOf(flow / snap);
 
             return snap;
         }
