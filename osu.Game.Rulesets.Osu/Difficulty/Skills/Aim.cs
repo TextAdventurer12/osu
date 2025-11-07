@@ -17,7 +17,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// <summary>
     /// Represents the skill required to correctly aim at every object in the map with a uniform CircleSize and normalized distances.
     /// </summary>
-    public class Aim : OsuProbabilitySkill
+    public abstract class Aim : OsuProbabilitySkill
     {
         public readonly bool IncludeSliders;
 
@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
 
-        private double skillMultiplier => 132;
+        private double skillMultiplier => 167.27;
         private double strainDecayBase => 0.15;
 
         private readonly List<double> sliderStrains = new List<double>();
