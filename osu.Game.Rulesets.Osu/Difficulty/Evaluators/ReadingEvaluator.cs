@@ -29,7 +29,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             var currObj = (OsuDifficultyHitObject)current;
             double constantAngleNerfFactor = getConstantAngleNerfFactor(currObj);
-            double velocity = Math.Max(1, currObj.MinimumJumpDistance / currObj.AdjustedDeltaTime); // Only allow velocity to buff
 
             double pastObjectDifficultyInfluence = 0.0;
 
@@ -49,7 +48,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             }
 
             // Value higher note densities exponentially
-            double noteDensityDifficulty = Math.Pow(pastObjectDifficultyInfluence, 1.45) * 0.9 * constantAngleNerfFactor * velocity;
+            double noteDensityDifficulty = Math.Pow(pastObjectDifficultyInfluence, 1.45) * 0.9 * constantAngleNerfFactor;
 
             // Award only denser than average maps.
             noteDensityDifficulty = Math.Max(0, noteDensityDifficulty - density_difficulty_base);
@@ -73,7 +72,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 // Account for both past and current densities
                 double densityFactor = Math.Pow(Math.Max(1, futureObjectDifficultyInfluence + pastObjectDifficultyInfluence - 2), 2.2) * 3.1;
 
-                hiddenDifficulty += (timeSpentInvisibleFactor + densityFactor) * constantAngleNerfFactor * velocity * 0.007;
+                hiddenDifficulty += (timeSpentInvisibleFactor + densityFactor) * constantAngleNerfFactor * 0.007;
 
                 // Apply a soft cap to general HD reading to account for partial memorization
                 hiddenDifficulty = Math.Pow(hiddenDifficulty, 0.65) * hidden_multiplier;
@@ -90,7 +89,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // https://www.desmos.com/calculator/c175335a71
             preemptDifficulty += Math.Pow((preempt_starting_point - preempt + Math.Abs(preempt - preempt_starting_point)) / 2, 2.5) / preempt_balancing_factor;
 
-            preemptDifficulty *= constantAngleNerfFactor * velocity;
+            preemptDifficulty *= constantAngleNerfFactor;
 
             double difficulty = preemptDifficulty + hiddenDifficulty + noteDensityDifficulty;
 
