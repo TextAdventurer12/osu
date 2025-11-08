@@ -341,7 +341,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // Scale the reading value with accuracy _harshly_.
             readingValue *= Math.Pow(accuracy, 3);
 
-            return readingValue;
+            return readingValue * 0;
         }
 
         private double calculateComboBasedEstimatedMissCount(OsuDifficultyAttributes attributes)

@@ -10,6 +10,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Utils
     public struct Bin
     {
         public double Difficulty;
+        public double Lambda;
         public double Count;
 
         /// <summary>
@@ -17,7 +18,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Utils
         /// For example, if we have bins with values [1,2,3,4,5] and want to insert the value 3.2,
         /// we will add 0.8 to the count of 3's and 0.2 to the count of 4's
         /// </summary>
-        public static List<Bin> CreateBins(List<double> difficulties, int totalBins)
+        public static List<Bin> CreateBins(List<double> difficulties, List<double> lambdas, int totalBins)
         {
             double maxDifficulty = difficulties.Max();
 

@@ -65,7 +65,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimNoSlidersDifficultStrainCount = aimWithoutSliders.CountTopWeightedStrains();
             double aimNoSlidersTopWeightedSliderCount = aimWithoutSliders.CountTopWeightedSliders();
-            Polynomial aimMissPenaltyCurve = ((OsuProbabilitySkill)skills[0]).GetMissPenaltyCurve();
+            Polynomial aimMissPenaltyCurve = ((OsuContaminatedProbabilitySkill)skills[0]).GetMissPenaltyCurve();
 
             double aimTopWeightedSliderFactor = aimNoSlidersTopWeightedSliderCount / Math.Max(1, aimNoSlidersDifficultStrainCount - aimNoSlidersTopWeightedSliderCount);
 
@@ -214,11 +214,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             var skills = new List<Skill>
             {
-                new CombinedAim(mods, true),
-                new CombinedAim(mods, false),
+                new CombinedAim(beatmap, mods, clockRate, true),
+                new CombinedAim(beatmap, mods, clockRate, false),
                 new Speed(mods),
-                new SnapAim(mods),
-                new FlowAim(mods),
+                new SnapAim(beatmap, mods, clockRate),
+                new FlowAim(beatmap, mods, clockRate),
                 new Reading(beatmap, mods, clockRate)
             };
 

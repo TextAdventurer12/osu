@@ -46,14 +46,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Utils
         /// <param name="difficulties">The list of difficulties in the map.</param>
         /// <param name="skill">The skill level to get the miss probabilities with.</param>
         /// <param name="hitProbability">Converts difficulties and skill to miss probabilities.</param>
-        public PoissonBinomial(IList<double> difficulties, double skill, Func<double, double, double> hitProbability)
+        public PoissonBinomial(IList<double> difficulties, List<double> lambdas, double skill, Func<double, double, double, double> hitProbability)
         {
             double variance = 0;
             double gamma = 0;
 
-            foreach (double d in difficulties)
+            for (int i = 0; i < difficulties.Count; i++)
             {
-                double p = 1 - hitProbability(skill, d);
+                double p = 1 - hitProbability(skill, difficulties[i], lambdas[i]);
 
                 mu += p;
                 variance += p * (1 - p);

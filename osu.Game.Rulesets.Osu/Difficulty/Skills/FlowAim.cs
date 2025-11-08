@@ -5,13 +5,14 @@ using System;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using osu.Game.Beatmaps;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     public class FlowAim : Aim
     {
-        public FlowAim(Mod[] mods)
-            : base(mods, false)
+        public FlowAim(IBeatmap beatmap, Mod[] mods, double clockRate)
+            : base(beatmap, mods, clockRate, false)
         {
         }
 

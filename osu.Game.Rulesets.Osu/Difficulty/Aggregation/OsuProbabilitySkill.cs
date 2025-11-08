@@ -12,9 +12,9 @@ using osu.Game.Rulesets.Osu.Difficulty.Utils;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
 {
-    public abstract class OsuProbabilitySkill : Skill
+    public abstract class OsuContaminatedProbabilitySkill : Skill
     {
-        protected OsuProbabilitySkill(Mod[] mods)
+        protected OsuContaminatedProbabilitySkill(Mod[] mods)
             : base(mods)
         {
         }
@@ -29,23 +29,29 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
         // The number of difficulties there must be before we can be sure that binning difficulties would not change the output significantly.
         private double binThreshold => 2 * bin_count;
 
+        // weighting of contaminating distribution
+        protected virtual double alpha => 0;
+
         private readonly List<double> difficulties = new List<double>();
+        private readonly List<double> lambdas = new List<double>(); 
 
         /// <summary>
         /// Returns the strain value at <see cref="DifficultyHitObject"/>. This value is calculated with or without respect to previous objects.
         /// </summary>
         protected abstract double StrainValueAt(DifficultyHitObject current);
+        protected abstract double LambdaValueAt(DifficultyHitObject current);
 
         public override void Process(DifficultyHitObject current)
         {
             difficulties.Add(StrainValueAt(current));
+            lambdas.Add(LambdaValueAt(current));
         }
 
-        protected abstract double HitProbability(double skill, double difficulty);
+        protected abstract double HitProbability(double skill, double difficulty, double lambda);
 
         private double difficultyValueExact()
         {
-            double maxDiff = difficulties.Max();
+            double maxDiff = (1 - alpha) * difficulties.Max() + alpha * lambdas.Max();
             if (maxDiff <= 1e-10) return 0;
 
             const double lower_bound = 0;
@@ -62,42 +68,48 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
             double fcProbability(double s)
             {
                 if (s <= 0) return 0;
+                double p = 1;
+                for (int i = 0; i < difficulties.Count(); i++)
+                {
+                    p *= HitProbability(s, difficulties[i], lambdas[i]);
+                }
 
-                return difficulties.Aggregate<double, double>(1, (current, d) => current * HitProbability(s, d));
+                return p;
             }
         }
 
-        private double difficultyValueBinned()
-        {
-            double maxDiff = difficulties.Max();
-            if (maxDiff <= 1e-10) return 0;
+        // private double difficultyValueBinned()
+        // {
+        //     double maxDiff = (1 - alpha) * difficulties.Max() + alpha * lambdas.Max();
+        //     if (maxDiff <= 1e-10) return 0;
 
-            var bins = Bin.CreateBins(difficulties, bin_count);
+        //     var bins = Bin.CreateBins(difficulties, bin_count);
 
-            const double lower_bound = 0;
-            double upperBoundEstimate = 3.0 * maxDiff;
+        //     const double lower_bound = 0;
+        //     double upperBoundEstimate = 3.0 * maxDiff;
 
-            double skill = RootFinding.FindRootExpand(
-                skill => fcProbability(skill) - fc_probability,
-                lower_bound,
-                upperBoundEstimate,
-                accuracy: 1e-4);
+        //     double skill = RootFinding.FindRootExpand(
+        //         skill => fcProbability(skill) - fc_probability,
+        //         lower_bound,
+        //         upperBoundEstimate,
+        //         accuracy: 1e-4);
 
-            return skill;
+        //     return skill;
 
-            double fcProbability(double s)
-            {
-                if (s <= 0) return 0;
+        //     double fcProbability(double s)
+        //     {
+        //         if (s <= 0) return 0;
 
-                return bins.Aggregate(1.0, (current, bin) => current * Math.Pow(HitProbability(s, bin.Difficulty), bin.Count));
-            }
-        }
+        //         return bins.Aggregate(1.0, (current, bin) => current * Math.Pow(HitProbability(s, bin.Difficulty, bin.Lambda), bin.Count));
+        //     }
+        // }
 
         public override double DifficultyValue()
         {
             if (difficulties.Count == 0) return 0;
 
-            return difficulties.Count > binThreshold ? difficultyValueBinned() : difficultyValueExact();
+            // return difficulties.Count > binThreshold ? difficultyValueBinned() : difficultyValueExact();
+            return difficultyValueExact();
         }
 
         /// <returns>
@@ -116,8 +128,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
 
             double fcSkill = DifficultyValue();
 
-            var bins = Bin.CreateBins(difficulties, bin_count);
-
             for (int i = 0; i < penalties.Length; i++)
             {
                 if (i == 0)
@@ -129,7 +139,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
                 double penalizedSkill = fcSkill * penalties[i];
 
                 // We want to take the log of misscount + 1, to make it easier for the polynomial to fit to them.
-                missCounts[i] = Math.Log(getMissCountAtSkill(penalizedSkill, bins) + 1);
+                missCounts[i] = Math.Log(getMissCountAtSkill(penalizedSkill) + 1);
             }
 
             missPenaltyCurve.Fit(missCounts);
@@ -140,16 +150,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Aggregation
         /// <summary>
         /// Find the lowest miss count that a player with the provided <paramref name="skill"/> would have a 2% chance of achieving or better.
         /// </summary>
-        private double getMissCountAtSkill(double skill, List<Bin> bins)
+        private double getMissCountAtSkill(double skill)
         {
-            double maxDiff = difficulties.Max();
+            double maxDiff = (1 - alpha) * difficulties.Max() + alpha * lambdas.Max();
 
             if (maxDiff == 0)
                 return 0;
             if (skill <= 0)
                 return difficulties.Count;
 
-            var poiBin = difficulties.Count > binThreshold ? new PoissonBinomial(bins, skill, HitProbability) : new PoissonBinomial(difficulties, skill, HitProbability);
+            // var poiBin = difficulties.Count > binThreshold ? new PoissonBinomial(bins, skill, HitProbability) : new PoissonBinomial(difficulties, skill, HitProbability);
+            var poiBin = new PoissonBinomial(difficulties, lambdas, skill, HitProbability);
 
             return Math.Max(0, RootFinding.FindRootExpand(x => poiBin.CDF(x) - fc_probability, -50, 1000, accuracy: 1e-4));
         }
