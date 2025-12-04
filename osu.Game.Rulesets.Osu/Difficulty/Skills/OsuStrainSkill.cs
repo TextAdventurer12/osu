@@ -27,6 +27,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             : base(mods)
         {
         }
+        
+        // this is kinda weird being here, but I'm not sure where else to put it
+        // I could make another BaseAim class, but it would basically only contain this function
+        private static double k = 7.27;
+        public static double ProbabilityOf(double ratio)
+            => ratio == 0 ? 1 : // if this aim's difficulty is 0, it will certainly be used
+               double.IsNaN(ratio) ? 0 : // if the other aim's difficulty is 0, this skill will certainly not be used
+               (1 / (1 + Math.Exp(k * Math.Log(ratio)))); // the probability of using this aim depends on the log(ratio) to satisfy probability conditions
 
         public override double DifficultyValue()
         {

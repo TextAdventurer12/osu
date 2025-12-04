@@ -9,8 +9,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceAttributes : PerformanceAttributes
     {
-        [JsonProperty("aim")]
-        public double Aim { get; set; }
+        [JsonProperty("snap_aim")]
+        public double SnapAim { get; set; }
+        [JsonProperty("flow_aim")]
+        public double FlowAim { get; set; }
 
         [JsonProperty("speed")]
         public double Speed { get; set; }
@@ -33,8 +35,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         [JsonProperty("score_based_estimated_miss_count")]
         public double? ScoreBasedEstimatedMissCount { get; set; }
 
-        [JsonProperty("aim_estimated_slider_breaks")]
-        public double AimEstimatedSliderBreaks { get; set; }
+        [JsonProperty("snap_aim_estimated_slider_breaks")]
+        public double SnapAimEstimatedSliderBreaks { get; set; }
+        [JsonProperty("flow_aim_estimated_slider_breaks")]
+        public double FlowAimEstimatedSliderBreaks { get; set; }
 
         [JsonProperty("speed_estimated_slider_breaks")]
         public double SpeedEstimatedSliderBreaks { get; set; }
@@ -44,7 +48,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             foreach (var attribute in base.GetAttributesForDisplay())
                 yield return attribute;
 
-            yield return new PerformanceDisplayAttribute(nameof(Aim), "Aim", Aim);
+            yield return new PerformanceDisplayAttribute(nameof(SnapAim), "Snap Aim", SnapAim);
+            yield return new PerformanceDisplayAttribute(nameof(FlowAim), "Flow Aim", FlowAim);
             yield return new PerformanceDisplayAttribute(nameof(Speed), "Speed", Speed);
             yield return new PerformanceDisplayAttribute(nameof(Accuracy), "Accuracy", Accuracy);
             yield return new PerformanceDisplayAttribute(nameof(Flashlight), "Flashlight Bonus", Flashlight);

@@ -57,7 +57,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         private double? speedDeviation;
 
-        private double aimEstimatedSliderBreaks;
+        private double snapAimEstimatedSliderBreaks;
+        private double flowAimEstimatedSliderBreaks;
         private double speedEstimatedSliderBreaks;
 
         public OsuPerformanceCalculator()
@@ -140,10 +141,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             speedDeviation = calculateSpeedDeviation(osuAttributes);
 
-            double aimValue = computeAimValue(score, osuAttributes);
+            double snapAimValue = computeSnapAimValue(score, osuAttributes);
+            double flowAimValue = computeFlowAimValue(score, osuAttributes);
             double speedValue = computeSpeedValue(score, osuAttributes);
             double accuracyValue = computeAccuracyValue(score, osuAttributes);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
+
+            double aimValue = Math.Pow(Math.Pow(snapAimValue, 1.5) + Math.Pow(flowAimValue, 1.5), 1 / 1.5); // TODO: update this everywhere else so sr works
 
             double totalValue =
                 Math.Pow(
@@ -155,28 +159,30 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             return new OsuPerformanceAttributes
             {
-                Aim = aimValue,
+                SnapAim = snapAimValue,
+                FlowAim = flowAimValue,
                 Speed = speedValue,
                 Accuracy = accuracyValue,
                 Flashlight = flashlightValue,
                 EffectiveMissCount = effectiveMissCount,
                 ComboBasedEstimatedMissCount = comboBasedEstimatedMissCount,
                 ScoreBasedEstimatedMissCount = scoreBasedEstimatedMissCount,
-                AimEstimatedSliderBreaks = aimEstimatedSliderBreaks,
+                SnapAimEstimatedSliderBreaks = snapAimEstimatedSliderBreaks,
+                FlowAimEstimatedSliderBreaks = flowAimEstimatedSliderBreaks,
                 SpeedEstimatedSliderBreaks = speedEstimatedSliderBreaks,
                 SpeedDeviation = speedDeviation,
                 Total = totalValue
             };
         }
 
-        private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
+        private double computeSnapAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (score.Mods.Any(h => h is OsuModAutopilot))
                 return 0.0;
 
-            double aimDifficulty = attributes.AimDifficulty;
+            double snapAimDifficulty = attributes.SnapAimDifficulty;
 
-            if (attributes.SliderCount > 0 && attributes.AimDifficultSliderCount > 0)
+            if (attributes.SliderCount > 0 && attributes.DifficultSliderCount > 0)
             {
                 double estimateImproperlyFollowedDifficultSliders;
 
@@ -184,45 +190,78 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 {
                     // When the score is considered classic (regardless if it was made on old client or not) we consider all missing combo to be dropped difficult sliders
                     int maximumPossibleDroppedSliders = totalImperfectHits;
-                    estimateImproperlyFollowedDifficultSliders = Math.Clamp(Math.Min(maximumPossibleDroppedSliders, attributes.MaxCombo - scoreMaxCombo), 0, attributes.AimDifficultSliderCount);
+                    estimateImproperlyFollowedDifficultSliders = Math.Clamp(Math.Min(maximumPossibleDroppedSliders, attributes.MaxCombo - scoreMaxCombo), 0, attributes.DifficultSliderCount);
                 }
                 else
                 {
                     // We add tick misses here since they too mean that the player didn't follow the slider properly
                     // We however aren't adding misses here because missing slider heads has a harsh penalty by itself and doesn't mean that the rest of the slider wasn't followed properly
-                    estimateImproperlyFollowedDifficultSliders = Math.Clamp(countSliderEndsDropped + countSliderTickMiss, 0, attributes.AimDifficultSliderCount);
+                    estimateImproperlyFollowedDifficultSliders = Math.Clamp(countSliderEndsDropped + countSliderTickMiss, 0, attributes.DifficultSliderCount);
                 }
 
-                double sliderNerfFactor = (1 - attributes.SliderFactor) * Math.Pow(1 - estimateImproperlyFollowedDifficultSliders / attributes.AimDifficultSliderCount, 3) + attributes.SliderFactor;
-                aimDifficulty *= sliderNerfFactor;
+                double sliderNerfFactor = (1 - attributes.SliderFactor) * Math.Pow(1 - estimateImproperlyFollowedDifficultSliders / attributes.DifficultSliderCount, 3) + attributes.SliderFactor;
+                snapAimDifficulty *= sliderNerfFactor;
             }
 
-            double aimValue = OsuStrainSkill.DifficultyToPerformance(aimDifficulty);
+            double snapAimValue = OsuStrainSkill.DifficultyToPerformance(snapAimDifficulty);
 
             double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
                                  (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
-            aimValue *= lengthBonus;
+            snapAimValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
             {
-                aimEstimatedSliderBreaks = calculateEstimatedSliderBreaks(attributes.AimTopWeightedSliderFactor, attributes);
+                snapAimEstimatedSliderBreaks = calculateEstimatedSliderBreaks(attributes.SnapAimTopWeightedSliderFactor, attributes);
 
-                double relevantMissCount = Math.Min(effectiveMissCount + aimEstimatedSliderBreaks, totalImperfectHits + countSliderTickMiss);
+                double relevantMissCount = Math.Min(effectiveMissCount + snapAimEstimatedSliderBreaks, totalImperfectHits + countSliderTickMiss);
 
-                aimValue *= calculateMissPenalty(relevantMissCount, attributes.AimDifficultStrainCount);
+                snapAimValue *= calculateMissPenalty(relevantMissCount, attributes.SnapAimDifficultStrainCount);
             }
 
             // TC bonuses are excluded when blinds is present as the increased visual difficulty is unimportant when notes cannot be seen.
             if (score.Mods.Any(m => m is OsuModBlinds))
-                aimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * drainRate * drainRate);
+                snapAimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * drainRate * drainRate);
             else if (score.Mods.Any(m => m is OsuModTraceable))
             {
-                aimValue *= 1.0 + OsuRatingCalculator.CalculateVisibilityBonus(score.Mods, approachRate, sliderFactor: attributes.SliderFactor);
+                snapAimValue *= 1.0 + OsuRatingCalculator.CalculateVisibilityBonus(score.Mods, approachRate, sliderFactor: attributes.SliderFactor);
             }
 
-            aimValue *= accuracy;
+            snapAimValue *= accuracy;
 
-            return aimValue;
+            return snapAimValue;
+        }
+
+        private double computeFlowAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
+        {
+            if (score.Mods.Any(h => h is OsuModAutopilot))
+                return 0.0;
+
+            double flowAimValue = OsuStrainSkill.DifficultyToPerformance(attributes.FlowAimDifficulty);
+
+            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
+                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            flowAimValue *= lengthBonus;
+
+            if (effectiveMissCount > 0)
+            {
+                flowAimEstimatedSliderBreaks = calculateEstimatedSliderBreaks(attributes.FlowAimTopWeightedSliderFactor, attributes);
+
+                double relevantMissCount = Math.Min(effectiveMissCount + flowAimEstimatedSliderBreaks, totalImperfectHits + countSliderTickMiss);
+
+                flowAimValue *= calculateMissPenalty(relevantMissCount, attributes.FlowAimDifficultStrainCount);
+            }
+
+            // TC bonuses are excluded when blinds is present as the increased visual difficulty is unimportant when notes cannot be seen.
+            if (score.Mods.Any(m => m is OsuModBlinds))
+                flowAimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * drainRate * drainRate);
+            else if (score.Mods.Any(m => m is OsuModTraceable))
+            {
+                flowAimValue *= 1.0 + OsuRatingCalculator.CalculateVisibilityBonus(score.Mods, approachRate, sliderFactor: attributes.SliderFactor);
+            }
+
+            flowAimValue *= accuracy;
+
+            return flowAimValue;
         }
 
         private double computeSpeedValue(ScoreInfo score, OsuDifficultyAttributes attributes)

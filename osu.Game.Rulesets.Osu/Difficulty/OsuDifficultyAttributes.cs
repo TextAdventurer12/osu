@@ -17,14 +17,26 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// <summary>
         /// The difficulty corresponding to the aim skill.
         /// </summary>
-        [JsonProperty("aim_difficulty")]
-        public double AimDifficulty { get; set; }
+        [JsonProperty("snap_aim_difficulty")]
+        public double SnapAimDifficulty { get; set; }
 
         /// <summary>
         /// The number of <see cref="Slider"/>s weighted by difficulty.
         /// </summary>
-        [JsonProperty("aim_difficult_slider_count")]
-        public double AimDifficultSliderCount { get; set; }
+        [JsonProperty("difficult_slider_count")]
+        public double DifficultSliderCount { get; set; }
+
+        /// <summary>
+        /// The difficulty corresponding to the aim skill.
+        /// </summary>
+        [JsonProperty("flow_aim_difficulty")]
+        public double FlowAimDifficulty { get; set; }
+
+        /// <summary>
+        /// The number of <see cref="Slider"/>s weighted by difficulty.
+        /// </summary>
+        [JsonProperty("flow_aim_difficult_slider_count")]
+        public double FlowAimDifficultSliderCount { get; set; }
 
         /// <summary>
         /// The difficulty corresponding to the speed skill.
@@ -46,9 +58,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         public double FlashlightDifficulty { get; set; }
 
         /// <summary>
-        /// Describes how much of <see cref="AimDifficulty"/> is contributed to by hitcircles or sliders.
-        /// A value closer to 1.0 indicates most of <see cref="AimDifficulty"/> is contributed by hitcircles.
-        /// A value closer to 0.0 indicates most of <see cref="AimDifficulty"/> is contributed by sliders.
+        /// Describes how much of <see cref="SnapAimDifficulty"/> is contributed to by hitcircles or sliders.
+        /// A value closer to 1.0 indicates most of <see cref="SnapAimDifficulty"/> is contributed by hitcircles.
+        /// A value closer to 0.0 indicates most of <see cref="SnapAimDifficulty"/> is contributed by sliders.
         /// </summary>
         [JsonProperty("slider_factor")]
         public double SliderFactor { get; set; }
@@ -58,8 +70,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         /// A value closer to 0.0 indicates most of <see cref="AimDifficultStrainCount"/> is contributed by hitcircles
         /// A value closer to Infinity indicates most of <see cref="AimDifficultStrainCount"/> is contributed by sliders
         /// </summary>
-        [JsonProperty("aim_top_weighted_slider_factor")]
-        public double AimTopWeightedSliderFactor { get; set; }
+        [JsonProperty("snap_aim_top_weighted_slider_factor")]
+        public double SnapAimTopWeightedSliderFactor { get; set; }
+        [JsonProperty("flow_aim_top_weighted_slider_factor")]
+        public double FlowAimTopWeightedSliderFactor { get; set; }
 
         /// <summary>
         /// Describes how much of <see cref="SpeedDifficultStrainCount"/> is contributed to by hitcircles or sliders
@@ -69,8 +83,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         [JsonProperty("speed_top_weighted_slider_factor")]
         public double SpeedTopWeightedSliderFactor { get; set; }
 
-        [JsonProperty("aim_difficult_strain_count")]
-        public double AimDifficultStrainCount { get; set; }
+        [JsonProperty("snap_aim_difficult_strain_count")]
+        public double SnapAimDifficultStrainCount { get; set; }
+        [JsonProperty("flow_aim_difficult_strain_count")]
+        public double FlowAimDifficultStrainCount { get; set; }
 
         [JsonProperty("speed_difficult_strain_count")]
         public double SpeedDifficultStrainCount { get; set; }
@@ -104,7 +120,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             foreach (var v in base.ToDatabaseAttributes())
                 yield return v;
 
-            yield return (ATTRIB_ID_AIM, AimDifficulty);
+            //yield return (ATTRIB_ID_AIM, AimDifficulty);
             yield return (ATTRIB_ID_SPEED, SpeedDifficulty);
             yield return (ATTRIB_ID_DIFFICULTY, StarRating);
 
@@ -113,11 +129,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             yield return (ATTRIB_ID_SLIDER_FACTOR, SliderFactor);
 
-            yield return (ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT, AimDifficultStrainCount);
+            //yield return (ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT, AimDifficultStrainCount);
             yield return (ATTRIB_ID_SPEED_DIFFICULT_STRAIN_COUNT, SpeedDifficultStrainCount);
             yield return (ATTRIB_ID_SPEED_NOTE_COUNT, SpeedNoteCount);
-            yield return (ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT, AimDifficultSliderCount);
-            yield return (ATTRIB_ID_AIM_TOP_WEIGHTED_SLIDER_FACTOR, AimTopWeightedSliderFactor);
+            //yield return (ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT, AimDifficultSliderCount);
+            //yield return (ATTRIB_ID_AIM_TOP_WEIGHTED_SLIDER_FACTOR, AimTopWeightedSliderFactor);
             yield return (ATTRIB_ID_SPEED_TOP_WEIGHTED_SLIDER_FACTOR, SpeedTopWeightedSliderFactor);
             yield return (ATTRIB_ID_NESTED_SCORE_PER_OBJECT, NestedScorePerObject);
             yield return (ATTRIB_ID_LEGACY_SCORE_BASE_MULTIPLIER, LegacyScoreBaseMultiplier);
@@ -128,16 +144,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             base.FromDatabaseAttributes(values, onlineInfo);
 
-            AimDifficulty = values[ATTRIB_ID_AIM];
+            //AimDifficulty = values[ATTRIB_ID_AIM];
             SpeedDifficulty = values[ATTRIB_ID_SPEED];
             StarRating = values[ATTRIB_ID_DIFFICULTY];
             FlashlightDifficulty = values.GetValueOrDefault(ATTRIB_ID_FLASHLIGHT);
             SliderFactor = values[ATTRIB_ID_SLIDER_FACTOR];
-            AimDifficultStrainCount = values[ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT];
+            //AimDifficultStrainCount = values[ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT];
             SpeedDifficultStrainCount = values[ATTRIB_ID_SPEED_DIFFICULT_STRAIN_COUNT];
             SpeedNoteCount = values[ATTRIB_ID_SPEED_NOTE_COUNT];
-            AimDifficultSliderCount = values[ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT];
-            AimTopWeightedSliderFactor = values[ATTRIB_ID_AIM_TOP_WEIGHTED_SLIDER_FACTOR];
+            //AimDifficultSliderCount = values[ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT];
+            //AimTopWeightedSliderFactor = values[ATTRIB_ID_AIM_TOP_WEIGHTED_SLIDER_FACTOR];
             SpeedTopWeightedSliderFactor = values[ATTRIB_ID_SPEED_TOP_WEIGHTED_SLIDER_FACTOR];
             NestedScorePerObject = values[ATTRIB_ID_NESTED_SCORE_PER_OBJECT];
             LegacyScoreBaseMultiplier = values[ATTRIB_ID_LEGACY_SCORE_BASE_MULTIPLIER];
