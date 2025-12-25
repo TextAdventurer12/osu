@@ -179,15 +179,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
         protected override Skill[] CreateSkills(IBeatmap beatmap, Mod[] mods, double clockRate)
         {
+            Mod[] modsPlusMirror = mods.Any(mod => mod is OsuModMirror)
+                ? mods
+                : mods.Append(new OsuModMirror { Reflection = { Value = OsuModMirror.MirrorType.Both }, MirrorStacks = { Value = true } }).ToArray();
             var skills = new List<Skill>
             {
-                new Aim(mods, true),
-                new Aim(mods, false),
-                new Speed(mods)
+                new Aim(modsPlusMirror, true),
+                new Aim(modsPlusMirror, false),
+                new Speed(modsPlusMirror)
             };
 
             if (mods.Any(h => h is OsuModFlashlight))
-                skills.Add(new Flashlight(mods));
+                skills.Add(new Flashlight(modsPlusMirror));
 
             return skills.ToArray();
         }
