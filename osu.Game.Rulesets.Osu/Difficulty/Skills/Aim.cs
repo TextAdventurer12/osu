@@ -43,19 +43,19 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (difficulty <= 0) return 1;
             if (skill <= 0) return 0;
 
-			double baseDeviation = difficulty / skill;
-			// at what point does the player lose the ability to aim normally
-			// increasing this will like high misscount scores more than ringtone maps, and vice versa
-			const double limit_of_proportion = 0.727;
-			// how quickly does the player lose the ability to aim normally at the limit of proportion
-			// increasing this has a similar effect as increasing the limit of proportion, but it changes how significant the effect is across maps
-			const double breakdown_rate = 30;
-			double adjustedDeviation = baseDeviation + Math.Exp(breakdown_rate * (baseDeviation - limit_of_proportion));
+            double baseDeviation = difficulty / skill;
+            // at what point does the player lose the ability to aim normally
+            // increasing this will like high misscount scores more than ringtone maps, and vice versa
+            const double limit_of_proportion = 0.727;
+            // how quickly does the player lose the ability to aim normally at the limit of proportion
+            // increasing this has a similar effect as increasing the limit of proportion, but it changes how significant the effect is across maps
+            const double breakdown_rate = 30;
+            double adjustedDeviation = baseDeviation + Math.Exp(breakdown_rate * (baseDeviation - limit_of_proportion));
 
             return DifficultyCalculationUtils.Erf(1 / (Math.Sqrt(2) * adjustedDeviation));
         }
 
-        private double strainDecay(double ms) => Math.Pow(0.15, ms / 1000);
+        private double strainDecay(double ms) => Math.Pow(0.2, ms / 1000);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
@@ -64,18 +64,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double snapDifficulty = SnapAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplierSnap;
             double agilityDifficulty = AgilityEvaluator.EvaluateDifficultyOf(current) * skillMultiplierAgility;
             double flowDifficulty = FlowAimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplierFlow;
-
-            if (Mods.Any(m => m is OsuModTouchDevice))
-            {
-                snapDifficulty = Math.Pow(snapDifficulty, 0.89);
-                // we don't adjust agility here since agility represents TD difficulty in a decent enough way
-                flowDifficulty = Math.Pow(flowDifficulty, 1.1);
-            }
-
-            if (Mods.Any(m => m is OsuModRelax))
-            {
-                agilityDifficulty *= 0.3;
-            }
 
             double totalDifficulty = calculateTotalValue(snapDifficulty, agilityDifficulty, flowDifficulty);
 
@@ -93,10 +81,23 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             // We compare flow to combined snap and agility because snap by itself doesn't have enough difficulty to be above flow on streams
             // Agility on the other hand is supposed to measure the rate of cursor velocity changes while snapping
             // So snapping every circle on a stream requires an enormous amount of agility at which point it's easier to flow
-            double combinedSnapDifficulty = DifficultyCalculationUtils.Norm(meanExponent, snapDifficulty, agilityDifficulty);
+            double combinedSnapDifficulty = DifficultyCalculationUtils.Norm(combinedSnapNormExponent, snapDifficulty, agilityDifficulty);
 
             double pSnap = calculateSnapFlowProbability(flowDifficulty / combinedSnapDifficulty);
             double pFlow = 1 - pSnap;
+
+            if (Mods.Any(m => m is OsuModTouchDevice))
+            {
+                // we don't adjust agility here since agility represents TD difficulty in a decent enough way
+                snapDifficulty = Math.Pow(snapDifficulty, 0.89);
+                combinedSnapDifficulty = DifficultyCalculationUtils.Norm(combinedSnapNormExponent, snapDifficulty, agilityDifficulty);
+            }
+
+            if (Mods.Any(m => m is OsuModRelax))
+            {
+                combinedSnapDifficulty *= 0.75;
+                flowDifficulty *= 0.6;
+            }
 
             double totalDifficulty = combinedSnapDifficulty * pSnap + flowDifficulty * pFlow;
 
