@@ -43,7 +43,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (difficulty <= 0) return 1;
             if (skill <= 0) return 0;
 
-            return DifficultyCalculationUtils.Erf(skill / (Math.Sqrt(2) * difficulty));
+			double baseDeviation = difficulty / skill;
+			// at what point does the player lose the ability to aim normally
+			// increasing this will like high misscount scores more than ringtone maps, and vice versa
+			const double limit_of_proportion = 0.727;
+			// how quickly does the player lose the ability to aim normally at the limit of proportion
+			// increasing this has a similar effect as increasing the limit of proportion, but it changes how significant the effect is across maps
+			const double breakdown_rate = 30;
+			double adjustedDeviation = baseDeviation + Math.Exp(breakdown_rate * (baseDeviation - limit_of_proportion));
+
+            return DifficultyCalculationUtils.Erf(1 / (Math.Sqrt(2) * adjustedDeviation));
         }
 
         private double strainDecay(double ms) => Math.Pow(0.15, ms / 1000);
