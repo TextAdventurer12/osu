@@ -429,57 +429,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double relevantCountOk = Math.Min(countOk, speedNoteCount - relevantCountMiss - relevantCountMeh);
             double relevantCountGreat = Math.Max(0, speedNoteCount - relevantCountMiss - relevantCountMeh - relevantCountOk);
 
-            return calculateDeviation(relevantCountGreat, relevantCountOk, relevantCountMeh);
-        }
-
-        /// <summary>
-        /// Estimates the player's tap deviation based on the OD, given number of greats, oks, mehs and misses,
-        /// assuming the player's mean hit error is 0. The estimation is consistent in that two SS scores on the same map with the same settings
-        /// will always return the same deviation. Misses are ignored because they are usually due to misaiming.
-        /// Greats and oks are assumed to follow a normal distribution, whereas mehs are assumed to follow a uniform distribution.
-        /// </summary>
-        private double? calculateDeviation(double relevantCountGreat, double relevantCountOk, double relevantCountMeh)
-        {
-            if (relevantCountGreat + relevantCountOk + relevantCountMeh <= 0)
-                return null;
-
-            // The sample proportion of successful hits.
-            double n = Math.Max(1, relevantCountGreat + relevantCountOk);
-            double p = relevantCountGreat / n;
-
-            // 99% critical value for the normal distribution (one-tailed).
-            const double z = 2.32634787404;
-
-            // We can be 99% confident that the population proportion is at least this value.
-            double pLowerBound = Math.Min(p, (n * p + z * z / 2) / (n + z * z) - z / (n + z * z) * Math.Sqrt(n * p * (1 - p) + z * z / 4));
-
-            double deviation;
-
-            // Tested max precision for the deviation calculation.
-            if (pLowerBound > 0.01)
-            {
-                // Compute deviation assuming greats and oks are normally distributed.
-                deviation = greatHitWindow / (DiffUtils.SQRT2 * DiffUtils.ErfInv(pLowerBound));
-
-                // Subtract the deviation provided by tails that land outside the ok hit window from the deviation computed above.
-                // This is equivalent to calculating the deviation of a normal distribution truncated at +-okHitWindow.
-                double okHitWindowTailAmount = Math.Sqrt(2 / Math.PI) * okHitWindow * Math.Exp(-0.5 * DiffUtils.Pow(okHitWindow / deviation, 2))
-                                               / (deviation * DiffUtils.Erf(okHitWindow / (DiffUtils.SQRT2 * deviation)));
-
-                deviation *= Math.Sqrt(1 - okHitWindowTailAmount);
-            }
-            else
-            {
-                // A tested limit value for the case of a score only containing oks.
-                deviation = okHitWindow / Math.Sqrt(3);
-            }
-
-            // Compute and add the variance for mehs, assuming that they are uniformly distributed.
-            double mehVariance = (mehHitWindow * mehHitWindow + okHitWindow * mehHitWindow + okHitWindow * okHitWindow) / 3;
-
-            deviation = Math.Sqrt(((relevantCountGreat + relevantCountOk) * DiffUtils.Pow(deviation, 2) + relevantCountMeh * mehVariance) / (relevantCountGreat + relevantCountOk + relevantCountMeh));
-
-            return deviation;
+            return OsuDeviationCalculator.CalculateDeviation(relevantCountGreat, relevantCountOk, relevantCountMeh);
         }
 
         // Calculates multiplier for speed to account for improper tapping based on the deviation and speed difficulty
