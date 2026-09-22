@@ -59,7 +59,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                                                          double pastObjectDifficultyInfluence, double currentVisibleObjectDensity)
         {
             const double density_multiplier = 2.4;
-            const double density_difficulty_base = 2.5;
 
             // Consider future densities too because it can make the path the cursor takes less clear
             double futureObjectDifficultyInfluence = Math.Sqrt(currentVisibleObjectDensity);
@@ -72,9 +71,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // Value higher note densities exponentially
             double noteDensityDifficulty = DiffUtils.Pow(pastObjectDifficultyInfluence + futureObjectDifficultyInfluence, 1.7) * 0.4 * constantAngleNerfFactor * velocity;
-
-            // Award only denser than average maps.
-            noteDensityDifficulty = Math.Max(0, noteDensityDifficulty - density_difficulty_base);
 
             // Apply a soft cap to general density reading to account for partial memorization
             noteDensityDifficulty = DiffUtils.Pow(noteDensityDifficulty, 0.45) * density_multiplier;
