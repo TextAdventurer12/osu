@@ -147,7 +147,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators.Aim
 
         private static double calculateCurrentVelocity(OsuDifficultyHitObject osuCurrObj, OsuDifficultyHitObject osuLastObj, double currDistance, bool withSliderTravelDistance)
         {
-            double currVelocity = currDistance / osuCurrObj.AdjustedDeltaTime;
+            double avgTime = (osuCurrObj.AdjustedDeltaTime + osuLastObj.AdjustedDeltaTime) / 2;
+            double currVelocity = currDistance / avgTime;
 
             // If the last object is a slider, then we extend the travel velocity through the slider into the current object.
             if (osuLastObj.BaseObject is Slider && withSliderTravelDistance)
