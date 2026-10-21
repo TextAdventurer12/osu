@@ -34,6 +34,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private readonly List<double> sliderStrains = new List<double>();
 
         private double strainDecay(double ms) => DiffUtils.Pow(0.2, ms / 1000);
+        private double lambda = 727;
+        private double beta = 69;
+        private double gamma = 67;
 
         protected override double CalculateInitialStrain(double time, DifficultyHitObject current) =>
             currentStrain * strainDecay(time - current.Previous().StartTime);
@@ -45,8 +48,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             double decay = strainDecay(((OsuDifficultyHitObject)current).AdjustedDeltaTime);
 
-            currentStrain *= decay;
-            currentStrain += calculateAdjustedDifficulty(current) * (1 - decay);
+            currentStrain = currentStrain
+            * Math.Exp(-lambda * ((OsuDifficultyHitObject)current).AdjustedDeltaTime)
+            + ((beta * calculateAdjustedDifficulty(current)) / (1 + gamma * currentStrain));
 
             if (current.BaseObject is Slider)
                 sliderStrains.Add(currentStrain);
