@@ -22,7 +22,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     {
         private readonly List<double> sliderStrains = new List<double>();
 
-        private double currentStrain;
         private double harmonicWeightSum;
 
         public Speed(Mod[] mods)
@@ -30,19 +29,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
         }
 
-        private double strainDecay(double ms) => DiffUtils.Pow(0.3, ms / 1000);
+		private const double strain_constant = 2.3;
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 66.2;
+            const double skill_multiplier = 6620;
 
             if (Mods.Any(m => m is OsuModRelax))
                 return 0;
 
-            double decay = strainDecay(((OsuDifficultyHitObject)current).AdjustedDeltaTime);
+			((OsuDifficultyHitObject)current).SpeedDifficulty = calculateAdjustedDifficulty(current);
 
-            currentStrain *= decay;
-            currentStrain += calculateAdjustedDifficulty(current) * (1 - decay) * skill_multiplier;
+			double currentStrain = 0;
+			if (current.Previous(1) != null)
+				for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current.Previous(1); obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
+					currentStrain += obj.SpeedDifficulty / (1 + strain_constant * (current.StartTime - obj.StartTime) / 1000);
 
             double currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
 
