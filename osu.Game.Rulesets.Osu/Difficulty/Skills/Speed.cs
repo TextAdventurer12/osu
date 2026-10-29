@@ -29,11 +29,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
         }
 
-		private const double strain_constant = 2.3;
+		private const double strain_constant = 1.8;
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 6620;
+            const double skill_multiplier = 9;
 
             if (Mods.Any(m => m is OsuModRelax))
                 return 0;
@@ -41,9 +41,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 			((OsuDifficultyHitObject)current).SpeedDifficulty = calculateAdjustedDifficulty(current);
 
 			double currentStrain = 0;
-			if (current.Previous(1) != null)
-				for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current.Previous(1); obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
-					currentStrain += obj.SpeedDifficulty / (1 + strain_constant * (current.StartTime - obj.StartTime) / 1000);
+			for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current; obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
+					currentStrain += obj.SpeedDifficulty / DiffUtils.Pow(1 + strain_constant * (current.StartTime - obj.StartTime) / 1000, 1.5);
+
+			currentStrain *= skill_multiplier;
 
             double currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
 
