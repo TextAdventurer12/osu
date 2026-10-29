@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Difficulty.Aggregation;
@@ -21,6 +22,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     public class Speed : Skill
     {
         private readonly List<double> sliderStrains = new List<double>();
+		private readonly List<(double time, double difficulty)> timeDifficultyPairs = new List<(double, double)>();
 
         private double harmonicWeightSum;
 
@@ -33,16 +35,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 9;
+            const double skill_multiplier = 5;
 
             if (Mods.Any(m => m is OsuModRelax))
                 return 0;
 
-			((OsuDifficultyHitObject)current).SpeedDifficulty = calculateAdjustedDifficulty(current);
+			double currentDifficulty = calculateAdjustedDifficulty(current);
+			timeDifficultyPairs.Add((current.StartTime, currentDifficulty));
 
 			double currentStrain = 0;
-			for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current; obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
-					currentStrain += obj.SpeedDifficulty / DiffUtils.Pow(1 + strain_constant * (current.StartTime - obj.StartTime) / 1000, 1.5);
+			foreach ((double time, double difficulty) pair in timeDifficultyPairs)
+				currentStrain += pair.difficulty / DiffUtils.Pow(1 + strain_constant * (current.StartTime - pair.time) / 1000, 1.5);
 
 			currentStrain *= skill_multiplier;
 
