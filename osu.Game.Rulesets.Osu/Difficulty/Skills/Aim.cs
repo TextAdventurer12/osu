@@ -29,26 +29,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             IncludeSliders = includeSliders;
         }
 
+        private double currentStrain;
+
         private readonly List<double> sliderStrains = new List<double>();
 
-		private const double strain_constant = 3.7;
+        private double strainDecay(double ms) => DiffUtils.Pow(0.2, ms / 1000);
 
-        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => StrainValueAt(current);
+        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) =>
+            currentStrain * strainDecay(time - current.Previous().StartTime);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             if (Mods.Any(m => m is OsuModAutopilot))
                 return 0;
 
-			if (IncludeSliders)
-				((OsuDifficultyHitObject)current).AimDifficulty = calculateAdjustedDifficulty(current);
-			else
-				((OsuDifficultyHitObject)current).AimNoSlidersDifficulty = calculateAdjustedDifficulty(current);
+            double decay = strainDecay(((OsuDifficultyHitObject)current).AdjustedDeltaTime);
 
-			double currentStrain = 0;
-			if (current.Previous(1) != null)
-				for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current.Previous(1); obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
-					currentStrain += (IncludeSliders ? obj.AimDifficulty : obj.AimNoSlidersDifficulty) / (1 + strain_constant * (current.StartTime - obj.StartTime) / 1000);
+            currentStrain *= decay;
+            currentStrain += calculateAdjustedDifficulty(current) * (1 - decay);
 
             if (current.BaseObject is Slider)
                 sliderStrains.Add(currentStrain);
@@ -85,7 +83,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double calculateTotalValue(double snapDifficulty, double agilityDifficulty, double flowDifficulty)
         {
-            const double skill_multiplier_total = 0.412;
+            const double skill_multiplier_total = 1.12;
             const double combined_snap_norm_exponent = 1.5;
 
             // We compare flow to combined snap and agility because snap by itself doesn't have enough difficulty to be above flow on streams

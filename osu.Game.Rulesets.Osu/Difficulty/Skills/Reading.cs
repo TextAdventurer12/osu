@@ -25,14 +25,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             hasHiddenMod = mods.OfType<OsuModHidden>().Any(m => !m.OnlyFadeApproachCircles.Value);
         }
 
+        private double currentStrain;
+
         private double? firstObjectStartTime;
 
-		private const double strain_constant = 0.3;
+        private double strainDecay(double ms) => DiffUtils.Pow(0.8, ms / 1000);
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 0.0025;
+            const double skill_multiplier = 2.5;
             const double reduced_difficulty_duration = 40 * 1000;
+
+            double decay = strainDecay(current.DeltaTime);
 
             // This currently operates under the assumption that `ObjectDifficultyOf` is called once per object, and in order.
             // Under that assumption, we can trust that `current.StartTime` refers to the start time of the first object in the case that `firstObjectStartTime` is yet to be set.
@@ -40,19 +44,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             const double reduced_difficulty_base_line = 0.2; // Assume that even with full memorisation, skill is still required to read and play the first objects.
 
-            double currentObjectStrain = calculateAdjustedDifficulty(current) * skill_multiplier;
+            double currentObjectStrain = calculateAdjustedDifficulty(current) * (1 - decay) * skill_multiplier;
 
             if (current.StartTime <= firstObjectStartTime + reduced_difficulty_duration)
             {
                 double scale = Math.Log10(double.Lerp(1, 10, Math.Clamp((current.StartTime - firstObjectStartTime.Value) / reduced_difficulty_duration, 0, 1)));
                 currentObjectStrain *= double.Lerp(reduced_difficulty_base_line, 1.0, scale);
             }
-			((OsuDifficultyHitObject)current).ReadingDifficulty = currentObjectStrain;
 
-			double currentStrain = 0;
-			if (current.Previous(1) != null)
-				for (OsuDifficultyHitObject obj = (OsuDifficultyHitObject)current.Previous(1); obj.Previous(1) != null; obj = (OsuDifficultyHitObject)obj.Previous(1))
-					currentStrain += obj.ReadingDifficulty / (1 + strain_constant * (current.StartTime - obj.StartTime) / 1000);
+            currentStrain *= decay;
+            currentStrain += currentObjectStrain;
 
             return currentStrain;
         }
