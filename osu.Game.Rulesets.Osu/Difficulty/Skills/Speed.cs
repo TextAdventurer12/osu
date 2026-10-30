@@ -31,11 +31,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
         }
 
-		private const double strain_constant = 1.8;
+		private const double strain_constant = 1.4;
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 5;
+            const double skill_multiplier = 4.2;
 
             if (Mods.Any(m => m is OsuModRelax))
                 return 0;
@@ -74,7 +74,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (ObjectDifficulties.Count == 0)
                 return 0;
 
-            (double difficulty, harmonicWeightSum) = HarmonicSeries.Aggregate(ObjectDifficulties, harmonicScale: 20);
+            (double difficulty, harmonicWeightSum) = HarmonicSeries.Aggregate(ObjectDifficulties, harmonicScale: 60, decayExponent: 1.10);
 
             return difficulty;
         }
