@@ -29,12 +29,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             private double ClockAdjustment(double delta)
             {
-                // decay tuning parameter. Higher tau = less strain carried from one stream to the next.
-                // Increasing tau makes the strain graph spikier, and decreasing makes it smoother.
-                const double tau = 200;
-                // gap penalisation constant. higher q = stronger nerf for gaps
-                const double q = 1.5;
-                return delta * DiffUtils.Pow(1 + delta * tau, q - 1);
+                // Below this bpm 1/4 we start to increase delta time to better account for stamina recovery
+                const double tau = 90;
+                // Delta  time multiplier for low bpms approaches tau_units ^ q. Increasing q will nerf anything below tau.
+                const double q = 1.25;
+                // Changes how sharply the multiplier scales around tau. Increasing m will strengthen the effect below tau and weaken it above
+                const double m = 5;
+                double tau_units = DiffUtils.Pow(tau / DiffUtils.MillisecondsToBPM(delta), m);
+                return delta * DiffUtils.Pow(1 + tau_units, q / m) / 1000;
             }
 
             public StaminaObject(double difficulty, double last_clock, double deltaTime)
@@ -58,7 +60,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double ProcessInternal(DifficultyHitObject current)
         {
-            const double skill_multiplier = 5.8;
+            const double skill_multiplier = 1.8;
 
             if (Mods.Any(m => m is OsuModRelax))
                 return 0;
@@ -69,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (staminaMemory.Count != 0)
                 clock_time = staminaMemory.Last().clock_time;
 
-            StaminaObject currStaminaObj = new StaminaObject(currentDifficulty, clock_time, current.DeltaTime / 1000);
+            StaminaObject currStaminaObj = new StaminaObject(currentDifficulty, clock_time, current.DeltaTime);
             staminaMemory.Add(currStaminaObj);
 
 			double currentStrain = 0;
@@ -103,7 +105,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (ObjectDifficulties.Count == 0)
                 return 0;
 
-            (double difficulty, harmonicWeightSum) = HarmonicSeries.Aggregate(ObjectDifficulties, harmonicScale: 60, decayExponent: 1.10);
+            (double difficulty, harmonicWeightSum) = HarmonicSeries.Aggregate(ObjectDifficulties, harmonicScale: 20);
 
             return difficulty;
         }
